@@ -230,3 +230,29 @@ void tc_deinit(int fd)
 
     close(fd);
 }
+
+int tc_get_cts(int fd)
+{
+    int flags = 0;
+
+    ioctl(fd, TIOCMGET, &flags);
+
+    if (flags & TIOCM_CTS) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}
+
+int tc_get_rts(int fd)
+{
+    int flags = 0;
+
+    ioctl(fd, TIOCMGET, &flags);
+
+    if (flags & TIOCM_RTS) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}

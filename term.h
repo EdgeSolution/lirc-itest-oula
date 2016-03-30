@@ -10,5 +10,7 @@ void tc_set_rts(int fd, char enabled);
 void tc_set_dtr(int fd, char enabled);
 int tc_init(char *dev);
 void tc_deinit(int fd);
+int tc_get_cts(int fd);
+int tc_get_rts(int fd);
 
 #endif /* __TERM_H__ */
