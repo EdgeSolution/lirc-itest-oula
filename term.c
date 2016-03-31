@@ -74,6 +74,7 @@ void tc_set_baudrate(int fd, int speed)
             cfsetospeed(&opt,B230400);
             break;
 
+#ifndef __APPLE__
         case 460800:
             cfsetispeed(&opt,B460800);
             cfsetospeed(&opt,B460800);
@@ -88,6 +89,7 @@ void tc_set_baudrate(int fd, int speed)
             cfsetispeed(&opt,B921600);
             cfsetospeed(&opt,B921600);
             break;
+#endif
 
         default:
             printf("Invalid baudrate(%d), use 9600 instead.\n", speed);
