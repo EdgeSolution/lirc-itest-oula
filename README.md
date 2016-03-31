@@ -43,7 +43,6 @@ int tc_get_rts(int fd);
 # Usage
 
 1. Use `tc_init()` API to open the device, it will return a fd.
-
 ```
 int fd = tc_init("/dev/ttyS0");
 ```
