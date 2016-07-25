@@ -1,0 +1,14 @@
+The integration test software of CPCI-1504
+==========================================
+
+Description
+-----------
+This project implements integration test softwares of CPCI-1504.
+
+NOTES: To run this utility, you need to be root user.
+
+
+File list
+-----------
+Makefile    - Makefile for whole project in this repository.
+README.txt  - This file
