@@ -19,8 +19,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
-#include "log.h"
-#include "cfg.h"
+#include "common.h"
 
 /* Version of the program */
 #define PROGRAM_VERSION     "0.1"
@@ -30,7 +29,7 @@
 char g_machine;
 
 /* The flag used to notify the program to exit */
-static int g_running = 1;
+int g_running = 1;
 
 
 /* Prototype */
