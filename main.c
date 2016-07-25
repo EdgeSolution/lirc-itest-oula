@@ -14,16 +14,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 #include <stdarg.h>
 #include <ctype.h>
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
-#include <libgen.h>
-#include <fcntl.h>
-#include <termios.h>
-#include "term.h"
+#include "log.h"
+#include "cfg.h"
 
 /* Version of the program */
 #define PROGRAM_VERSION     "0.1"
@@ -38,6 +35,7 @@ static int g_running = 1;
 
 /* Prototype */
 int get_parameter(void);
+int load_config(char *config_file);
 int install_sig_handler(void);
 
 
@@ -54,6 +52,19 @@ int main(int argc, char **argv)
     get_parameter();
 
     install_sig_handler();
+
+    char log_file[260];
+    int fd = log_init(log_file, "lirc");
+    if (fd < 0) {
+        printf("Log init error\n");
+        return -1;
+    }
+
+    load_config("lirc.cfg");
+    log_print(fd, "begin\n");
+    log_print(fd, "lirc-itest main program\n");
+    log_print(fd, "end\n");
+    log_close(fd);
 
     return rc;
 }
@@ -101,6 +112,33 @@ int get_parameter(void)
     return 0;
 }
 
+
+/******************************************************************************
+ * NAME:
+ *      load_config
+ *
+ * DESCRIPTION:
+ *      Load default parameters of diag function from config file.
+ *
+ * PARAMETERS:
+ *      config_file - The config file.
+ *
+ * RETURN:
+ *      0 - OK
+ *      Others - Error
+ ******************************************************************************/
+int load_config(char *config_file)
+{
+    char value[MAX_LINE_LENGTH];
+    char *sect_name = "SIM";
+    char *param_name = "board_num";
+
+    if (ini_get_key_value(config_file, sect_name, param_name, value) == 0) {
+        printf("%s: %s = %s\n", sect_name, param_name, value);
+    }
+
+    return 0;
+}
 
 
 void sig_handler(int signo)

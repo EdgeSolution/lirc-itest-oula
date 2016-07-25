@@ -4,7 +4,7 @@
  *     cfg.c
  *
  * DESCRIPTION:
- *     Load default parameters from config file
+ *     Define functions to load setting from configuration file
  *
  * REVISION(MM/DD/YYYY):
  *     07/25/2016  Shengkui Leng (shengkui.leng@advantech.com.cn)
@@ -15,8 +15,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
-
-#define MAX_LINE_LENGTH     260
+#include "cfg.h"
 
 
 /*
@@ -184,38 +183,3 @@ int ini_get_key_value(const char *ini_file, const char *sect,
     fclose(file);
     return error;
 }
-
-
-/******************************************************************************
- * NAME:
- *      load_config
- *
- * DESCRIPTION:
- *      Load default parameters of diag function from config file.
- *
- * PARAMETERS:
- *      config_file - The config file.
- *      serv        - The dui_serv_x structure.
- *
- * RETURN:
- *      0 - OK
- *      Others - Error
- ******************************************************************************/
-int load_config(char *config_file)
-{
-/*
-    char value[MAX_LINE_LENGTH];
-    int f;
-    int p;
-    char *service_name;
-    char *func_name;
-    char *param_name;
-
-
-    if (!ini_get_key_value(config_file, sect_name, param_name, value)) {
-        DBG_PRINT("%s: %s = %s\n", sect_name, param_name, value);
-    }
-*/
-    return 0;
-}
-
