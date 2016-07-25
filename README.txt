@@ -12,3 +12,6 @@ File list
 -----------
 Makefile    - Makefile for whole project in this repository.
 README.txt  - This file
+main.c      - The main program
+log.c       - The log module
+cfg.c       - The configuration module
