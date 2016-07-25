@@ -106,7 +106,8 @@ void log_print(int fd, char *format, ...)
  *      board    - Prefix string of the filename of log file.
  *
  * RETURN:
- *      fd of the log file
+ *      >=0 - fd of the log file
+ *      <0  - error
  ******************************************************************************/
 int log_init(char *log_file, char *board)
 {
@@ -125,11 +126,7 @@ int log_init(char *log_file, char *board)
 
     fd = open(log_file, O_RDWR | O_CREAT | O_APPEND,
             S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-    if (fd >= 0) {
-        return fd;
-    } else {
-        return -1;
-    }
+    return fd;
 }
 
 
