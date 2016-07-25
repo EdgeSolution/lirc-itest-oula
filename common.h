@@ -17,9 +17,17 @@
 #include "log.h"
 #include "cfg.h"
 
+#define MAX_STR_LENGTH      100
+
 /* Global variables **/
+extern char g_tester[];
+extern char g_product_sn[];
+extern int g_duration;
 extern char g_machine;
 extern int g_running;
+extern int g_board_num;
+extern int g_baudrate;
+extern int g_speed;
 
 
 #endif /* _COMMON_H_ */

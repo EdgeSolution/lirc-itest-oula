@@ -25,11 +25,30 @@
 #define PROGRAM_VERSION     "0.1"
 
 
+/* Tester */
+char g_tester[MAX_STR_LENGTH];
+
+/* Product Serial Number */
+char g_product_sn[MAX_STR_LENGTH];
+
+/* Test duration(seconds) */
+int g_duration = 600;
+
 /* Machine A or B */
-char g_machine;
+char g_machine = 'A';
 
 /* The flag used to notify the program to exit */
 int g_running = 1;
+
+/* Board number (SIM) */
+int g_board_num = 2;
+
+/* Baudrate of serial port (SIM) */
+int g_baudrate = 115200;
+
+/* Speed of NIC port (NIM) */
+int g_speed = 1000;
+
 
 
 /* Prototype */
