@@ -21,7 +21,7 @@
 #define MSG_BUF_SIZE        2048
 
 
-const char g_log_dir_path[] = "/var/log";
+const char g_log_dir_path[] = "./";
 
 
 
@@ -57,7 +57,8 @@ struct tm* get_current_time()
  *      Print a message string to a log file
  *
  * PARAMETERS:
- *      Arguments are the same as fprintf
+ *      fd    - The fd of log file
+ *      Other arguments are the same as printf
  *
  * RETURN:
  *      None
@@ -80,9 +81,9 @@ void log_print(int fd, char *format, ...)
 
     /* print to log file */
     p = get_current_time();
-    snprintf(line, sizeof(line), "| %02d:%02d:%02d %02d/%02d/%d | %s",
+    snprintf(line, sizeof(line), "| %d-%02d-%02d %02d:%02d:%02d | %s",
+        (1900 + p->tm_year), (1 + p->tm_mon), p->tm_mday,
         p->tm_hour, p->tm_min, p->tm_sec,
-        (1 + p->tm_mon), p->tm_mday, (1900 + p->tm_year),
         dbg_msg
         );
 
@@ -90,8 +91,6 @@ void log_print(int fd, char *format, ...)
     if (rc < 0) {
         printf("Write log error\n");
     }
-
-    close(fd);
 }
 
 
