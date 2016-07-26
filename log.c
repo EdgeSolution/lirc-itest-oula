@@ -33,18 +33,17 @@ const char g_log_dir_path[] = "./";
  *      Get the current time
  *
  * PARAMETERS:
- *      date_time - None
+ *      p - Output the time.
  *
  * RETURN:
  *      The pointer of time strcuture
  ******************************************************************************/
-struct tm* get_current_time()
+struct tm* get_current_time(struct tm *p)
 {
-    static struct tm *p;
     struct timeval timep;
 
     gettimeofday(&timep, NULL);
-    p = localtime(&timep.tv_sec);
+    localtime_r(&timep.tv_sec, p);
     return p;
 }
 
@@ -66,7 +65,7 @@ struct tm* get_current_time()
 void log_print(int fd, char *format, ...)
 {
     va_list args;
-    struct tm *p;
+    struct tm p;
     char line[MSG_BUF_SIZE];
     char dbg_msg[MSG_BUF_SIZE];
 
@@ -80,10 +79,10 @@ void log_print(int fd, char *format, ...)
     va_end(args);
 
     /* print to log file */
-    p = get_current_time();
+    get_current_time(&p);
     snprintf(line, sizeof(line), "| %d-%02d-%02d %02d:%02d:%02d | %s",
-        (1900 + p->tm_year), (1 + p->tm_mon), p->tm_mday,
-        p->tm_hour, p->tm_min, p->tm_sec,
+        (1900 + p.tm_year), (1 + p.tm_mon), p.tm_mday,
+        p.tm_hour, p.tm_min, p.tm_sec,
         dbg_msg
         );
 
@@ -111,15 +110,15 @@ void log_print(int fd, char *format, ...)
  ******************************************************************************/
 int log_init(char *log_file, char *board)
 {
-    struct tm *p;
+    struct tm p;
     char date_time[64];
     int fd;
 
-    p = get_current_time();
+    get_current_time(&p);
 
     /* Build date_time for filename */
-    sprintf(date_time, "%d%02d%02d_%02d%02d%02d", (1900 + p->tm_year),
-        (1 + p->tm_mon), p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec);
+    sprintf(date_time, "%d%02d%02d_%02d%02d%02d", (1900 + p.tm_year),
+        (1 + p.tm_mon), p.tm_mday, p.tm_hour, p.tm_min, p.tm_sec);
 
     /* Generate log file name */
     sprintf(log_file, "%s/%s_%s.log", g_log_dir_path, board, date_time);
