@@ -107,7 +107,7 @@ int main(int argc, char **argv)
     log_close(fd);
 
     fd = log_init(log_file, "report", g_report_dir);
-    log_print(fd, "report\n");
+    write_file(fd, "report\n");
     log_close(fd);
     return rc;
 }

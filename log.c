@@ -20,11 +20,6 @@
 #include <sys/stat.h>
 #include "log.h"
 
-#define MSG_BUF_SIZE        2048
-
-
-const char g_log_dir_path[] = "./";
-
 
 
 /******************************************************************************
@@ -159,5 +154,40 @@ void log_close(int fd)
 {
     if (fd >= 0) {
         close(fd);
+    }
+}
+
+
+/******************************************************************************
+ * NAME:
+ *      write_file
+ *
+ * DESCRIPTION:
+ *      Write a string to a file
+ *
+ * PARAMETERS:
+ *      fd    - The fd of a file
+ *      Other arguments are the same as printf
+ *
+ * RETURN:
+ *      None
+ ******************************************************************************/
+void write_file(int fd, char *format, ...)
+{
+    va_list args;
+    char line[MSG_BUF_SIZE];
+
+    if (fd < 0) {
+        printf("Invalid fd\n");
+        return;
+    }
+
+    va_start(args, format);
+    vsnprintf(line, MSG_BUF_SIZE, format, args);
+    va_end(args);
+
+    int rc = write(fd, line, strlen(line));
+    if (rc < 0) {
+        printf("Write file error\n");
     }
 }

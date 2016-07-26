@@ -16,15 +16,17 @@
 
 #include <stdio.h>
 
+#define MSG_BUF_SIZE        2048
+
 
 int log_init(char *log_file, char *prefix, char *dir);
 void log_print(int fd, char *format, ...);
+void write_file(int fd, char *format, ...);
 void log_close(int fd);
 
 
 /* Print message to log file */
 #define LOG_OUT(fd, format, args...)    log_print(fd, (char*)format, ## args);
-
 
 
 /*
