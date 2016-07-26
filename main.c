@@ -4,7 +4,7 @@
 *     main.c
 *
 * DESCRIPTION:
-*     Integration test software for CPCI-1504
+*     Integration test software for CPCI-1504(LiRC-3)
 *
 * REVISION(MM/DD/YYYY):
 *     07/25/2016  Shengkui Leng (shengkui.leng@advantech.com.cn)
@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
+#include <limits.h>
 #include "common.h"
 
 /* Version of the program */
@@ -50,11 +51,22 @@ int g_baudrate = 115200;
 int g_speed = 1000;
 
 
+/* Full path of the directory where the log/error/report files put */
+char g_log_dir[PATH_MAX];
+char g_error_dir[PATH_MAX];
+char g_report_dir[PATH_MAX];
+
+/* Full path of the config file */
+char g_config_path[PATH_MAX];
+
+/* Full path of program */
+char g_progam_path[PATH_MAX];
 
 /* Prototype */
 int get_parameter(void);
 int load_config(char *config_file);
 int install_sig_handler(void);
+size_t get_exe_path(char *path_buf, size_t len);
 
 
 
@@ -63,7 +75,7 @@ int main(int argc, char **argv)
     int rc = 0;
 
     if (argc != 1) {
-        printf("LIRC-ITEST v%s\n", PROGRAM_VERSION);
+        printf("LiRC-ITEST v%s\n", PROGRAM_VERSION);
         return -1;
     }
 
@@ -71,20 +83,32 @@ int main(int argc, char **argv)
 
     install_sig_handler();
 
+    if (get_exe_path(g_progam_path, sizeof(g_progam_path)-1) <= 0) {
+        printf("Get path of program error\n");
+        return -1;
+    }
+
+    snprintf(g_log_dir, sizeof(g_log_dir), "%s/%s", g_progam_path, "log");
+    snprintf(g_error_dir, sizeof(g_error_dir), "%s/%s", g_log_dir, "error");
+    snprintf(g_report_dir, sizeof(g_report_dir), "%s/%s", g_log_dir, "report");
+    snprintf(g_config_path, sizeof(g_config_path), "%s/%s", g_progam_path, "lirc.cfg");
+
+    load_config(g_config_path);
+
     char log_file[260];
-    int fd = log_init(log_file, "lirc");
+    int fd = log_init(log_file, "lirc", g_log_dir);
     if (fd < 0) {
         printf("Log init error\n");
         return -1;
     }
-
-    load_config("lirc.cfg");
-
     log_print(fd, "begin\n");
     log_print(fd, "lirc-itest main program\n");
     log_print(fd, "end\n");
     log_close(fd);
 
+    fd = log_init(log_file, "report", g_report_dir);
+    log_print(fd, "report\n");
+    log_close(fd);
     return rc;
 }
 
@@ -232,3 +256,52 @@ int install_sig_handler(void)
 
     return 0;
 }
+
+
+/******************************************************************************
+ * NAME:
+ *      get_exe_path
+ *
+ * DESCRIPTION: 
+ *      Find the path containing the currently running program executable.
+ *
+ * PARAMETERS:
+ *      path_buf - The buffer to output the path.
+ *      len      - The size of buffer.
+ *
+ * RETURN:
+ *      The number of characters in the buffer, or -1 on error.
+ ******************************************************************************/
+size_t get_exe_path(char *path_buf, size_t len)
+{
+    char *pos;
+    int rc;
+
+    /* Read the target of /proc/self/exe. */
+    rc = readlink("/proc/self/exe", path_buf, len);
+    if (rc == -1) {
+        printf("readlink error\n");
+        return -1;
+    }
+    path_buf[rc] = 0;
+
+    /*
+     * Find the last occurrence of a forward slash, the path separator. Obtain
+     * the directory containing the program by truncating the path after the
+     * last slash.
+     */
+    pos = strrchr(path_buf, '/');
+    if (pos == NULL) {
+        printf("No '/' found in path!\n");
+        return -1;
+    }
+    ++pos;
+    *pos = '\0';
+
+    /*
+     * Return the length of the path.
+     */
+    return (size_t)(pos - path_buf);
+}
+
+

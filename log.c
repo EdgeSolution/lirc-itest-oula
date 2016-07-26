@@ -16,6 +16,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "log.h"
 
 #define MSG_BUF_SIZE        2048
@@ -102,13 +104,14 @@ void log_print(int fd, char *format, ...)
  *
  * PARAMETERS:
  *      log_file - Output the filename of log file.
- *      board    - Prefix string of the filename of log file.
+ *      prefix   - Prefix string of the filename of log file.
+ *      dir      - The directory where the log shall be placed.
  *
  * RETURN:
  *      >=0 - fd of the log file
  *      <0  - error
  ******************************************************************************/
-int log_init(char *log_file, char *board)
+int log_init(char *log_file, char *prefix, char *dir)
 {
     struct tm p;
     char date_time[64];
@@ -121,7 +124,17 @@ int log_init(char *log_file, char *board)
         (1 + p.tm_mon), p.tm_mday, p.tm_hour, p.tm_min, p.tm_sec);
 
     /* Generate log file name */
-    sprintf(log_file, "%s/%s_%s.log", g_log_dir_path, board, date_time);
+    if (dir) {
+        /* Create the dir of log file */
+        struct stat s;
+        if (stat(dir, &s) != 0) {
+            mkdir(dir, 0755);
+        }
+
+        sprintf(log_file, "%s/%s_%s.log", dir, prefix, date_time);
+    } else {
+        sprintf(log_file, "%s_%s.log", prefix, date_time);
+    }
 
     fd = open(log_file, O_RDWR | O_CREAT | O_APPEND,
             S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);

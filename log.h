@@ -17,7 +17,7 @@
 #include <stdio.h>
 
 
-int log_init(char *log_file, char *board);
+int log_init(char *log_file, char *prefix, char *dir);
 void log_print(int fd, char *format, ...);
 void log_close(int fd);
 
