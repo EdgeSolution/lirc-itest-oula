@@ -20,6 +20,8 @@
 #include <errno.h>
 #include <signal.h>
 #include <limits.h>
+#include <libgen.h>
+#include <sys/stat.h>
 #include "common.h"
 
 /* Version of the program */
@@ -57,17 +59,18 @@ char g_error_dir[PATH_MAX];
 char g_report_dir[PATH_MAX];
 
 /* Full path of the config file */
-char g_config_path[PATH_MAX];
+char g_config_file[PATH_MAX];
 
 /* Full path of program */
 char g_progam_path[PATH_MAX];
 
-/* Prototype */
+/* Function Prototype */
 int get_parameter(void);
 int load_config(char *config_file);
 int install_sig_handler(void);
 size_t get_exe_path(char *path_buf, size_t len);
-
+int init_path(void);
+int move_log_to_error(char *log_file);
 
 
 int main(int argc, char **argv)
@@ -83,17 +86,9 @@ int main(int argc, char **argv)
 
     install_sig_handler();
 
-    if (get_exe_path(g_progam_path, sizeof(g_progam_path)-1) <= 0) {
-        printf("Get path of program error\n");
-        return -1;
-    }
+    init_path();
 
-    snprintf(g_log_dir, sizeof(g_log_dir), "%s/%s", g_progam_path, "log");
-    snprintf(g_error_dir, sizeof(g_error_dir), "%s/%s", g_log_dir, "error");
-    snprintf(g_report_dir, sizeof(g_report_dir), "%s/%s", g_log_dir, "report");
-    snprintf(g_config_path, sizeof(g_config_path), "%s/%s", g_progam_path, "lirc.cfg");
-
-    load_config(g_config_path);
+    load_config(g_config_file);
 
     char log_file[260];
     int fd = log_init(log_file, "lirc", g_log_dir);
@@ -105,6 +100,7 @@ int main(int argc, char **argv)
     log_print(fd, "lirc-itest main program\n");
     log_print(fd, "end\n");
     log_close(fd);
+    move_log_to_error(log_file);
 
     fd = log_init(log_file, "report", g_report_dir);
     write_file(fd, "report\n");
@@ -305,3 +301,64 @@ size_t get_exe_path(char *path_buf, size_t len)
 }
 
 
+/******************************************************************************
+ * NAME:
+ *      init_path
+ *
+ * DESCRIPTION: 
+ *      Init file path of log/error/report and config file.
+ *
+ * PARAMETERS:
+ *      None 
+ *
+ * RETURN:
+ *      None
+ ******************************************************************************/
+int init_path(void)
+{
+    struct stat s;
+
+    if (get_exe_path(g_progam_path, sizeof(g_progam_path)-1) <= 0) {
+        printf("Get path of program error\n");
+        return -1;
+    }
+
+    snprintf(g_log_dir, sizeof(g_log_dir), "%s/%s", g_progam_path, "log");
+    snprintf(g_error_dir, sizeof(g_error_dir), "%s/%s", g_log_dir, "error");
+    snprintf(g_report_dir, sizeof(g_report_dir), "%s/%s", g_log_dir, "report");
+    snprintf(g_config_file, sizeof(g_config_file), "%s/%s", g_progam_path, "lirc.cfg");
+
+    if (stat(g_log_dir, &s) != 0) {
+        mkdir(g_log_dir, 0755);
+    }
+    if (stat(g_error_dir, &s) != 0) {
+        mkdir(g_error_dir, 0755);
+    }
+    if (stat(g_report_dir, &s) != 0) {
+        mkdir(g_report_dir, 0755);
+    }
+
+    return 0;
+}
+
+/******************************************************************************
+ * NAME:
+ *      move_log_to_error
+ *
+ * DESCRIPTION: 
+ *      Move the log file to error
+ *
+ * PARAMETERS:
+ *      log_file - The fullpath of log file. 
+ *
+ * RETURN:
+ *      None
+ ******************************************************************************/
+int move_log_to_error(char *log_file)
+{
+    char new_file[PATH_MAX];
+
+    snprintf(new_file, sizeof(new_file), "%s/error_%s", g_error_dir, basename(log_file));
+    rename(log_file, new_file);
+    return 0;
+}
