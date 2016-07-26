@@ -79,6 +79,7 @@ int main(int argc, char **argv)
     }
 
     load_config("lirc.cfg");
+
     log_print(fd, "begin\n");
     log_print(fd, "lirc-itest main program\n");
     log_print(fd, "end\n");
@@ -104,20 +105,51 @@ int main(int argc, char **argv)
  ******************************************************************************/
 int get_parameter(void)
 {
+    char buf[MAX_STR_LENGTH];
+    char *p;
+
+    /* Get the information of tester */
+    printf("Please input the Tester:\n");
+    if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+        printf("input error\n");
+        return -1;
+    }
+    p = left_trim(right_trim(buf));
+    strncpy(g_tester, p, sizeof(g_tester));
+
+    /* Get the product SN */
+    printf("Please input the Product SN:\n");
+    if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+        printf("input error\n");
+        return -1;
+    }
+    p = left_trim(right_trim(buf));
+    strncpy(g_product_sn, p, sizeof(g_product_sn));
+
+    /* Get the test time */
+    printf("Please input the Test time(seconds):\n");
+    if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+        printf("input error\n");
+        return -1;
+    }
+    g_duration = atoi(buf);
+    if (g_duration <= 0) {
+        printf("input error\n");
+        return -1;
+    }
+
+    /* Get the machine A or B */
     printf("Please input A or B for this machine:\n");
     if (scanf("%c", &g_machine) != 1) {
         printf("input error\n");
         return -1;
     }
+    g_machine = toupper(g_machine);
     switch (g_machine) {
     case 'a':
     case 'A':
-        g_machine = toupper(g_machine);
-        break;
-
     case 'b':
     case 'B':
-        g_machine = toupper(g_machine);
         break;
 
     default:
@@ -126,7 +158,8 @@ int get_parameter(void)
         break;
     }
 
-
+    DBG_PRINT("Tester: %s, Product SN: %s, Test time: %d\n",
+        g_tester, g_product_sn, g_duration);
     return 0;
 }
 
@@ -148,13 +181,23 @@ int get_parameter(void)
 int load_config(char *config_file)
 {
     char value[MAX_LINE_LENGTH];
-    char *sect_name = "SIM";
-    char *param_name = "board_num";
 
-    if (ini_get_key_value(config_file, sect_name, param_name, value) == 0) {
-        printf("%s: %s = %s\n", sect_name, param_name, value);
+    if (ini_get_key_value(config_file, "SIM", "board_num", value) == 0) {
+        g_board_num = atoi(value);
+        if ((g_board_num < 1) || (g_board_num > 2)) {
+            printf("Config file parse error\n");
+            return 1;
+        }
+    }
+    if (ini_get_key_value(config_file, "SIM", "baudrate", value) == 0) {
+        g_baudrate = atoi(value);
+        if (g_baudrate <= 0) {
+            printf("Config file parse error\n");
+            return 1;
+        }
     }
 
+    DBG_PRINT("board_num = %d, baudrate = %d\n", g_board_num, g_baudrate);
     return 0;
 }
 

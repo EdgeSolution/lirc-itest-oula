@@ -21,7 +21,7 @@
 /*
  * Trim whitespace chars from the end of string.
  */
-static char *right_trim(char *str)
+char *right_trim(char *str)
 {
     char *p = str + strlen(str);
 
@@ -35,7 +35,7 @@ static char *right_trim(char *str)
 /* 
  * Return pointer to first non-whitespace char in string.
  */
-static char *left_trim(const char *str)
+char *left_trim(const char *str)
 {
     while (*str && isspace(*str)) {
         str++;

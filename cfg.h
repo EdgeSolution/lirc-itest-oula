@@ -19,5 +19,7 @@
 int ini_get_key_value(const char *ini_file, const char *sect,
     const char *item_key, char *item_val);
 
+char *right_trim(char *str);
+char *left_trim(const char *str);
 
 #endif /* _CFG_H_ */
