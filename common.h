@@ -30,4 +30,28 @@ extern int g_baudrate;
 extern int g_speed;
 
 
+/* Arguments pass to the test_routine of test module */
+typedef struct _mod_args {
+    char *log_file;
+} mod_args;
+
+/* Sturcture for each test module */
+typedef struct _test_mod {
+    /* 1- Run, 0 -don't run */
+    int run;
+
+    /* Name of test module */
+    char name[MAX_STR_LENGTH];
+    
+    /* Log file */
+    char log_file[PATH_MAX];
+
+    /* Thread routine and pid of test module */
+    pthread_t pid;
+    void * (* test_routine)(void *arg);
+
+    /* Interface to print status of test module */
+    void (* print_status)(void);
+} test_mod_t;
+
 #endif /* _COMMON_H_ */
