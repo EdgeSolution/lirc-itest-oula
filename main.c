@@ -21,6 +21,7 @@
 #include <signal.h>
 #include <libgen.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include "common.h"
 #include "led_test.h"
 
@@ -77,6 +78,7 @@ int init_path(void);
 int move_log_to_error(char *log_file);
 int start_test_module(test_mod_t *pmod);
 void generate_report(void);
+void set_timeout(int sec);
 
 
 int main(int argc, char **argv)
@@ -98,6 +100,7 @@ int main(int argc, char **argv)
     load_config(g_config_file);
 
     start_test_module(&test_mod_led);
+    set_timeout(g_duration);
 
     /* Print the status of test module */
     while (g_running) {
@@ -272,7 +275,40 @@ int install_sig_handler(void)
         return -1;
     }
 
+    if (sigaction(SIGALRM, &sa, NULL)) {
+        printf("sigaction(SIGALRM) error\n");
+        return -1;
+    }
+
     return 0;
+}
+
+
+/******************************************************************************
+ * NAME:
+ *      set_timeout
+ *
+ * DESCRIPTION: 
+ *      Set test duration.
+ *
+ * PARAMETERS:
+ *      sec - Time duration(seconds)
+ *
+ * RETURN:
+ *      None
+ ******************************************************************************/
+void set_timeout(int sec)
+{
+    struct itimerval itimer;
+    
+    /* Configure the timer to expire after sec(seconds)... */
+    itimer.it_value.tv_sec = sec;
+    itimer.it_value.tv_usec = 0;
+
+    itimer.it_interval.tv_sec = 0;
+    itimer.it_interval.tv_usec = 0;
+
+    setitimer(ITIMER_REAL, &itimer, NULL);
 }
 
 
