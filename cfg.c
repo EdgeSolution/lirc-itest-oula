@@ -124,7 +124,7 @@ int ini_get_key_value(const char *ini_file, const char *sect,
                 *end = '\0';
                 strncpy0(section, start + 1, sizeof(section));
                 start = left_trim(right_trim(section));
-                if (!strcmp(start, sect)) {
+                if (!strcasecmp(start, sect)) {
                     found_sect = 1;
                     break;
                 }
@@ -166,7 +166,7 @@ int ini_get_key_value(const char *ini_file, const char *sect,
                 right_trim(value);
 
                 /* A valid key=value pair found, is this key we want? */
-                if (!strcmp(name, item_key)) {
+                if (!strcasecmp(name, item_key)) {
                     /* The key found! */
                     strcpy(item_val, value);
                     error = 0;
