@@ -19,10 +19,10 @@
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
-#include <limits.h>
 #include <libgen.h>
 #include <sys/stat.h>
 #include "common.h"
+#include "led_test.h"
 
 /* Version of the program */
 #define PROGRAM_VERSION     "0.1"
@@ -64,6 +64,10 @@ char g_config_file[PATH_MAX];
 /* Full path of program */
 char g_progam_path[PATH_MAX];
 
+/* An array to manage all test modules. */
+test_mod_t *g_test_module[MOD_COUNT] = {0, };
+
+
 /* Function Prototype */
 int get_parameter(void);
 int load_config(char *config_file);
@@ -71,11 +75,14 @@ int install_sig_handler(void);
 size_t get_exe_path(char *path_buf, size_t len);
 int init_path(void);
 int move_log_to_error(char *log_file);
+int start_test_module(test_mod_t *pmod);
+void generate_report(void);
 
 
 int main(int argc, char **argv)
 {
     int rc = 0;
+    int i;
 
     if (argc != 1) {
         printf("LiRC-ITEST v%s\n", PROGRAM_VERSION);
@@ -90,21 +97,29 @@ int main(int argc, char **argv)
 
     load_config(g_config_file);
 
-    char log_file[260];
-    int fd = log_init(log_file, "lirc", g_log_dir);
-    if (fd < 0) {
-        printf("Log init error\n");
-        return -1;
-    }
-    log_print(fd, "begin\n");
-    log_print(fd, "lirc-itest main program\n");
-    log_print(fd, "end\n");
-    log_close(fd);
-    move_log_to_error(log_file);
+    start_test_module(&test_mod_led);
 
-    fd = log_init(log_file, "report", g_report_dir);
-    write_file(fd, "report\n");
-    log_close(fd);
+    /* Print the status of test module */
+    while (g_running) {
+        for (i = 0; i < MOD_COUNT; i++) {
+            if (g_test_module[i] && g_test_module[i]->run) {
+                g_test_module[i]->print_status();
+            }
+        }
+    }
+
+    /* Wait the thread of test module to exit */
+    for (i = 0; i < MOD_COUNT; i++) {
+        if (g_test_module[i] && g_test_module[i]->run) {
+            pthread_join(g_test_module[i]->pid, NULL);
+            if (g_test_module[i]->pass == 0) {
+                move_log_to_error(g_test_module[i]->log_file);
+            }
+        }
+    }
+
+    /* Generate test report */
+    generate_report();
     return rc;
 }
 
@@ -205,14 +220,21 @@ int load_config(char *config_file)
     if (ini_get_key_value(config_file, "SIM", "board_num", value) == 0) {
         g_board_num = atoi(value);
         if ((g_board_num < 1) || (g_board_num > 2)) {
-            printf("Config file parse error\n");
+            printf("Config error\n");
             return 1;
         }
     }
     if (ini_get_key_value(config_file, "SIM", "baudrate", value) == 0) {
         g_baudrate = atoi(value);
         if (g_baudrate <= 0) {
-            printf("Config file parse error\n");
+            printf("Config error\n");
+            return 1;
+        }
+    }
+    if (ini_get_key_value(config_file, "NIM", "speed", value) == 0) {
+        g_speed = atoi(value);
+        if ((g_speed != 1000) && (g_speed != 100) && (g_speed != 10) ) {
+            printf("Config error\n");
             return 1;
         }
     }
@@ -341,6 +363,7 @@ int init_path(void)
     return 0;
 }
 
+
 /******************************************************************************
  * NAME:
  *      move_log_to_error
@@ -361,4 +384,89 @@ int move_log_to_error(char *log_file)
     snprintf(new_file, sizeof(new_file), "%s/error_%s", g_error_dir, basename(log_file));
     rename(log_file, new_file);
     return 0;
+}
+
+
+/******************************************************************************
+ * NAME:
+ *      start_test_module
+ *
+ * DESCRIPTION: 
+ *      Start a test module.
+ *
+ * PARAMETERS:
+ *      pmod - The data structure of a test module.
+ *
+ * RETURN:
+ *      0 - OK, others - Error
+ ******************************************************************************/
+int start_test_module(test_mod_t *pmod)
+{
+    char value[MAX_LINE_LENGTH];
+
+    /* Init data structure of test module */
+    g_test_module[MOD_LED] = pmod;
+
+    /* Does this test module need to be run or not? */
+    if (ini_get_key_value(g_config_file, pmod->name, "run", value) == 0) {
+        if (strcasecmp(value, "Y") == 0) {
+            pmod->run = 1;
+        } else {
+            pmod->run = 0;
+        }
+    }
+
+    if (pmod->run) {
+        /* Create log file */
+        int fd = log_init(pmod->log_file, pmod->name, g_log_dir);
+        if (fd < 0) {
+            printf("Log init error\n");
+            return -1;
+        }
+        pmod->log_fd = fd;
+        log_print(pmod->log_fd, "test module started\n");
+
+        /* Start thread of test module */
+        if (pthread_create(&pmod->pid, NULL, pmod->test_routine, NULL) != 0) {
+            log_print(pmod->log_fd, "start test routine error\n");
+            pmod->pass = 0;
+            pmod->pid = -1;
+        }
+    }
+
+    return 0;
+}
+
+
+/******************************************************************************
+ * NAME:
+ *      generate_report
+ *
+ * DESCRIPTION: 
+ *      Generate a test report
+ *
+ * PARAMETERS:
+ *      None 
+ *
+ * RETURN:
+ *      None
+ ******************************************************************************/
+void generate_report(void)
+{
+    int i;
+    char report_file[PATH_MAX];
+
+    int fd = log_init(report_file, "report", g_report_dir);
+    write_file(fd, "================== Test Report ==================\n");
+    write_file(fd, "Tester: %s\n", g_tester);
+    write_file(fd, "Product SN: %s\n", g_product_sn);
+    write_file(fd, "Test time: %d\n", g_duration);
+
+    for (i = 0; i < MOD_COUNT; i++) {
+        if (g_test_module[i] && g_test_module[i]->run) {
+            g_test_module[i]->print_result(fd);
+        }
+    }
+
+    log_close(fd);
 }

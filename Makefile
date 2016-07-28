@@ -2,10 +2,10 @@
 TARGET=lirc-itest
 
 #Directories of source files
-SRC_DIRS = .
+SRC_DIRS = . led
 
 #Directories of header files
-#INC_DIRS = -I.
+INC_DIRS = -I. -I led
 
 #Compile flags: directories of header files, warning option...
 CFLAGS = -Wall -O $(INC_DIRS) #-g -DDEBUG
@@ -14,7 +14,7 @@ CFLAGS = -Wall -O $(INC_DIRS) #-g -DDEBUG
 #LDFLAGS = -L.
 
 #The list of libraries to link with
-#LDLIBS =
+LDLIBS = -pthread
 
 
 ################################################################

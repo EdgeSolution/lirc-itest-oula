@@ -14,6 +14,8 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#include <limits.h>
+#include <pthread.h>
 #include "log.h"
 #include "cfg.h"
 
@@ -32,17 +34,22 @@ extern int g_speed;
 
 /* Sturcture for each test module */
 typedef struct _test_mod {
-    /* 1- Run, 0 -don't run */
+    /* 1- Run, 0 -don't run, this flag is loaded from config file */
     int run;
 
-    /* 0 - pass, 1 - fail */
-    int result;
+    /* test result: 1 - pass, 0 - fail */
+    int pass;
 
-    /* Name of test module */
-    char name[MAX_STR_LENGTH];
+    /*
+     * Name of test module(Lowercase Letters). It shall be the same as the
+     * section name in config file, and it will also be a part of the name
+     * of log file.
+     */
+    char *name;
 
     /* Log file */
     char log_file[PATH_MAX];
+    int log_fd;
 
     /*
      * Thread routine and pid of test module, this routine shall be implemented
@@ -70,5 +77,13 @@ typedef struct _mod_args {
     test_mod_t *mod;
 } mod_args;
 
+
+/* Index of modules in the array of g_test_module */
+#define MOD_SIM     0
+#define MOD_NIM     1
+#define MOD_MSM     2
+#define MOD_HSM     3
+#define MOD_LED     4
+#define MOD_COUNT   5   /* Counter of test modules */
 
 #endif /* _COMMON_H_ */
