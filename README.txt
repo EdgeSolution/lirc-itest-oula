@@ -16,3 +16,8 @@ main.c      - The main program
 log.c       - The log module
 cfg.c       - The configuration module
 led/        - Test module: led
+hsm/        - Test module: hsm
+msm/        - Test module: msm
+nim/        - Test module: nim
+sim/        - Test module: sim
+lirc.cfg    - Configuation file
