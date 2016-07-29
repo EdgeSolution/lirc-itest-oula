@@ -64,8 +64,6 @@ char g_config_file[PATH_MAX];
 /* Full path of program */
 char g_progam_path[PATH_MAX];
 
-/* Max counter of test modules */
-#define MAX_MOD_COUNT   10
 
 /* An array to manage all test modules. */
 test_mod_t *g_test_module[MAX_MOD_COUNT] = {0, };
@@ -73,16 +71,6 @@ test_mod_t *g_test_module[MAX_MOD_COUNT] = {0, };
 /* Index of modules in the array of g_test_module */
 int mod_index = 0;
 
-/* Function Prototype */
-int get_parameter(void);
-int load_config(char *config_file);
-int install_sig_handler(void);
-size_t get_exe_path(char *path_buf, size_t len);
-int init_path(void);
-int move_log_to_error(char *log_file);
-int start_test_module(test_mod_t *pmod);
-void generate_report(void);
-void set_timeout(int sec);
 
 
 int main(int argc, char **argv)
@@ -109,6 +97,7 @@ int main(int argc, char **argv)
     start_test_module(&test_mod_msm);
     start_test_module(&test_mod_nim);
     start_test_module(&test_mod_sim);
+
     set_timeout(g_duration);
 
     /* Print the status of test module */
@@ -298,7 +287,7 @@ int install_sig_handler(void)
  *      set_timeout
  *
  * DESCRIPTION: 
- *      Set test duration.
+ *      Set test duration(start a timer to end the test after a period time).
  *
  * PARAMETERS:
  *      sec - Time duration(seconds)
@@ -511,6 +500,7 @@ void generate_report(void)
     write_file(fd, "Tester: %s\n", g_tester);
     write_file(fd, "Product SN: %s\n", g_product_sn);
     write_file(fd, "Test time: %d\n", g_duration);
+    write_file(fd, "\n");
 
     for (i = 0; i < mod_index; i++) {
         if (g_test_module[i] && g_test_module[i]->run) {
