@@ -22,12 +22,7 @@
 #include <libgen.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include "common.h"
-#include "led_test.h"
-#include "hsm_test.h"
-#include "msm_test.h"
-#include "nim_test.h"
-#include "sim_test.h"
+#include "main.h"
 
 /* Version of the program */
 #define PROGRAM_VERSION     "0.1"
@@ -69,9 +64,14 @@ char g_config_file[PATH_MAX];
 /* Full path of program */
 char g_progam_path[PATH_MAX];
 
-/* An array to manage all test modules. */
-test_mod_t *g_test_module[MOD_COUNT] = {0, };
+/* Max counter of test modules */
+#define MAX_MOD_COUNT   10
 
+/* An array to manage all test modules. */
+test_mod_t *g_test_module[MAX_MOD_COUNT] = {0, };
+
+/* Index of modules in the array of g_test_module */
+int mod_index = 0;
 
 /* Function Prototype */
 int get_parameter(void);
@@ -103,6 +103,7 @@ int main(int argc, char **argv)
 
     load_config(g_config_file);
 
+    mod_index = 0;
     start_test_module(&test_mod_led);
     start_test_module(&test_mod_hsm);
     start_test_module(&test_mod_msm);
@@ -112,7 +113,7 @@ int main(int argc, char **argv)
 
     /* Print the status of test module */
     while (g_running) {
-        for (i = 0; i < MOD_COUNT; i++) {
+        for (i = 0; i < mod_index; i++) {
             if (g_test_module[i] && g_test_module[i]->run) {
                 g_test_module[i]->print_status();
             }
@@ -120,7 +121,7 @@ int main(int argc, char **argv)
     }
 
     /* Wait the thread of test module to exit */
-    for (i = 0; i < MOD_COUNT; i++) {
+    for (i = 0; i < mod_index; i++) {
         if (g_test_module[i] && g_test_module[i]->run) {
             pthread_join(g_test_module[i]->pid, NULL);
             if (g_test_module[i]->pass == 0) {
@@ -448,8 +449,13 @@ int start_test_module(test_mod_t *pmod)
 {
     char value[MAX_LINE_LENGTH];
 
+    if (mod_index >= MAX_MOD_COUNT) {
+        printf("The number of modules is more than the max counter\n");
+        return -1;
+    }
+
     /* Init data structure of test module */
-    g_test_module[MOD_LED] = pmod;
+    g_test_module[mod_index++] = pmod;
 
     /* Does this test module need to be run or not? */
     if (ini_get_key_value(g_config_file, pmod->name, "run", value) == 0) {
@@ -506,7 +512,7 @@ void generate_report(void)
     write_file(fd, "Product SN: %s\n", g_product_sn);
     write_file(fd, "Test time: %d\n", g_duration);
 
-    for (i = 0; i < MOD_COUNT; i++) {
+    for (i = 0; i < mod_index; i++) {
         if (g_test_module[i] && g_test_module[i]->run) {
             g_test_module[i]->print_result(fd);
         }

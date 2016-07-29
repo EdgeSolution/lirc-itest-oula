@@ -19,7 +19,6 @@
 #include "log.h"
 #include "cfg.h"
 
-#define MAX_STR_LENGTH      100
 
 /* Global variables **/
 extern char g_tester[];
@@ -71,19 +70,5 @@ typedef struct _test_mod {
     void (* print_result)(int fd);
 } test_mod_t;
 
-
-/* Arguments pass to the test_routine of test module */
-typedef struct _mod_args {
-    test_mod_t *mod;
-} mod_args;
-
-
-/* Index of modules in the array of g_test_module */
-#define MOD_SIM     0
-#define MOD_NIM     1
-#define MOD_MSM     2
-#define MOD_HSM     3
-#define MOD_LED     4
-#define MOD_COUNT   5   /* Counter of test modules */
 
 #endif /* _COMMON_H_ */
