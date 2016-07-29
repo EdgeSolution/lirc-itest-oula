@@ -24,6 +24,10 @@
 #include <sys/time.h>
 #include "common.h"
 #include "led_test.h"
+#include "hsm_test.h"
+#include "msm_test.h"
+#include "nim_test.h"
+#include "sim_test.h"
 
 /* Version of the program */
 #define PROGRAM_VERSION     "0.1"
@@ -100,6 +104,10 @@ int main(int argc, char **argv)
     load_config(g_config_file);
 
     start_test_module(&test_mod_led);
+    start_test_module(&test_mod_hsm);
+    start_test_module(&test_mod_msm);
+    start_test_module(&test_mod_nim);
+    start_test_module(&test_mod_sim);
     set_timeout(g_duration);
 
     /* Print the status of test module */
