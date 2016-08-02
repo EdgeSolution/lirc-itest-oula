@@ -188,14 +188,14 @@ int tc_get_cts_casco(int fd)
     int nReg = 0x06;
 
     if (ioperm (m_nBasePort, 7, 1)) {
-        perror ("ioperm");
+        //perror ("ioperm");
         return -2;
     }
 
     reg_val = inb (m_nBasePort + nReg);
 
     if (ioperm (m_nBasePort, 7, 0)) {
-        perror ("ioperm");
+        //perror ("ioperm");
         return -2;
     }
 
@@ -217,7 +217,7 @@ int send_packet(int fd)
             bytes_left -= size;
             bytes_sent += size;
         } else {
-            perror("write error");
+            //perror("write error");
             rc = -1;
             break;
         }
