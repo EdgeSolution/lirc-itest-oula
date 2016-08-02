@@ -17,13 +17,10 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
-#include <signal.h>
 #include <stdint.h>
 #include <ctype.h>
-#include <errno.h>
 #include <time.h>
 #include <sys/io.h>
-#include <termios.h>
 #include "term.h"
 #include "hsm_test.h"
 
