@@ -1,9 +1,9 @@
-The integration test software of CPCI-1504
-==========================================
+The integration test software of CPCI-1504(LiRC-3)
+==================================================
 
 Description
 -----------
-This project implements integration test softwares of CPCI-1504.
+This project implements integration test softwares of CPCI-1504(LiRC-3).
 
 NOTES: To run this utility, you need to be root user.
 
@@ -21,3 +21,4 @@ msm/        - Test module: msm
 nim/        - Test module: nim
 sim/        - Test module: sim
 lirc.cfg    - Configuation file
+lib/        - Library of serial port
