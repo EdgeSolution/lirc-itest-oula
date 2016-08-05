@@ -39,6 +39,8 @@ test_mod_t test_mod_led = {
 
 void led_print_status()
 {
+    printf("%-*s %s\n", COL_FIX_WIDTH, "LED",
+        test_mod_led.pass?STR_MOD_OK:STR_MOD_ERROR);
 }
 
 void led_print_result(int fd)
