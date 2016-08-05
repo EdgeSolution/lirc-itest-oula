@@ -107,6 +107,7 @@ int main(int argc, char **argv)
                 g_test_module[i]->print_status();
             }
         }
+        sleep(1);
     }
 
     /* Wait the thread of test module to exit */
