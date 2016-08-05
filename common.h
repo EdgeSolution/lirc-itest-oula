@@ -71,4 +71,9 @@ typedef struct _test_mod {
 } test_mod_t;
 
 
+#define COL_FIX_WIDTH       20
+#define STR_MOD_OK          "MODULE is OK"
+#define STR_MOD_ERROR       "MODULE is ERROR"
+
+
 #endif /* _COMMON_H_ */

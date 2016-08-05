@@ -57,6 +57,7 @@ char g_packet[PACKET_SIZE];
 
 void hsm_print_status()
 {
+    printf("%-*s %s\n", COL_FIX_WIDTH, "HSM", STR_MOD_OK);
 }
 
 void hsm_print_result(int fd)

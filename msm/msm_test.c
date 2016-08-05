@@ -59,9 +59,10 @@ void print_result(void);
 
 void msm_print_status()
 {
-    printf("MSM \t\tMODULE is OK\n"
-        "TEST:%lu \tERROR:%lu\n",
-        counter_test, counter_fail);
+    printf("%-*s %s\n"
+        "TEST:%-*lu ERROR:%-*lu\n",
+        COL_FIX_WIDTH, "MSM", (counter_fail == 0) ? STR_MOD_OK : STR_MOD_ERROR,
+        COL_FIX_WIDTH-5, counter_test, COL_FIX_WIDTH-6, counter_fail);
 }
 
 void msm_print_result(int fd)
