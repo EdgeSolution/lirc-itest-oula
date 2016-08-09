@@ -27,10 +27,10 @@
 void hsm_print_status();
 void hsm_print_result(int fd);
 void *hsm_test(void *args);
-void tc_set_rts_casco(int fd, char enabled);
-int tc_get_cts_casco(int fd);
-int send_packet(int fd);
-int open_port();
+static void tc_set_rts_casco(int fd, char enabled);
+static int tc_get_cts_casco(int fd);
+static int send_packet(int fd);
+static int open_port();
 
 
 test_mod_t test_mod_hsm = {
@@ -168,7 +168,7 @@ void *hsm_test(void *args)
 }
 
 
-void tc_set_rts_casco(int fd, char enabled)
+static void tc_set_rts_casco(int fd, char enabled)
 {
     unsigned char flags = TIOCM_RTS;
 
@@ -179,7 +179,7 @@ void tc_set_rts_casco(int fd, char enabled)
     }
 }
 
-int tc_get_cts_casco(int fd)
+static int tc_get_cts_casco(int fd)
 {
     uint8_t reg_val;
     uint16_t m_nBasePort = 0x2f8;
@@ -202,7 +202,7 @@ int tc_get_cts_casco(int fd)
 
 
 /* Send data */
-int send_packet(int fd)
+static int send_packet(int fd)
 {
     int rc = 0;
     char *buf = g_packet;
@@ -226,7 +226,7 @@ int send_packet(int fd)
 
 
 /* Open and setup serial port */
-int open_port()
+static int open_port()
 {
     int fd;
     char *dev = DEVICE_NAME;
