@@ -57,7 +57,7 @@ unsigned long counter_fail = 0;
 
 static int read_data_a(int fd, int addr, char *cmp_buf);
 static int read_data_b(int fd, int addr, char *cmp_buf);
-static void print_result(void);
+static void print_result(int log_fd);
 static int open_port(void);
 
 
@@ -109,11 +109,11 @@ void *msm_test(void *args)
                 break;
             }
             if (bytes != PACKET_SIZE) {
-                printf("write %d bytes(%02X)   FALSE!\n", bytes, data_55[0]);
+                log_print(log_fd, "write %d bytes(%02X)   FALSE!\n", bytes, data_55[0]);
                 counter_fail++;
                 continue;
             } else {
-                printf("write %d bytes(%02X)   OK!\n", bytes, data_55[0]);
+                log_print(log_fd, "write %d bytes(%02X)   OK!\n", bytes, data_55[0]);
             }
             sleep(10);
 
@@ -122,10 +122,10 @@ void *msm_test(void *args)
                 break;
             }
             if (bytes != PACKET_SIZE) {
-                printf("read %d bytes(%02X)   FALSE!\n", bytes, data_aa[0]);
+                log_print(log_fd, "read %d bytes(%02X)   FALSE!\n", bytes, data_aa[0]);
                 counter_fail++;
             } else {
-                printf("read %d bytes(%02X)   OK!\n", bytes, data_aa[0]);
+                log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, data_aa[0]);
                 counter_success++;
             }
             sleep(2);
@@ -140,11 +140,11 @@ void *msm_test(void *args)
                 break;
             }
             if (bytes != PACKET_SIZE) {
-                printf("read %d bytes(%02X)   FALSE!\n", bytes, data_55[0]);
+                log_print(log_fd, "read %d bytes(%02X)   FALSE!\n", bytes, data_55[0]);
                 counter_fail++;
                 continue;
             } else {
-                printf("read %d bytes(%02X)   OK!\n", bytes, data_55[0]);
+                log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, data_55[0]);
                 counter_success++;
             }
             sleep(2);
@@ -154,17 +154,17 @@ void *msm_test(void *args)
                 break;
             }
             if (bytes != PACKET_SIZE) {
-                printf("write %d bytes(%02X)   FALSE!\n", bytes, data_aa[0]);
+                log_print(log_fd, "write %d bytes(%02X)   FALSE!\n", bytes, data_aa[0]);
                 counter_fail++;
                 continue;
             } else {
-                printf("write %d bytes(%02X)   OK!\n", bytes, data_aa[0]);
+                log_print(log_fd, "write %d bytes(%02X)   OK!\n", bytes, data_aa[0]);
             }
             sleep(10);
         }
     }
 
-    print_result();
+    print_result(log_fd);
 
     /* Close the device of storage. */
     close(spi);
@@ -246,16 +246,15 @@ static int read_data_b(int fd, int addr, char *cmp_buf)
 }
 
 
-static void print_result(void)
+static void print_result(int log_fd)
 {
-    printf("\n");
     if (counter_fail > 0) {
-        printf("Test FALSE. Test time:%lu;  Failed:%lu;\n",
+        log_print(log_fd, "Test FALSE. Test time:%lu;  Failed:%lu;\n",
             counter_test, counter_fail);
-        printf("FAIL\n");
+        log_print(log_fd, "FAIL\n");
     } else {
-        printf("Test OK. Test time:%lu\n", counter_test);
-        printf("PASS\n");
+        log_print(log_fd, "Test OK. Test time:%lu\n", counter_test);
+        log_print(log_fd, "PASS\n");
     }
 }
 
