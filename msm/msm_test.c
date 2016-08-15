@@ -56,7 +56,7 @@ unsigned long counter_fail = 0;
 
 static int read_data_a(int fd, int addr, char *cmp_buf);
 static int read_data_b(int fd, int addr, char *cmp_buf);
-static void print_result(int log_fd);
+static void log_result(int log_fd);
 static int open_port(void);
 static unsigned char get_data_pattern(int fd);
 static int send_data_pattern(int fd, unsigned char pattern);
@@ -73,9 +73,10 @@ void msm_print_status()
 void msm_print_result(int fd)
 {
     if (test_mod_msm.pass) {
-        write_file(fd, "MSM: PASS\n");
+        write_file(fd, "MSM: PASS. Test time:%lu\n", counter_test);
     } else {
-        write_file(fd, "MSM: FAIL\n");
+        write_file(fd, "MSM: FAIL. Test time:%lu;  Failed:%lu;\n",
+            counter_test, counter_fail);
     }
 }
 
@@ -93,6 +94,7 @@ void *msm_test(void *args)
     int spi = open(ADVSPI_DEVICE, O_RDWR);
     if (spi == -1) {
         log_print(log_fd, "open storage device is Failed!\n");
+        test_mod_msm.pass = 0;
         return NULL;
     }
     log_print(log_fd, "open storage device is Successful!\n");
@@ -101,6 +103,7 @@ void *msm_test(void *args)
     int com = open_port();
     if (com < 0) {
         log_print(log_fd, "open serial port Failed!\n");
+        test_mod_msm.pass = 0;
         return NULL;
     }
 
@@ -130,6 +133,7 @@ void *msm_test(void *args)
             if (bytes != PACKET_SIZE) {
                 log_print(log_fd, "write %d bytes(%02X)   FALSE!\n", bytes, data[0]);
                 counter_fail++;
+                test_mod_msm.pass = 0;
                 continue;
             } else {
                 log_print(log_fd, "write %d bytes(%02X)   OK!\n", bytes, data[0]);
@@ -166,6 +170,7 @@ void *msm_test(void *args)
             if (bytes != PACKET_SIZE) {
                 log_print(log_fd, "read %d bytes(%02X)   FALSE!\n", bytes, data_aa[0]);
                 counter_fail++;
+                test_mod_msm.pass = 0;
             } else {
                 log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, data_aa[0]);
                 counter_success++;
@@ -210,6 +215,7 @@ void *msm_test(void *args)
             if (bytes != PACKET_SIZE) {
                 log_print(log_fd, "read %d bytes(%02X)   FALSE!\n", bytes, data[0]);
                 counter_fail++;
+                test_mod_msm.pass = 0;
                 continue;
             } else {
                 log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, data[0]);
@@ -225,6 +231,7 @@ void *msm_test(void *args)
             if (bytes != PACKET_SIZE) {
                 log_print(log_fd, "write %d bytes(%02X)   FALSE!\n", bytes, data[0]);
                 counter_fail++;
+                test_mod_msm.pass = 0;
                 continue;
             } else {
                 log_print(log_fd, "write %d bytes(%02X)   OK!\n", bytes, data[0]);
@@ -237,7 +244,7 @@ void *msm_test(void *args)
         }
     }
 
-    print_result(log_fd);
+    log_result(log_fd);
 
     /* Close the device of storage. */
     close(spi);
@@ -320,12 +327,13 @@ static int read_data_b(int fd, int addr, char *cmp_buf)
 }
 
 
-static void print_result(int log_fd)
+static void log_result(int log_fd)
 {
     if (counter_fail > 0) {
         log_print(log_fd, "Test FALSE. Test time:%lu;  Failed:%lu;\n",
             counter_test, counter_fail);
         log_print(log_fd, "FAIL\n");
+        test_mod_msm.pass = 0;
     } else {
         log_print(log_fd, "Test OK. Test time:%lu\n", counter_test);
         log_print(log_fd, "PASS\n");
