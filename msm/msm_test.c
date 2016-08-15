@@ -25,7 +25,6 @@
 void msm_print_status();
 void msm_print_result(int fd);
 void *msm_test(void *args);
-static int open_port(void);
 
 
 test_mod_t test_mod_msm = {
@@ -59,6 +58,8 @@ static int read_data_a(int fd, int addr, char *cmp_buf);
 static int read_data_b(int fd, int addr, char *cmp_buf);
 static void print_result(int log_fd);
 static int open_port(void);
+static int get_data_pattern(int fd);
+static int send_data_pattern(int fd, int pattern);
 
 
 void msm_print_status()
@@ -95,6 +96,12 @@ void *msm_test(void *args)
         return NULL;
     }
     log_print(log_fd, "open storage device is Successful!\n");
+
+    int com = open_port();
+    if (com < 0) {
+        log_print(log_fd, "open serial port Failed!\n");
+        return NULL;
+    }
 
     memset(data_55, 0x55, sizeof(data_55));
     memset(data_aa, 0xAA, sizeof(data_aa));
@@ -168,6 +175,7 @@ void *msm_test(void *args)
 
     /* Close the device of storage. */
     close(spi);
+    close(com);
 
     log_print(log_fd, "Test end\n\n");
     return NULL;
@@ -259,7 +267,19 @@ static void print_result(int log_fd)
 }
 
 
-/* Open and setup serial port */
+/******************************************************************************
+ * NAME:
+ *      open_port
+ *
+ * DESCRIPTION: 
+ *      Open the serial port of CCM,and return the fd of it.
+ *
+ * PARAMETERS:
+ *      None 
+ *
+ * RETURN:
+ *      The fd of serial port
+ ******************************************************************************/
 static int open_port(void)
 {
     int fd;
@@ -284,4 +304,66 @@ static int open_port(void)
     }
 
     return fd;
+}
+
+
+/******************************************************************************
+ * NAME:
+ *      get_data_pattern
+ *
+ * DESCRIPTION: 
+ *      Read data from serail port and search the char 0x55 or 0xAA
+ *
+ * PARAMETERS:
+ *      fd - The fd of serail port
+ *
+ * RETURN:
+ *      The char 0x55/0xAA
+ ******************************************************************************/
+static int get_data_pattern(int fd)
+{
+    char buf[64];
+
+    while (g_running) {
+        memset(buf, 0, sizeof(buf));
+        int size = read(fd, buf, sizeof(buf)-1);
+        if (size > 0) {
+            if (strchr(buf, 0x55)) {
+                return 0x55;
+            } else if (strchr(buf, 0xAA)) {
+                return 0xAA;
+            }
+        }
+    }
+
+    return 0;
+}
+
+
+/******************************************************************************
+ * NAME:
+ *      send_data_pattern
+ *
+ * DESCRIPTION: 
+ *      Send a char from the serial port.
+ *
+ * PARAMETERS:
+ *      fd - The fd of serial port
+ *      pattern - Char to send
+ *
+ * RETURN:
+ *      Bytes wrote
+ ******************************************************************************/
+static int send_data_pattern(int fd, int pattern)
+{
+    char buf[2] = {pattern, 0};
+
+    while (g_running) {
+        int size = write(fd, buf, 1);
+        if (size > 0) {
+            return 1;
+        }
+    }
+
+    return 0;
 }
