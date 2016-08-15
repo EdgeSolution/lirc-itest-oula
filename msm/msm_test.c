@@ -58,8 +58,8 @@ static int read_data_a(int fd, int addr, char *cmp_buf);
 static int read_data_b(int fd, int addr, char *cmp_buf);
 static void print_result(int log_fd);
 static int open_port(void);
-static int get_data_pattern(int fd);
-static int send_data_pattern(int fd, int pattern);
+static unsigned char get_data_pattern(int fd);
+static int send_data_pattern(int fd, unsigned char pattern);
 
 
 void msm_print_status()
@@ -97,37 +97,72 @@ void *msm_test(void *args)
     }
     log_print(log_fd, "open storage device is Successful!\n");
 
+    /* Open serial port */
     int com = open_port();
     if (com < 0) {
         log_print(log_fd, "open serial port Failed!\n");
         return NULL;
     }
 
+    /* Set data pattern to write */
     memset(data_55, 0x55, sizeof(data_55));
     memset(data_aa, 0xAA, sizeof(data_aa));
 
+    char *data = NULL;
+    unsigned char pattern = 0;
     if (g_machine == 'A') {
+        sleep(10);
         while (g_running) {
             counter_test++;
 
+            /* Switch the data pattern */
+            if (counter_test % 2) {
+                data = data_55;
+            } else {
+                data = data_aa;
+            }
+
             /* Write data */
-            bytes = advspi_write_a(spi, data_55, PACKET_SIZE, 0);
+            bytes = advspi_write_a(spi, data, PACKET_SIZE, 0);
             if (!g_running) {
                 break;
             }
             if (bytes != PACKET_SIZE) {
-                log_print(log_fd, "write %d bytes(%02X)   FALSE!\n", bytes, data_55[0]);
+                log_print(log_fd, "write %d bytes(%02X)   FALSE!\n", bytes, data[0]);
                 counter_fail++;
                 continue;
             } else {
-                log_print(log_fd, "write %d bytes(%02X)   OK!\n", bytes, data_55[0]);
+                log_print(log_fd, "write %d bytes(%02X)   OK!\n", bytes, data[0]);
             }
+
+            /* Set data pattern to other side */
+            send_data_pattern(com, data[0]);
+            
             sleep(10);
 
-            bytes = read_data_b(spi, addr, data_aa);
+            /* Get data pattern from other side */
+            pattern = get_data_pattern(com);
+
+            /* Read data and verify */
+            switch (pattern) {
+            case 0xAA:
+                bytes = read_data_b(spi, addr, data_aa);
+                break;
+            
+            case 0x55:
+                bytes = read_data_b(spi, addr, data_55);
+                break;
+
+            default:
+                bytes = 0;
+                break;
+            }
+
             if (!g_running) {
                 break;
             }
+
+            /* Update counter */
             if (bytes != PACKET_SIZE) {
                 log_print(log_fd, "read %d bytes(%02X)   FALSE!\n", bytes, data_aa[0]);
                 counter_fail++;
@@ -135,38 +170,69 @@ void *msm_test(void *args)
                 log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, data_aa[0]);
                 counter_success++;
             }
+
             sleep(2);
         }
     } else {
-        sleep(10);
         while (g_running) {
             counter_test++;
 
-            bytes = read_data_a(spi, addr, data_55);
+            /* Switch the data pattern */
+            if (counter_test % 2) {
+                data = data_aa;
+            } else {
+                data = data_55;
+            }
+
+            /* Get data pattern from other side */
+            pattern = get_data_pattern(com);
+
+            /* Read data and verify */
+            switch (pattern) {
+            case 0xAA:
+                bytes = read_data_a(spi, addr, data_aa);
+                break;
+            
+            case 0x55:
+                bytes = read_data_a(spi, addr, data_55);
+                break;
+
+            default:
+                bytes = 0;
+                break;
+            }
+
             if (!g_running) {
                 break;
             }
+
+            /* Update counter */
             if (bytes != PACKET_SIZE) {
-                log_print(log_fd, "read %d bytes(%02X)   FALSE!\n", bytes, data_55[0]);
+                log_print(log_fd, "read %d bytes(%02X)   FALSE!\n", bytes, data[0]);
                 counter_fail++;
                 continue;
             } else {
-                log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, data_55[0]);
+                log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, data[0]);
                 counter_success++;
             }
             sleep(2);
 
-            bytes = advspi_write_b(spi, data_aa, PACKET_SIZE, 0);
+            /* Write data */
+            bytes = advspi_write_b(spi, data, PACKET_SIZE, 0);
             if (!g_running) {
                 break;
             }
             if (bytes != PACKET_SIZE) {
-                log_print(log_fd, "write %d bytes(%02X)   FALSE!\n", bytes, data_aa[0]);
+                log_print(log_fd, "write %d bytes(%02X)   FALSE!\n", bytes, data[0]);
                 counter_fail++;
                 continue;
             } else {
-                log_print(log_fd, "write %d bytes(%02X)   OK!\n", bytes, data_aa[0]);
+                log_print(log_fd, "write %d bytes(%02X)   OK!\n", bytes, data[0]);
             }
+            
+            /* Set data pattern to other side */
+            send_data_pattern(com, data[0]);
+
             sleep(10);
         }
     }
@@ -211,10 +277,10 @@ static int read_data_a(int fd, int addr, char *cmp_buf)
     }
 
     if (memcmp(cmp_buf, buf, len) == 0) {
-        return -1;
+        return len;
     }
 
-    return ret;
+    return 0;
 }
 
 
@@ -247,10 +313,10 @@ static int read_data_b(int fd, int addr, char *cmp_buf)
     }
 
     if (memcmp(cmp_buf, buf, len) == 0) {
-        return -1;
+        return len;
     }
 
-    return ret;
+    return 0;
 }
 
 
@@ -320,7 +386,7 @@ static int open_port(void)
  * RETURN:
  *      The char 0x55/0xAA
  ******************************************************************************/
-static int get_data_pattern(int fd)
+static unsigned char get_data_pattern(int fd)
 {
     char buf[64];
 
@@ -354,7 +420,7 @@ static int get_data_pattern(int fd)
  * RETURN:
  *      Bytes wrote
  ******************************************************************************/
-static int send_data_pattern(int fd, int pattern)
+static int send_data_pattern(int fd, unsigned char pattern)
 {
     char buf[2] = {pattern, 0};
 
