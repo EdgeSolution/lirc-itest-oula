@@ -54,8 +54,8 @@ unsigned long counter_success = 0;
 unsigned long counter_fail = 0;
 
 
-static int read_data_a(int fd, int addr, char *cmp_buf);
-static int read_data_b(int fd, int addr, char *cmp_buf);
+static int read_data_a(int fd, char *cmp_buf);
+static int read_data_b(int fd, char *cmp_buf);
 static void log_result(int log_fd);
 static int open_port(void);
 static unsigned char get_data_pattern(int fd);
@@ -87,7 +87,6 @@ void *msm_test(void *args)
 
     log_print(log_fd, "Begin test!\n\n");
 
-    int addr = 0;
     int bytes;
 
     /* Open the device of storage. */
@@ -150,11 +149,11 @@ void *msm_test(void *args)
             /* Read data and verify */
             switch (pattern) {
             case 0xAA:
-                bytes = read_data_b(spi, addr, data_aa);
+                bytes = read_data_b(spi, data_aa);
                 break;
             
             case 0x55:
-                bytes = read_data_b(spi, addr, data_55);
+                bytes = read_data_b(spi, data_55);
                 break;
 
             default:
@@ -195,11 +194,11 @@ void *msm_test(void *args)
             /* Read data and verify */
             switch (pattern) {
             case 0xAA:
-                bytes = read_data_a(spi, addr, data_aa);
+                bytes = read_data_a(spi, data_aa);
                 break;
             
             case 0x55:
-                bytes = read_data_a(spi, addr, data_55);
+                bytes = read_data_a(spi, data_55);
                 break;
 
             default:
@@ -264,13 +263,12 @@ void *msm_test(void *args)
  *
  * PARAMETERS:
  *      fd       - The fd of serial port
- *      addr     - The offset to start read
  *      cmp_buf  - The data to compare with the readed data
  *
  * RETURN:
  *      Number of bytes readed
  ******************************************************************************/
-static int read_data_a(int fd, int addr, char *cmp_buf)
+static int read_data_a(int fd, char *cmp_buf)
 {
     int ret = 0;
     int len = PACKET_SIZE;
@@ -300,13 +298,12 @@ static int read_data_a(int fd, int addr, char *cmp_buf)
  *
  * PARAMETERS:
  *      fd       - The fd of serial port
- *      addr     - The offset to start read
  *      cmp_buf  - The data to compare with the readed data
  *
  * RETURN:
  *      Number of bytes readed
  ******************************************************************************/
-static int read_data_b(int fd, int addr, char *cmp_buf)
+static int read_data_b(int fd, char *cmp_buf)
 {
     int ret = 0;
     int len = PACKET_SIZE;
