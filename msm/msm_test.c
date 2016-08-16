@@ -41,7 +41,7 @@ test_mod_t test_mod_msm = {
 
 #define ADVSPI_DEVICE   "/dev/advspi3962"
 
-/* Data size if 64KB(Half size of nvSRAM) */
+/* Data size is 64KB(Half size of nvSRAM) */
 #define PACKET_SIZE     HALF_SIZE
 
 /* Data pattern to write. */
