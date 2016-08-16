@@ -76,4 +76,7 @@ typedef struct _test_mod {
 #define STR_MOD_ERROR       "MODULE is ERROR"
 
 
+void kill_process(char *name);
+
+
 #endif /* _COMMON_H_ */

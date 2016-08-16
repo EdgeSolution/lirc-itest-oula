@@ -20,6 +20,8 @@
 #include "msm_test.h"
 #include "nim_test.h"
 #include "sim_test.h"
+#include "mem_test.h"
+#include "cpu_test.h"
 
 
 #define MAX_STR_LENGTH      100

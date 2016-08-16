@@ -2,10 +2,10 @@
 TARGET=lirc-itest
 
 #Directories of source files
-SRC_DIRS = . led hsm msm nim sim lib
+SRC_DIRS = . led hsm msm nim sim lib mem cpu
 
 #Directories of header files
-INC_DIRS = -I. -I led -I hsm -I msm -I nim -I sim -I lib
+INC_DIRS = -I. -I led -I hsm -I msm -I nim -I sim -I lib -I mem -I cpu
 
 #Compile flags: directories of header files, warning option...
 CFLAGS = -Wall -O $(INC_DIRS) #-g -DDEBUG

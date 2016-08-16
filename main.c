@@ -98,6 +98,10 @@ int main(int argc, char **argv)
     start_test_module(&test_mod_nim);
     start_test_module(&test_mod_sim);
 
+    /* Start CPU and mem test program */
+    start_test_module(&test_mod_cpu);
+    start_test_module(&test_mod_mem);
+
     set_timeout(g_duration);
 
     /* Print the status of test module */
@@ -105,6 +109,7 @@ int main(int argc, char **argv)
         for (i = 0; i < mod_index; i++) {
             if (g_test_module[i] && g_test_module[i]->run) {
                 g_test_module[i]->print_status();
+                sleep(1);
             }
         }
         sleep(1);
