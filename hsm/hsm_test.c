@@ -92,7 +92,7 @@ void *hsm_test(void *args)
     } else {
         log_print(log_fd, "open mac %c at %s is Successful!\n", g_machine, DEVICE_NAME);
         test_mod_hsm.pass = 0;
-        return NULL;
+        pthread_exit(NULL);
     }
     sleep(2);
 
@@ -168,7 +168,7 @@ void *hsm_test(void *args)
     tc_deinit(fd);
 
     log_print(log_fd, "Test end\n\n");
-    return NULL;
+    pthread_exit(NULL);
 }
 
 

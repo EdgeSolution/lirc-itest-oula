@@ -61,7 +61,7 @@ void *led_test(void *args)
     if (fd < 0) {
         log_print(log_fd, "Device open failure\n");
         test_mod_led.pass = 0;
-        return NULL;
+        pthread_exit(NULL);
     }
 
     log_print(log_fd, "Begin test!\n\n");
@@ -92,5 +92,5 @@ void *led_test(void *args)
 
     close(fd);
     log_print(log_fd, "Test end\n\n");
-    return NULL;
+    pthread_exit(NULL);
 }

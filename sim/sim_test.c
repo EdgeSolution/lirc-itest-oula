@@ -61,5 +61,5 @@ void *sim_test(void *args)
     }
 
     log_print(log_fd, "Test end\n\n");
-    return NULL;
+    pthread_exit(NULL);
 }

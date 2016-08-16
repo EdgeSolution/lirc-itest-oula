@@ -94,7 +94,7 @@ void *msm_test(void *args)
     if (spi == -1) {
         log_print(log_fd, "open storage device is Failed!\n");
         test_mod_msm.pass = 0;
-        return NULL;
+        pthread_exit(NULL);
     }
     log_print(log_fd, "open storage device is Successful!\n");
 
@@ -103,7 +103,7 @@ void *msm_test(void *args)
     if (com < 0) {
         log_print(log_fd, "open serial port Failed!\n");
         test_mod_msm.pass = 0;
-        return NULL;
+        pthread_exit(NULL);
     }
 
     /* Set data pattern to write */
@@ -250,7 +250,7 @@ void *msm_test(void *args)
     close(com);
 
     log_print(log_fd, "Test end\n\n");
-    return NULL;
+    pthread_exit(NULL);
 }
 
 
