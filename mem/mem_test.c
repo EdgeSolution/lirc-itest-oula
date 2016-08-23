@@ -23,6 +23,7 @@
 void mem_print_status();
 void mem_print_result(int fd);
 void *mem_test(void *args);
+static int find_fail_str(char *logfile);
 
 
 test_mod_t test_mod_mem = {
@@ -77,8 +78,47 @@ void *mem_test(void *args)
             sleep(3);
         }
         kill_process(prog);
+
+        if (find_fail_str(log_file)) {
+            test_mod_mem.pass = 0;
+        }
         break;
     }
 
     pthread_exit(NULL);
+}
+
+
+/******************************************************************************
+ * NAME:
+ *      find_fail_str
+ *
+ * DESCRIPTION: 
+ *      Search "FAIL" string from log file.
+ *
+ * PARAMETERS:
+ *      logfile - The log file.
+ *
+ * RETURN:
+ *      1 - "FAIL" string found or no log file.
+ *      0 - No "FAIL" found.
+ ******************************************************************************/
+static int find_fail_str(char *logfile)
+{
+    char line[1024];
+    int ret = 0;
+
+    FILE *fp = fopen(logfile, "r");
+    if (fp == NULL) {
+        return 1;
+    }
+
+    while (fgets(line, sizeof(line)-1, fp)) {
+        if (strstr(line, "FAIL") != NULL) {
+            ret = 1;
+        }
+    }
+
+    fclose(fp);
+    return ret;
 }
