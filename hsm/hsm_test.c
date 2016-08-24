@@ -89,10 +89,10 @@ void *hsm_test(void *args)
     fd = open_port();
     if (fd < 0) {
         log_print(log_fd, "open mac %c at %s is Failed!\n", g_machine, DEVICE_NAME);
-    } else {
-        log_print(log_fd, "open mac %c at %s is Successful!\n", g_machine, DEVICE_NAME);
         test_mod_hsm.pass = 0;
         pthread_exit(NULL);
+    } else {
+        log_print(log_fd, "open mac %c at %s is Successful!\n", g_machine, DEVICE_NAME);
     }
     sleep(2);
 
