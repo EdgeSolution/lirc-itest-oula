@@ -331,7 +331,7 @@ static void log_result(int log_fd)
             counter_test, counter_fail);
         log_print(log_fd, "FAIL\n");
         test_mod_msm.pass = 0;
-    } if ((counter_test > 0) && (counter_success == 0)) {
+    } if (counter_success == 0) {
         log_print(log_fd, "Serial port communication error!\n");
         test_mod_msm.pass = 0;
     } else {
