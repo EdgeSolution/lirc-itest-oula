@@ -91,6 +91,11 @@ int main(int argc, char **argv)
 
     load_config(g_config_file);
 
+    if (!wait_other_side_ready()) {
+        printf("The other side is not ready!\n");
+        return -1;
+    }
+
     mod_index = 0;
     start_test_module(&test_mod_led);
     start_test_module(&test_mod_hsm);

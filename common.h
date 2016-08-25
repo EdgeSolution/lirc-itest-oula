@@ -76,7 +76,11 @@ typedef struct _test_mod {
 #define STR_MOD_ERROR       "MODULE is ERROR"
 
 
+#define CCM_SERIAL_PORT     "/dev/ttyS1"
+#define DATA_SYNC           0x7E
+
 void kill_process(char *name);
+int wait_other_side_ready(void);
 
 
 #endif /* _COMMON_H_ */
