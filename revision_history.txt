@@ -1,0 +1,14 @@
+LIRC-ITEST REVISION HISTORY
+
+LAST UPDATE 2016-08-26
+
+
+Versions in brackets () are not official releases, but testing versions.
+
+VERSION  DATE        CHANGES / DESCRIPTION
+
+(0.01)   2016-08-26  -First release
+                     -Implemented HSM, MSM, LED, CPU and MEM test module. 
+                     -Support test log and report
+                     -Support config file
+
