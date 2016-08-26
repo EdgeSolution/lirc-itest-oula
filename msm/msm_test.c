@@ -130,12 +130,12 @@ void *msm_test(void *args)
                 break;
             }
             if (bytes != PACKET_SIZE) {
-                log_print(log_fd, "write %d bytes(%02X)   FALSE!\n", bytes, data[0]);
+                log_print(log_fd, "write %d bytes(%02X)   FALSE!\n", bytes, (unsigned char)data[0]);
                 counter_fail++;
                 test_mod_msm.pass = 0;
                 continue;
             } else {
-                log_print(log_fd, "write %d bytes(%02X)   OK!\n", bytes, data[0]);
+                log_print(log_fd, "write %d bytes(%02X)   OK!\n", bytes, (unsigned char)data[0]);
             }
 
             /* Set data pattern to other side */
@@ -167,11 +167,11 @@ void *msm_test(void *args)
 
             /* Update counter */
             if (bytes != PACKET_SIZE) {
-                log_print(log_fd, "read %d bytes(%02X)   FALSE!\n", bytes, data_aa[0]);
+                log_print(log_fd, "read %d bytes(%02X)   FALSE!\n", bytes, pattern);
                 counter_fail++;
                 test_mod_msm.pass = 0;
             } else {
-                log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, data_aa[0]);
+                log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, pattern);
                 counter_success++;
             }
 
@@ -212,12 +212,12 @@ void *msm_test(void *args)
 
             /* Update counter */
             if (bytes != PACKET_SIZE) {
-                log_print(log_fd, "read %d bytes(%02X)   FALSE!\n", bytes, data[0]);
+                log_print(log_fd, "read %d bytes(%02X)   FALSE!\n", bytes, pattern);
                 counter_fail++;
                 test_mod_msm.pass = 0;
                 continue;
             } else {
-                log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, data[0]);
+                log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, pattern);
                 counter_success++;
             }
             sleep(2);
@@ -228,12 +228,12 @@ void *msm_test(void *args)
                 break;
             }
             if (bytes != PACKET_SIZE) {
-                log_print(log_fd, "write %d bytes(%02X)   FALSE!\n", bytes, data[0]);
+                log_print(log_fd, "write %d bytes(%02X)   FALSE!\n", bytes, (unsigned char)data[0]);
                 counter_fail++;
                 test_mod_msm.pass = 0;
                 continue;
             } else {
-                log_print(log_fd, "write %d bytes(%02X)   OK!\n", bytes, data[0]);
+                log_print(log_fd, "write %d bytes(%02X)   OK!\n", bytes, (unsigned char)data[0]);
             }
             
             /* Set data pattern to other side */
