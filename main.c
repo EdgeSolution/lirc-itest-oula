@@ -91,10 +91,12 @@ int main(int argc, char **argv)
 
     load_config(g_config_file);
 
+    printf("Wait the other side to be ready...\n");
     if (!wait_other_side_ready()) {
         printf("The other side is not ready!\n");
         return -1;
     }
+    printf("OK\n");
 
     mod_index = 0;
     start_test_module(&test_mod_led);
@@ -111,13 +113,13 @@ int main(int argc, char **argv)
 
     /* Print the status of test module */
     while (g_running) {
+        sleep(3);
         for (i = 0; i < mod_index; i++) {
             if (g_test_module[i] && g_test_module[i]->run) {
                 g_test_module[i]->print_status();
                 sleep(1);
             }
         }
-        sleep(1);
     }
 
     /* Wait the thread of test module to exit */
