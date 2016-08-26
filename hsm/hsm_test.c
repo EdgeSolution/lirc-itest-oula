@@ -52,7 +52,6 @@ int reverse = 0;
 /* The packet to send */
 char g_packet[PACKET_SIZE];
 
-#define DEVICE_NAME     "/dev/ttyS1"
 
 
 void hsm_print_status()
@@ -88,11 +87,11 @@ void *hsm_test(void *args)
 
     fd = open_port();
     if (fd < 0) {
-        log_print(log_fd, "open mac %c at %s is Failed!\n", g_machine, DEVICE_NAME);
+        log_print(log_fd, "open mac %c at %s is Failed!\n", g_machine, CCM_SERIAL_PORT);
         test_mod_hsm.pass = 0;
         pthread_exit(NULL);
     } else {
-        log_print(log_fd, "open mac %c at %s is Successful!\n", g_machine, DEVICE_NAME);
+        log_print(log_fd, "open mac %c at %s is Successful!\n", g_machine, CCM_SERIAL_PORT);
     }
     sleep(2);
 
@@ -235,7 +234,7 @@ static int send_packet(int fd)
 static int open_port()
 {
     int fd;
-    char *dev = DEVICE_NAME;
+    char *dev = CCM_SERIAL_PORT;
     int baud = 115200;
     int databits = 8;
     int parity = 0;

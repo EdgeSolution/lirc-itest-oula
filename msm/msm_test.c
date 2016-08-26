@@ -37,7 +37,6 @@ test_mod_t test_mod_msm = {
     .print_result = msm_print_result
 };
 
-#define DEVICE_NAME     "/dev/ttyS1"
 
 #define ADVSPI_DEVICE   "/dev/advspi3962"
 
@@ -356,7 +355,7 @@ static void log_result(int log_fd)
 static int open_port(void)
 {
     int fd;
-    char *dev = DEVICE_NAME;
+    char *dev = CCM_SERIAL_PORT;
     int baud = 115200;
     int databits = 8;
     int parity = 0;
