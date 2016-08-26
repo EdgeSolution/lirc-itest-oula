@@ -21,8 +21,9 @@
 
 int log_init(char *log_file, char *prefix, char *dir);
 void log_print(int fd, char *format, ...);
-void write_file(int fd, char *format, ...);
 void log_close(int fd);
+void write_file(int fd, char *format, ...);
+void dump_file(char *file);
 
 
 /* Print message to log file */

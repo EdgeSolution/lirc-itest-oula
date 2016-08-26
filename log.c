@@ -191,3 +191,36 @@ void write_file(int fd, char *format, ...)
         printf("Write file error\n");
     }
 }
+
+
+/******************************************************************************
+ * NAME:
+ *      dump_file
+ *
+ * DESCRIPTION:
+ *      Dump the content of a file to stdout
+ *
+ * PARAMETERS:
+ *      fd    - The fd of a file
+ *
+ * RETURN:
+ *      None
+ ******************************************************************************/
+void dump_file(char *file)
+{
+    char line[1024];
+    memset(line, 0, sizeof(line));
+
+    FILE *fp = fopen(file, "r");
+    if (fp == NULL) {
+        return;
+    }
+
+    printf("\n");
+    while (fgets(line, sizeof(line)-1, fp)) {
+        printf("%s", line);
+    }
+    printf("\n");
+
+    fclose(fp);
+}
