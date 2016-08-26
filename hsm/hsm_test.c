@@ -162,6 +162,8 @@ void *hsm_test(void *args)
 
                 old_time = cur_time;
             }
+
+            sleep_ms(100);
         }
     }
 

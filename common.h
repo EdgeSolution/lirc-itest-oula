@@ -81,6 +81,7 @@ typedef struct _test_mod {
 
 void kill_process(char *name);
 int wait_other_side_ready(void);
+int sleep_ms(unsigned int ms);
 
 
 #endif /* _COMMON_H_ */

@@ -201,3 +201,30 @@ int wait_other_side_ready(void)
 
     return rc;
 }
+
+
+/******************************************************************************
+ * NAME:
+ *      sleep_ms
+ *
+ * DESCRIPTION:
+ *      Sleep some number of milli-seconds.
+ *
+ * PARAMETERS:
+ *      ms - Time in milliseconds.
+ *
+ * RETURN:
+ *      0 - OK, Other - interrupted or error
+ ******************************************************************************/
+int sleep_ms(unsigned int ms)
+{
+    struct timespec req;
+
+    req.tv_sec = ms / 1000;
+    req.tv_nsec = (ms % 1000) * 1000000;
+    if (nanosleep(&req, NULL) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
