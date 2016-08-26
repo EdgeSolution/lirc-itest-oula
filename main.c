@@ -522,4 +522,5 @@ void generate_report(void)
     }
 
     log_close(fd);
+    dump_file(report_file);
 }
