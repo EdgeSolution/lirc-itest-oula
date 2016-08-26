@@ -113,7 +113,6 @@ void *msm_test(void *args)
     char *data = NULL;
     unsigned char pattern = 0;
     if (g_machine == 'A') {
-        sleep(10);
         while (g_running) {
             counter_test++;
 
