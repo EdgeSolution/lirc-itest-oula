@@ -89,6 +89,7 @@ int main(int argc, char **argv)
 
     init_path();
 
+    /* Load parameters of test module from config file. */
     load_config(g_config_file);
 
     printf("Wait the other side to be ready...\n");
@@ -98,17 +99,17 @@ int main(int argc, char **argv)
     }
     printf("OK\n");
 
+    /* Start test modules */
     mod_index = 0;
     start_test_module(&test_mod_led);
     start_test_module(&test_mod_hsm);
     start_test_module(&test_mod_msm);
     start_test_module(&test_mod_nim);
     start_test_module(&test_mod_sim);
-
-    /* Start CPU and mem test program */
     start_test_module(&test_mod_cpu);
     start_test_module(&test_mod_mem);
 
+    /* Set test duration. */
     set_timeout(g_duration);
 
     /* Print the status of test module */
@@ -132,7 +133,7 @@ int main(int argc, char **argv)
         }
     }
 
-    /* Generate test report */
+    /* Generate test report and print to stdout */
     generate_report();
     return rc;
 }
@@ -218,7 +219,7 @@ int get_parameter(void)
  *      load_config
  *
  * DESCRIPTION:
- *      Load default parameters of diag function from config file.
+ *      Load parameters of test module from config file.
  *
  * PARAMETERS:
  *      config_file - The config file.
@@ -495,7 +496,7 @@ int start_test_module(test_mod_t *pmod)
  *      generate_report
  *
  * DESCRIPTION: 
- *      Generate a test report
+ *      Generate a test report and print to stdout.
  *
  * PARAMETERS:
  *      None 
@@ -522,5 +523,7 @@ void generate_report(void)
     }
 
     log_close(fd);
+
+    /* Print the report to stdout */
     dump_file(report_file);
 }
