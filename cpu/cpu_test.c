@@ -58,7 +58,19 @@ void *cpu_test(void *args)
     int log_fd = test_mod_cpu.log_fd;
     char *log_file = test_mod_cpu.log_file;
     char *prog = "stresscpu2";
+    char prog_path[1024];
     char cmd[260];
+
+    snprintf(prog_path, sizeof(prog_path), "%s/%s", g_progam_path, prog);
+    if (!is_exe_exist(prog_path)) {
+        snprintf(prog_path, sizeof(prog_path), "%s", prog);
+        if (!is_exe_exist(prog_path)) {
+            log_print(log_fd, "%s not found\n", prog);
+            test_mod_cpu.pass = 0;
+            pthread_exit(NULL);
+        }
+    }
+    DBG_PRINT("stresscpu: %s\n", prog_path);
 
     pid_t pid = fork();
     switch (pid) {
@@ -68,7 +80,7 @@ void *cpu_test(void *args)
         break;
 
     case 0:
-        snprintf(cmd, sizeof(cmd), "%s -n 3 > %s", prog, log_file);
+        snprintf(cmd, sizeof(cmd), "%s -n 3 > %s", prog_path, log_file);
         system(cmd);
         return NULL;
 

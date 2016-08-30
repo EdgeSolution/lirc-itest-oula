@@ -29,6 +29,7 @@ extern int g_running;
 extern int g_board_num;
 extern int g_baudrate;
 extern int g_speed;
+extern char g_progam_path[];
 
 
 /* Sturcture for each test module */
@@ -82,6 +83,7 @@ typedef struct _test_mod {
 void kill_process(char *name);
 int wait_other_side_ready(void);
 int sleep_ms(unsigned int ms);
+int is_exe_exist(char *exe);
 
 
 #endif /* _COMMON_H_ */

@@ -25,3 +25,27 @@ mem/        - Test module: mem
 cpu/        - Test module: cpu
 lirc.cfg    - Configuation file
 lib/        - Library of serial port
+
+
+Build
+-----------
+Run under terminal or console:
+# make
+
+The binary file of the test software is "lirc-itest", and there is also a
+config file "lirc.cfg" to define some parameters of test module. These two
+files shall be placed under same directory.
+
+The test module CPU and MEM call 3rd-party utilities "memtester" and
+"stresscpu2". These utlities shall be placed under the same directory of
+lirc-itest or the Linux executable search path (defined by $PATH environment
+variable) like "/usr/local/bin/" or "/root/bin/".
+
+
+Usage
+-----------
+To run the program:
+# ./lirc-itest
+
+This program shall be run on both machine A and B.
+

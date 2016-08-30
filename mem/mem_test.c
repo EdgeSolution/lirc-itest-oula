@@ -59,7 +59,19 @@ void *mem_test(void *args)
     int log_fd = test_mod_mem.log_fd;
     char *log_file = test_mod_mem.log_file;
     char *prog = "memtester";
+    char prog_path[1024];
     char cmd[260];
+
+    snprintf(prog_path, sizeof(prog_path), "%s/%s", g_progam_path, prog);
+    if (!is_exe_exist(prog_path)) {
+        snprintf(prog_path, sizeof(prog_path), "%s", prog);
+        if (!is_exe_exist(prog_path)) {
+            log_print(log_fd, "%s not found\n", prog);
+            test_mod_mem.pass = 0;
+            pthread_exit(NULL);
+        }
+    }
+    DBG_PRINT("memtester: %s\n", prog_path);
 
     pid_t pid = fork();
     switch (pid) {
@@ -69,7 +81,7 @@ void *mem_test(void *args)
         break;
 
     case 0:
-        snprintf(cmd, sizeof(cmd), "%s %dM >%s", prog, 3000, log_file);
+        snprintf(cmd, sizeof(cmd), "%s %dM >%s", prog_path, 3000, log_file);
         system(cmd);
         return NULL;
 

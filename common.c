@@ -228,3 +228,36 @@ int sleep_ms(unsigned int ms)
 
     return 0;
 }
+
+
+/******************************************************************************
+ * NAME:
+ *      is_exe_exist
+ *
+ * DESCRIPTION: 
+ *      Is the EXE file exist.
+ *
+ * PARAMETERS:
+ *      exe - File name or full path of EXE file
+ *
+ * RETURN:
+ *      1 - Exist
+ *      0 - Non-exist
+ ******************************************************************************/
+int is_exe_exist(char *exe)
+{
+    char cmd[1024];
+    int rc;
+
+    if (exe == NULL) {
+        return 0;
+    }
+
+    snprintf(cmd, sizeof(cmd), "command -v %s > /dev/null", exe);
+    rc = DIAG_SYS_RC(system(cmd));
+    if (rc == 0) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
