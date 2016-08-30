@@ -59,7 +59,7 @@ void *cpu_test(void *args)
     char *log_file = test_mod_cpu.log_file;
     char *prog = "stresscpu2";
     char prog_path[1024];
-    char cmd[260];
+    char cmd[1024];
 
     snprintf(prog_path, sizeof(prog_path), "%s/%s", g_progam_path, prog);
     if (!is_exe_exist(prog_path)) {
