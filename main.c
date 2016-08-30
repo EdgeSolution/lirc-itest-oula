@@ -83,7 +83,10 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    get_parameter();
+    /* Get some input from user */
+    if (get_parameter() < 0) {
+        return -1;
+    }
 
     install_sig_handler();
 
@@ -165,6 +168,10 @@ int get_parameter(void)
         return -1;
     }
     p = left_trim(right_trim(buf));
+    if (strlen(p) == 0) {
+        printf("input error\n");
+        return -1;
+    }
     strncpy(g_tester, p, sizeof(g_tester));
 
     /* Get the product SN */
@@ -174,6 +181,10 @@ int get_parameter(void)
         return -1;
     }
     p = left_trim(right_trim(buf));
+    if (strlen(p) == 0) {
+        printf("input error\n");
+        return -1;
+    }
     strncpy(g_product_sn, p, sizeof(g_product_sn));
 
     /* Get the test time */
