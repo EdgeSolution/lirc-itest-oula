@@ -44,7 +44,7 @@ void kill_process(char *name)
  * RETURN:
  *      The fd of serial port
  ******************************************************************************/
-static int ser_open(char *dev)
+int ser_open(char *dev)
 {
     int fd;
     int baud = 115200;

@@ -54,7 +54,6 @@ unsigned long counter_fail = 0;
 static int read_data_a(int fd, char *cmp_buf);
 static int read_data_b(int fd, char *cmp_buf);
 static void log_result(int log_fd);
-static int open_port(void);
 static unsigned char get_data_pattern(int fd);
 static int send_data_pattern(int fd, unsigned char pattern);
 
@@ -96,7 +95,7 @@ void *msm_test(void *args)
     log_print(log_fd, "open storage device is Successful!\n");
 
     /* Open serial port */
-    int com = open_port();
+    int com = ser_open(CCM_SERIAL_PORT);
     if (com < 0) {
         log_print(log_fd, "open serial port Failed!\n");
         test_mod_msm.pass = 0;
@@ -334,46 +333,6 @@ static void log_result(int log_fd)
         log_print(log_fd, "Test OK. Test time:%lu\n", counter_test);
         log_print(log_fd, "PASS\n");
     }
-}
-
-
-/******************************************************************************
- * NAME:
- *      open_port
- *
- * DESCRIPTION: 
- *      Open the serial port of CCM,and return the fd of it.
- *
- * PARAMETERS:
- *      None 
- *
- * RETURN:
- *      The fd of serial port
- ******************************************************************************/
-static int open_port(void)
-{
-    int fd;
-    char *dev = CCM_SERIAL_PORT;
-    int baud = 115200;
-    int databits = 8;
-    int parity = 0;
-    int stopbits = 1;
-
-    fd = tc_init(dev);
-    if (fd == -1) {
-        return -1;
-    }
-
-    /* Set baudrate */
-    tc_set_baudrate(fd, baud);
-
-    /* Set databits, stopbits, parity ... */
-    if (tc_set_port(fd, databits, stopbits, parity) == -1) {
-        tc_deinit(fd);
-        return -1;
-    }
-
-    return fd;
 }
 
 

@@ -84,6 +84,7 @@ void kill_process(char *name);
 int wait_other_side_ready(void);
 int sleep_ms(unsigned int ms);
 int is_exe_exist(char *exe);
+int ser_open(char *dev);
 
 
 #endif /* _COMMON_H_ */

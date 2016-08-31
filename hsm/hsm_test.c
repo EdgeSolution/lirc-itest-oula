@@ -30,7 +30,6 @@ void *hsm_test(void *args);
 static void tc_set_rts_casco(int fd, char enabled);
 static int tc_get_cts_casco(int fd);
 static int send_packet(int fd);
-static int open_port();
 
 
 test_mod_t test_mod_hsm = {
@@ -85,7 +84,7 @@ void *hsm_test(void *args)
         g_packet[i] = (i % 64) + 0x30;
     }
 
-    fd = open_port();
+    fd = ser_open(CCM_SERIAL_PORT);
     if (fd < 0) {
         log_print(log_fd, "open mac %c at %s is Failed!\n", g_machine, CCM_SERIAL_PORT);
         test_mod_hsm.pass = 0;
@@ -229,32 +228,4 @@ static int send_packet(int fd)
     }
 
     return rc;
-}
-
-
-/* Open and setup serial port */
-static int open_port()
-{
-    int fd;
-    char *dev = CCM_SERIAL_PORT;
-    int baud = 115200;
-    int databits = 8;
-    int parity = 0;
-    int stopbits = 1;
-
-    fd = tc_init(dev);
-    if (fd == -1) {
-        return -1;
-    }
-
-    /* Set baudrate */
-    tc_set_baudrate(fd, baud);
-
-    /* Set databits, stopbits, parity ... */
-    if (tc_set_port(fd, databits, stopbits, parity) == -1) {
-        tc_deinit(fd);
-        return -1;
-    }
-
-    return fd;
 }
