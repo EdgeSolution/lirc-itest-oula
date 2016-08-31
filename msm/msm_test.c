@@ -274,7 +274,7 @@ static int read_data_a(int fd, char *cmp_buf)
 
     ret = advspi_read_a(fd, buf, len, 0);
     if (ret <= 0) {
-        return ret;
+        return 0;
     }
 
     if (memcmp(cmp_buf, buf, len) == 0) {
@@ -309,7 +309,7 @@ static int read_data_b(int fd, char *cmp_buf)
 
     ret = advspi_read_b(fd, buf, len, 0);
     if (ret <= 0) {
-        return ret;
+        return 0;
     }
 
     if (memcmp(cmp_buf, buf, len) == 0) {
