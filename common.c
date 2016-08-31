@@ -33,13 +33,13 @@ void kill_process(char *name)
 
 /******************************************************************************
  * NAME:
- *      open_port
+ *      ser_open
  *
  * DESCRIPTION: 
  *      Open a serial port, and return the fd of it.
  *
  * PARAMETERS:
- *      None 
+ *      dev -  The serial port to open
  *
  * RETURN:
  *      The fd of serial port
