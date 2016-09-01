@@ -7,15 +7,15 @@
 
 static struct termios term_bak;
 
-void tc_termattr_bak(int fd);
-void tc_termattr_rst(int fd);
+static void tc_termattr_bak(int fd);
+static void tc_termattr_rst(int fd);
 
-void tc_termattr_bak(int fd)
+static void tc_termattr_bak(int fd)
 {
     tcgetattr(fd, &term_bak);
 }
 
-void tc_termattr_rst(int fd)
+static void tc_termattr_rst(int fd)
 {
     tcsetattr(fd, TCSANOW, &term_bak);
 }
@@ -25,7 +25,6 @@ void tc_set_baudrate(int fd, int speed)
     struct termios opt;
 
     tcgetattr(fd, &opt);
-    cfmakeraw(&opt);
 
     switch(speed)
     {
@@ -152,17 +151,6 @@ int tc_set_port(int fd, int databits, int stopbits, int parity)
             options.c_cflag &= ~CSTOPB;
     }
 
-    //Flow control: off
-    options.c_cflag &= ~CRTSCTS;
-    options.c_iflag &= ~(IXON | IXOFF | IXANY);
-
-    options.c_iflag &= ~INLCR;
-    options.c_iflag &= ~IGNCR;
-    options.c_iflag &= ~ICRNL;
-
-    options.c_cc[VTIME] = 20;
-    options.c_cc[VMIN] = 0;
-
     tcsetattr(fd, TCSANOW, &options);
 
     return 0;
@@ -219,10 +207,10 @@ int tc_init(char *dev)
         return -1;
     }
 
-    options.c_cflag |= CLOCAL | CREAD;
-    options.c_lflag &= ~(ICANON | ECHO | ECHOE | ECHOK | ECHONL |ISIG);
-    options.c_iflag &= ~(INPCK | IGNPAR | PARMRK | ISTRIP | ICRNL | IXANY);
-    options.c_oflag &= ~OPOST;
+    cfmakeraw(&options);
+
+    options.c_cc[VTIME] = 20;
+    options.c_cc[VMIN] = 0;
 
     tcsetattr(fd, TCSAFLUSH, &options);
 
