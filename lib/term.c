@@ -156,6 +156,10 @@ int tc_set_port(int fd, int databits, int stopbits, int parity)
     options.c_cflag &= ~CRTSCTS;
     options.c_iflag &= ~(IXON | IXOFF | IXANY);
 
+    options.c_iflag &= ~INLCR;
+    options.c_iflag &= ~IGNCR;
+    options.c_iflag &= ~ICRNL;
+
     options.c_cc[VTIME] = 20;
     options.c_cc[VMIN] = 0;
 
