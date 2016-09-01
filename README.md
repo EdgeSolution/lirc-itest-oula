@@ -23,7 +23,9 @@ Run the follow command in your code will
 git subtree pull --prefix lib http://172.21.73.37:3000/serial/libtc.git master
 ```
 
-**If you want to squash the history into single commit in your repository, you need to add `--squash` parameter when you using `git subtree`**
+**Add `--squash` parameter can squash the history into single commit in your repository when you using `git subtree`**
+
+**NOTE: If you use `--squash` when add subtree, you must use `--squash` for pull too**
 
 # API
 
