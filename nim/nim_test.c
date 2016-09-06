@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+//#include <arpa/inet.h>
 #include <sys/ioctl.h>
 #include <pthread.h>
 
@@ -47,7 +48,6 @@ int32_t udp_recv_task_id[TESC_NUM];
 /* Extern Variables */
 
 /* Function Defination */
-
 void nim_print_status();
 void nim_print_result(int fd);
 void *nim_test(void *args);
@@ -97,13 +97,18 @@ void udp_test_start(uint32_t ethid, uint16_t portid)
 {
     int8_t task_send[10];
     int8_t task_recv[10];
-    
+   
+    int test;
+
+    pthread_t ptid_r;
+    pthread_t ptid_s;
+ 
     ether_port_para net_port_para_send;
     ether_port_para net_port_para_recv;
 
     memset(target_ip[ethid], 0, 20);
-    sprintf(task_send, "tnet send %d", ethid);
-    sprintf(task_recv, "tnet recv %d", ethid);
+    sprintf(task_send, "net send %d", ethid);
+    sprintf(task_recv, "net recv %d", ethid);
 
     switch(ethid) {
         case 0:
@@ -131,15 +136,23 @@ void udp_test_start(uint32_t ethid, uint16_t portid)
     net_port_para_send.ethid = ethid; 
     net_port_para_send.ip = target_ip[ethid];
 
-    udp_recv_task_id[ethid] = pthread_create(NULL, NULL, (void *)&udp_recv_test, &net_port_para_recv);
+    printf("now, create thread receive\n");
+    udp_recv_task_id[ethid] = pthread_create(&ptid_r, NULL, (void *)udp_recv_test, &net_port_para_recv);
     if(udp_recv_task_id[ethid] != 0) {
         printf("task %s spawn failed!\n", task_recv);
     }
 
-    udp_send_task_id[ethid] = pthread_create(NULL, NULL, (void *)&udp_send_test, &net_port_para_send);
+    printf("now, create thread send\n");
+    udp_send_task_id[ethid] = pthread_create(&ptid_s, NULL, (void *)udp_send_test, &net_port_para_send);
     if(udp_send_task_id[ethid] != 0) {
         printf("task %s spawn failed!\n", task_send);
     }
+
+    /* Wait udp send packet thread and udp receive packet thread to endup */
+    pthread_join(ptid_r, NULL);
+    pthread_join(ptid_s, NULL);
+    
+    printf("ENDUP~\n");
 } 
 
 int udp_test_init(uint32_t ethid, uint16_t portid)
@@ -173,7 +186,8 @@ int udp_test_init(uint32_t ethid, uint16_t portid)
     memset(tesc_err_no, 0, TESC_NUM * sizeof(uint32_t));
     memset(tesc_lost_no, 0, TESC_NUM * sizeof(uint32_t));
 
-    printf("yyyyyy\n");    
+    printf("udp test initial done!\n");
+
     return 0;
 }
 
@@ -182,7 +196,7 @@ int socket_init(int *sockfd, char *ipaddr, uint16_t portid)
     struct sockaddr_in hostaddr;
     //uint32_t flag;
     
-    *sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    *sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP /*0*/);
     if(*sockfd == -1) {
         printf("create socket failed! errno=%d, %s\n", errno, strerror(errno));
         return -1;
@@ -191,20 +205,21 @@ int socket_init(int *sockfd, char *ipaddr, uint16_t portid)
     
     memset(&hostaddr, 0, sizeof(struct sockaddr_in));
 
-    printf("ip address = %s, port number = %#x\n", ipaddr, portid);
+    printf("ip address = %s, port number = %d\n", ipaddr, portid);
     hostaddr.sin_family = AF_INET;
     hostaddr.sin_port = htons(portid);
-    hostaddr.sin_addr.s_addr = inet_addr(ipaddr);
+    hostaddr.sin_addr.s_addr = htonl(*ipaddr);
+    //hostaddr.sin_addr.s_addr = inet_addr(ipaddr); // error: Cannot assign requested address
     printf("hostaddr.sin_addr.s_addr = %#x\n", hostaddr.sin_addr.s_addr);
 
-    if(bind(*sockfd, (struct sockaddr *)(&hostaddr), sizeof(struct sockaddr)) < 0) {
+    if(bind(*sockfd, (struct sockaddr *)(&hostaddr), sizeof(struct sockaddr)) == -1) {
         printf("ip bind error: %s errno=%d, %s\n", ipaddr, errno, strerror(errno));
         return -1;
     }
     
     //set no-blocking mode ??
-    //...
-    printf("xxxxx\n");
+    
+    printf("socket initail done!\n");
  
     return 0;
 }
@@ -219,6 +234,9 @@ void udp_send_test(ether_port_para *net_port_para)
     int i, send_num;
     uint8_t send_buf[NET_MAX_NUM];    
 
+    pid_t pid;
+    pthread_t tid;    
+
     sockfd = net_port_para->sockfd;
     ethid = net_port_para->ethid;
     portid = net_port_para->port;
@@ -231,6 +249,11 @@ void udp_send_test(ether_port_para *net_port_para)
     }
     
     while(1) {
+        pid = getpid();
+        tid = pthread_self();
+        printf("send thread: pid %u tid %u (0x%x)\n", (unsigned int)pid, 
+            (unsigned int)tid, (unsigned int)tid);
+
         send_buf[0] = udp_cnt_send[ethid] & 0xff;
         send_buf[1] = udp_cnt_send[ethid] >> 8 & 0xff;
         send_buf[2] = udp_cnt_send[ethid] >> 16 & 0xff;
@@ -259,9 +282,11 @@ void udp_recv_test(ether_port_para *net_port_para)
     uint32_t ethid;
     int8_t *ip;
     uint16_t portid;
-
     int i = 0, recv_num;
     uint8_t recv_buf[NET_MAX_NUM];
+
+    pid_t pid;
+    pthread_t tid;
 
     sockfd = net_port_para->sockfd;
     ethid = net_port_para->ethid;
@@ -270,6 +295,11 @@ void udp_recv_test(ether_port_para *net_port_para)
     memset(recv_buf, 0, NET_MAX_NUM);
 
     while(1) {
+        pid = getpid();
+        tid = pthread_self();
+        printf("receive thread: pid %u tid %u (0x%x)\n", (unsigned int)pid,
+            (unsigned int)tid, (unsigned int)tid);
+
         recv_num = udp_recv(sockfd, portid, recv_buf, NET_MAX_NUM, ethid);
     
         if(recv_num == NET_MAX_NUM) {
@@ -394,11 +424,14 @@ int is_udp_read_ready(int *sockfd)
 }
 
 
-void main()
+int main(int argc, char *argv[])
 {   
     int ret;
-    ret = udp_test_init(1, 0x9000);
+
+    ret = udp_test_init(1, 0x9001);
     
-    //udp_test_start(1, TESC0_PORT);
+    udp_test_start(1, 0x9001);
     printf("hello world\n");
+    
+    return 0;
 }
