@@ -8,7 +8,7 @@
 *
 * REVISION(MM/DD/YYYY):
 *     07/29/2016  Shengkui Leng (shengkui.leng@advantech.com.cn)
-*     - Initial version 
+*     - Initial version
 *
 ******************************************************************************/
 
@@ -105,10 +105,10 @@ test_mod_t test_mod_sim = {
 int open_uart(char *port)
 {
 	int fd;
-	fd = open( port, O_RDWR|O_NOCTTY);  
-	if (fd < 0) {  
-		printf("Can't Open Serial Port at %s\n", port);  
-		return -1;  
+	fd = open( port, O_RDWR|O_NOCTTY);
+	if (fd < 0) {
+		printf("Can't Open Serial Port at %s\n", port);
+		return -1;
 	} else {
 		printf("Open Serial Port at %s Successful\n", port);
 		return fd;
@@ -121,9 +121,9 @@ int open_uart(char *port)
  * Description:
  *		close serial port
  * PARAMETERS:
- *		fd: File descriptor 
+ *		fd: File descriptor
  * Return:
- *		
+ *
  */
 void close_uart(int fd)
 {
@@ -140,7 +140,7 @@ void close_uart(int fd)
  		pack_num: count packet amount
  		serial_num: uart number
  * Return:
- *		
+ *
  */
  void creat_uart_pack(struct uart_package *uart_pack, uint32_t pack_num, uint8_t serial_number)
  {
@@ -173,14 +173,14 @@ void close_uart(int fd)
  		return;
  }
 
-/* 
+/*
  * Name:
  *		 init_uart_port
- * Description: 
- *		 init the serialport  
- * PARAMETERS: 
+ * Description:
+ *		 init the serialport
+ * PARAMETERS:
  *		 fd:
- *		 baud_rate: baudrate  
+ *		 baud_rate: baudrate
  * Return:
  *		int(status)
  */
@@ -188,46 +188,46 @@ void close_uart(int fd)
  {
  	struct termios options;
 	if  (tcgetattr(fd, &options)  !=  0) {
-		perror("Get opertion error,Please check\n");      
-		return FALSE;   
+		perror("Get opertion error,Please check\n");
+		return FALSE;
 	}
 	switch (baud_rate) {
 		case 115200:
-			cfsetispeed(&options, B115200);  
-			cfsetospeed(&options, B115200);  
+			cfsetispeed(&options, B115200);
+			cfsetospeed(&options, B115200);
 			break;
 		case 19200:
-			cfsetispeed(&options, B19200);  
-			cfsetospeed(&options, B19200);  
+			cfsetispeed(&options, B19200);
+			cfsetospeed(&options, B19200);
 			break;
 		case 9600:
-			cfsetispeed(&options, B9600);  
-			cfsetospeed(&options, B9600);  
+			cfsetispeed(&options, B9600);
+			cfsetospeed(&options, B9600);
 			break;
 		case 4800:
-			cfsetispeed(&options, B4800);  
-			cfsetospeed(&options, B4800);  
+			cfsetispeed(&options, B4800);
+			cfsetospeed(&options, B4800);
 			break;
 		case 2400:
-			cfsetispeed(&options, B2400);  
-			cfsetospeed(&options, B2400);  
+			cfsetispeed(&options, B2400);
+			cfsetospeed(&options, B2400);
 			break;
 		case 1200:
-			cfsetispeed(&options, B1200);  
-			cfsetospeed(&options, B1200);  
+			cfsetispeed(&options, B1200);
+			cfsetospeed(&options, B1200);
 			break;
 		case 300:
-			cfsetispeed(&options, B300);  
-			cfsetospeed(&options, B300);  
+			cfsetispeed(&options, B300);
+			cfsetospeed(&options, B300);
 			break;
 		default:
 			printf("Unkown baudrate\n");
 			return FALSE;
 	}
 
-	// The c_cflag member contains two options that should always be enabled, CLOCAL and CREAD. 
-	// These will ensure that your program does not become the 'owner' of the port subject 
-	// to sporatic job control and hangup signals, 
+	// The c_cflag member contains two options that should always be enabled, CLOCAL and CREAD.
+	// These will ensure that your program does not become the 'owner' of the port subject
+	// to sporatic job control and hangup signals,
 	// and also that the serial interface driver will read incoming data bytes.
 	options.c_cflag |= (CLOCAL | CREAD);
 	// No parity ( 8N1 )
@@ -235,29 +235,29 @@ void close_uart(int fd)
 	options.c_cflag &= ~CSTOPB;
 	options.c_cflag &= ~CSIZE;
 	options.c_cflag |= CS8;
-	// Disable Hardware Flow Control 
+	// Disable Hardware Flow Control
     options.c_cflag &= ~CRTSCTS;
 
-	//# Line control 
+	//# Line control
 	// using raw input
 	options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
 
-	//# Input control 
+	//# Input control
 	// disable parity check
 	options.c_iflag &= ~INPCK;
-	// disable SW flow 
+	// disable SW flow
 	options.c_iflag &= ~(IXON | IXOFF | IXANY);
-	// disable NL to CR 
+	// disable NL to CR
 	options.c_iflag &= ~(INLCR | ICRNL);
 
-	//# Output Control 
-	// raw output 
+	//# Output Control
+	// raw output
 	options.c_oflag &= ~OPOST;
 
-	//# control characters 
+	//# control characters
 	options.c_cc[VMIN] = 0;
 
-	/*active the newtio*/  
+	/*active the newtio*/
 	if ((tcsetattr(fd, TCSANOW, &options)) != 0) {
 		printf("Serial port set error!!!\n");
 		return FALSE;
@@ -268,17 +268,17 @@ void close_uart(int fd)
  }
 
 
-/* 
+/*
  * Name:
  *		 send_uart_packet
- * Description: 
- *		 send data  
- * PARAMETERS: 
+ * Description:
+ *		 send data
+ * PARAMETERS:
  *		 fd:file point
  *		 packet_ptr:data point
- 		 len:data length  
- * Return:  
- *		 send bytes 
+ 		 len:data length
+ * Return:
+ *		 send bytes
  */
 int send_uart_packet(int fd, struct uart_package * packet_ptr, int len)
 {
@@ -315,16 +315,16 @@ int send_uart_packet(int fd, struct uart_package * packet_ptr, int len)
 }
 
 
-/* 
+/*
  * Name:
  *		 read_pack_head_1_byte
- * Description: 
+ * Description:
  *		 read 1 data from uart
- * PARAMETERS: 
+ * PARAMETERS:
  *		 fd:file point
  *		 buff:save data
  * Return:
- *		  read status   
+ *		  read status
  */
 int read_pack_head_1_byte(int fd, uint8_t *buff)
 {
@@ -347,17 +347,17 @@ int read_pack_head_1_byte(int fd, uint8_t *buff)
 	return ret;
 }
 
-/* 
+/*
  * Name:
  *		 recv_uart_packet
- * Description: 
+ * Description:
  *		 receive data
- * PARAMETERS: 
+ * PARAMETERS:
  *		 fd:file point
  *		 buff:save data
- *		 len:data length  
+ *		 len:data length
  * Return:
- *		  received bytes   
+ *		  received bytes
  */
 int recv_uart_packet(int fd, uint8_t *buff, int len)
 {
@@ -454,14 +454,14 @@ int recv_uart_packet(int fd, uint8_t *buff, int len)
 }
 
 
-/* 
+/*
  * Name:
  *		 recv_uart_packet
- * Description: 
+ * Description:
  *		 reassembly packet by buff
- * PARAMETERS: 
+ * PARAMETERS:
  *		 recv_packet: packet
- *		 buff:data  
+ *		 buff:data
  * Return:
  *
  */
@@ -473,14 +473,14 @@ void reassembly_packet(struct uart_package * recv_packet, uint8_t *buff)
 	memcpy(recv_packet->pack_head, buff + 0, sizeof(recv_packet->pack_head));
 
 	recv_packet->serial_number = buff[5];
-	
+
 	memcpy(recv_packet->pack_data, buff + 6, sizeof(recv_packet->pack_data));
 
 	recv_packet->pack_tail = buff[256];
-	
+
 	memcpy(&recv_packet->pack_num, buff + 257, sizeof(recv_packet->pack_num));
 
-	/* 
+	/*
 	 *calculated received-data's CRC code
 	 */
 	crc = crc32(0, recv_packet->pack_head, 5);
@@ -492,14 +492,14 @@ void reassembly_packet(struct uart_package * recv_packet, uint8_t *buff)
 }
 
 
-/* 
+/*
  * Name:
  *		 analysis_packet
- * Description: 
- *		 check packet 
- * PARAMETERS: 
+ * Description:
+ *		 check packet
+ * PARAMETERS:
  *		 recv_packet: packet
- *		 buff:data  
+ *		 buff:data
  * Return:
  *		 0: packet ok
  *      -1: packet error
@@ -511,7 +511,7 @@ int analysis_packet(struct uart_package *recv_packet, uint8_t *buff)
 	uint32_t crc_check = 0xFFFFFFFF;
 
 	/*
-	 * check crc and printf which data is error 
+	 * check crc and printf which data is error
 	 */
 	memcpy(&crc_check, buff + 261, sizeof(crc_check)); /* Get received CRC code */
 	if ((uint32_t)crc_check != (uint32_t)recv_packet->crc_err) {
@@ -548,14 +548,14 @@ int analysis_packet(struct uart_package *recv_packet, uint8_t *buff)
 }
 
 
-/* 
+/*
  * Name:
  *		 first_send_port
- * Description: 
+ * Description:
  *		 set computer first send packet
- * PARAMETERS: 
+ * PARAMETERS:
  *		 fd:ile point
- *		 serial_number: serial number 
+ *		 serial_number: serial number
  * Return:
  *		 test status
  */
@@ -616,14 +616,14 @@ int first_send_port(int fd, uint8_t serial_number)
 }
 
 
-/* 
+/*
  * Name:
  *		 first_recv_port
- * Description: 
+ * Description:
  *		 set computer first received packet
- * PARAMETERS: 
+ * PARAMETERS:
  *		 fd:ile point
- *		 serial_number: serial number 
+ *		 serial_number: serial number
  * Return:
  *		 test status (-1 for error; 0 for pass;)
  */
@@ -685,12 +685,12 @@ int first_recv_port(int fd, uint8_t serial_number)
 }
 
 
-/* 
+/*
  * Name:
  *		 sim_test
- * Description: 
+ * Description:
  *		 test uart
- * PARAMETERS: 
+ * PARAMETERS:
  *		 args: uart attribute
  * Return:
  *		 NULL
@@ -748,12 +748,12 @@ void sim_test(void *args)
 	pthread_exit(NULL);
 }
 
-/* 
+/*
  * Name:
  *		 sim_print_result
- * Description: 
+ * Description:
  *		 print test result
- * PARAMETERS: 
+ * PARAMETERS:
  *		 fd: log file point
  * Return:
  *		 NULL
@@ -768,12 +768,12 @@ void sim_print_result(int fd)
 }
 
 
-/* 
+/*
  * Name:
  *		 sim_print_status
- * Description: 
+ * Description:
  *		 print ,pactet loss rate,error rate ..
- * PARAMETERS: 
+ * PARAMETERS:
  *		 NULL
  * Return:
  *		 NULL
@@ -790,7 +790,7 @@ void sim_print_status(void)
 	printf("target send packet = %d\n",(uint32_t)_target_send_pack_num);
 }
 
-void main(int argc, char *argv[]) 
+void main(int argc, char *argv[])
 {
 	struct uart_attr *uart_param;
 	int baudrate;
@@ -806,7 +806,7 @@ void main(int argc, char *argv[])
 	uart_param->dev_name = argv[2];
 	uart_param->baudrate = atoi(argv[3]);
 
-	sim_test(uart_param);	
+	sim_test(uart_param);
 
 	sim_print_status();
 }
