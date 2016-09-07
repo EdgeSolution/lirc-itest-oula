@@ -123,7 +123,7 @@ void creat_uart_pack(struct uart_package *uart_pack, uint32_t pack_num, uint8_t 
     crc = crc32(crc, &uart_pack->serial_number, 1);
     crc = crc32(crc, uart_pack->pack_data, 250);
     crc = crc32(crc, &uart_pack->pack_tail, 1);
-    crc = crc32(crc, &uart_pack->pack_num, 4);
+    crc = crc32(crc, (uint8_t *)&uart_pack->pack_num, 4);
     uart_pack->crc_err = crc;
 }
 
@@ -170,6 +170,7 @@ int send_uart_packet(int fd, struct uart_package * packet_ptr, int len)
             i += ret;
         }
     }
+
     return bytes;
 }
 
@@ -346,7 +347,7 @@ void reassembly_packet(struct uart_package * recv_packet, uint8_t *buff)
     crc = crc32(crc, &recv_packet->serial_number, 1);
     crc = crc32(crc, recv_packet->pack_data, 250);
     crc = crc32(crc, &recv_packet->pack_tail, 1);
-    crc = crc32(crc, &recv_packet->pack_num, 4);
+    crc = crc32(crc, (uint8_t *)&recv_packet->pack_num, 4);
     recv_packet->crc_err = crc;
 }
 
