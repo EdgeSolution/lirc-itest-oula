@@ -53,11 +53,10 @@ struct uart_attr {
     char *test_type;
 }__attribute__ ((packed));
 
-int _err_count = 0;//global variable,count packet loss or error
-uint32_t _recived_pack_count = 0;//global variable, count recived packet
-uint32_t _send_pack_count = 1;//global variable, count send packet
-uint32_t _target_send_pack_num = 0;//Record target amount of packets sent
-
+static int _err_count = 0;//global variable,count packet loss or error
+static uint32_t _recived_pack_count = 0;//global variable, count recived packet
+static uint32_t _send_pack_count = 1;//global variable, count send packet
+static uint32_t _target_send_pack_num = 0;//Record target amount of packets sent
 
 int read_pack_head_1_byte(int fd, uint8_t *buff);
 
