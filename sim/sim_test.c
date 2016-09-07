@@ -26,6 +26,7 @@
 #include <malloc.h>
 #include <signal.h>
 #include "sim_test.h"
+#include "term.h"
 
 #define MAX_RETRY_COUNT 20
 #define HEAD_1 0xff
@@ -36,7 +37,6 @@
 #define TAIL 0xfe
 
 #define BUFF_SIZE 265
-#define FALSE -1
 
 struct uart_package {
     uint8_t pack_head[5];//0xff 0xfd 0xfc 0xfb 0xfa
@@ -58,10 +58,6 @@ uint32_t _recived_pack_count = 0;//global variable, count recived packet
 uint32_t _send_pack_count = 1;//global variable, count send packet
 uint32_t _target_send_pack_num = 0;//Record target amount of packets sent
 
-
-//gcc -o test my_uart_test.c -lz
-int open_uart(char *port);
-void close_uart(int fd);
 
 int read_pack_head_1_byte(int fd, uint8_t *buff);
 
@@ -90,45 +86,6 @@ test_mod_t test_mod_sim = {
     .print_status = sim_print_status,
     .print_result = sim_print_result
 };
-
-/*
- * NAME:
- *     open_uart
- * Description:
- *     Open serial port
- * PARAMETERS:
- *     port: The serial port name at linux
- * Return:
- *     Serial port File descriptor
- */
-
-int open_uart(char *port)
-{
-    int fd;
-    fd = open( port, O_RDWR|O_NOCTTY);
-    if (fd < 0) {
-        printf("Can't Open Serial Port at %s\n", port);
-        return -1;
-    } else {
-        printf("Open Serial Port at %s Successful\n", port);
-        return fd;
-    }
-}
-
-/*
- * NAME:
- *     close_uart
- * Description:
- *     close serial port
- * PARAMETERS:
- *     fd: File descriptor
- * Return:
- *
- */
-void close_uart(int fd)
-{
-    close(fd);
-}
 
 /*
  * NAME:
@@ -169,104 +126,7 @@ void creat_uart_pack(struct uart_package *uart_pack, uint32_t pack_num, uint8_t 
     crc = crc32(crc, &uart_pack->pack_tail, 1);
     crc = crc32(crc, &uart_pack->pack_num, 4);
     uart_pack->crc_err = crc;
-
-    return;
 }
-
-/*
- * Name:
- *      init_uart_port
- * Description:
- *      init the serialport
- * PARAMETERS:
- *      fd:
- *      baud_rate: baudrate
- * Return:
- *     int(status)
- */
-int init_uart_port(int fd, int baud_rate)
-{
-    struct termios options;
-    if  (tcgetattr(fd, &options)  !=  0) {
-        perror("Get opertion error,Please check\n");
-        return FALSE;
-    }
-    switch (baud_rate) {
-        case 115200:
-            cfsetispeed(&options, B115200);
-            cfsetospeed(&options, B115200);
-            break;
-        case 19200:
-            cfsetispeed(&options, B19200);
-            cfsetospeed(&options, B19200);
-            break;
-        case 9600:
-            cfsetispeed(&options, B9600);
-            cfsetospeed(&options, B9600);
-            break;
-        case 4800:
-            cfsetispeed(&options, B4800);
-            cfsetospeed(&options, B4800);
-            break;
-        case 2400:
-            cfsetispeed(&options, B2400);
-            cfsetospeed(&options, B2400);
-            break;
-        case 1200:
-            cfsetispeed(&options, B1200);
-            cfsetospeed(&options, B1200);
-            break;
-        case 300:
-            cfsetispeed(&options, B300);
-            cfsetospeed(&options, B300);
-            break;
-        default:
-            printf("Unkown baudrate\n");
-            return FALSE;
-    }
-
-    // The c_cflag member contains two options that should always be enabled, CLOCAL and CREAD.
-    // These will ensure that your program does not become the 'owner' of the port subject
-    // to sporatic job control and hangup signals,
-    // and also that the serial interface driver will read incoming data bytes.
-    options.c_cflag |= (CLOCAL | CREAD);
-    // No parity ( 8N1 )
-    options.c_cflag &= ~PARENB;
-    options.c_cflag &= ~CSTOPB;
-    options.c_cflag &= ~CSIZE;
-    options.c_cflag |= CS8;
-    // Disable Hardware Flow Control
-    options.c_cflag &= ~CRTSCTS;
-
-    //# Line control
-    // using raw input
-    options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
-
-    //# Input control
-    // disable parity check
-    options.c_iflag &= ~INPCK;
-    // disable SW flow
-    options.c_iflag &= ~(IXON | IXOFF | IXANY);
-    // disable NL to CR
-    options.c_iflag &= ~(INLCR | ICRNL);
-
-    //# Output Control
-    // raw output
-    options.c_oflag &= ~OPOST;
-
-    //# control characters
-    options.c_cc[VMIN] = 0;
-
-    /*active the newtio*/
-    if ((tcsetattr(fd, TCSANOW, &options)) != 0) {
-        printf("Serial port set error!!!\n");
-        return FALSE;
-    }
-    printf("Serial port set done!!!\n");
-    return 0;
-
-}
-
 
 /*
  * Name:
@@ -714,15 +574,18 @@ void sim_test(void *args)
     _send_pack_count = 0;//init _send_pack_count;
 
     port = uart_param->dev_name;
-    fd = open_uart(port);
+    fd = tc_init(uart_param->dev_name);
     if (fd < 0) {
         printf("Open %s error\n",port);
     }
 
-    if (init_uart_port(fd, uart_param->baudrate) < 0) {
-        printf("init uart error\n");
-        return;
+    /* Set databits, stopbits, parity ... */
+    if (tc_set_port(fd, 8, 1, 0) == -1) {
+        tc_deinit(fd);
+        return NULL;
     }
+
+    tc_set_baudrate(fd, uart_param->baudrate);
 
     if ((strcmp(uart_param->test_type, "B") == 0 )) {
         uart_function = first_recv_port;
