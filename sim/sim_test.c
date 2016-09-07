@@ -7,7 +7,7 @@
  *     Define functions for SIM test.
  *
  * REVISION(MM/DD/YYYY):
- *     07/29/2016  Shengkui Leng (shengkui.leng@advantech.com.cn)
+ *     09/06/2016  Yuechao Zhao (yuechao.zhao@advantech.com.cn)
  *     - Initial version
  *
  ******************************************************************************/
