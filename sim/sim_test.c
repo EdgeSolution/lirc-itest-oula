@@ -40,7 +40,7 @@
 
 struct uart_package {
     uint8_t pack_head[5];//0xff 0xfd 0xfc 0xfb 0xfa
-    uint8_t serial_number;
+    uint8_t uart_id;
     uint8_t pack_data[250];//0x00->0xF9
     uint8_t pack_tail;
     uint32_t  pack_num;
@@ -60,15 +60,15 @@ static uint32_t _target_send_pack_num = 0;//Record target amount of packets sent
 
 int read_pack_head_1_byte(int fd, uint8_t *buff);
 
-void creat_uart_pack(struct uart_package *uart_pack, uint32_t pack_num, uint8_t serial_number);
+void creat_uart_pack(struct uart_package *uart_pack, uint32_t pack_num, uint8_t uart_id);
 int init_uart_port(int fd, int baud_rate);
 int send_uart_packet(int fd, struct uart_package * packet_ptr, int len);
 int recv_uart_packet(int fd, uint8_t *buff, int len);
 void reassembly_packet(struct uart_package * recv_packet, uint8_t *buff);
 int analysis_packet(struct uart_package *recv_packet, uint8_t *buff);
 
-int first_recv_port(int fd, uint8_t serial_number);
-int first_send_port(int fd, uint8_t serial_number);
+int first_recv_port(int fd, uint8_t uart_id);
+int first_send_port(int fd, uint8_t uart_id);
 void sim_print_status(void);
 void sim_print_result(int fd);
 void sim_test(void *args);
@@ -93,12 +93,12 @@ test_mod_t test_mod_sim = {
  *     creat uart package
  * PARAMETERS:
  *     uart_pack: creat uart packet and save into uart_pack
-pack_num: count packet amount
-serial_num: uart number
+ *     pack_num: count packet amount
+ *     uart_id: uart ID
  * Return:
  *
  */
-void creat_uart_pack(struct uart_package *uart_pack, uint32_t pack_num, uint8_t serial_number)
+void creat_uart_pack(struct uart_package *uart_pack, uint32_t pack_num, uint8_t uart_id)
 {
     uint8_t i = 0;
     uint32_t crc = 0xFFFFFFFF;
@@ -109,7 +109,7 @@ void creat_uart_pack(struct uart_package *uart_pack, uint32_t pack_num, uint8_t 
     uart_pack->pack_head[3] = HEAD_4;
     uart_pack->pack_head[4] = HEAD_5;
 
-    uart_pack->serial_number = serial_number;
+    uart_pack->uart_id = uart_id;
     for (i=0; i<=0xF9; i++) {
         uart_pack->pack_data[i] = i;
     }
@@ -120,7 +120,7 @@ void creat_uart_pack(struct uart_package *uart_pack, uint32_t pack_num, uint8_t 
      * calculated CRC
      */
     crc = crc32(0, uart_pack->pack_head, 5);
-    crc = crc32(crc, &uart_pack->serial_number, 1);
+    crc = crc32(crc, &uart_pack->uart_id, 1);
     crc = crc32(crc, uart_pack->pack_data, 250);
     crc = crc32(crc, &uart_pack->pack_tail, 1);
     crc = crc32(crc, (uint8_t *)&uart_pack->pack_num, 4);
@@ -151,7 +151,7 @@ int send_uart_packet(int fd, struct uart_package * packet_ptr, int len)
     }
     memcpy(buff + 0, packet_ptr->pack_head, sizeof(packet_ptr->pack_head));
 
-    buff[5] = packet_ptr->serial_number;
+    buff[5] = packet_ptr->uart_id;
 
     memcpy(buff + 6, packet_ptr->pack_data, sizeof(packet_ptr->pack_data));
 
@@ -332,7 +332,7 @@ void reassembly_packet(struct uart_package * recv_packet, uint8_t *buff)
 
     memcpy(recv_packet->pack_head, buff + 0, sizeof(recv_packet->pack_head));
 
-    recv_packet->serial_number = buff[5];
+    recv_packet->uart_id = buff[5];
 
     memcpy(recv_packet->pack_data, buff + 6, sizeof(recv_packet->pack_data));
 
@@ -344,7 +344,7 @@ void reassembly_packet(struct uart_package * recv_packet, uint8_t *buff)
      *calculated received-data's CRC code
      */
     crc = crc32(0, recv_packet->pack_head, 5);
-    crc = crc32(crc, &recv_packet->serial_number, 1);
+    crc = crc32(crc, &recv_packet->uart_id, 1);
     crc = crc32(crc, recv_packet->pack_data, 250);
     crc = crc32(crc, &recv_packet->pack_tail, 1);
     crc = crc32(crc, (uint8_t *)&recv_packet->pack_num, 4);
@@ -391,7 +391,7 @@ int analysis_packet(struct uart_package *recv_packet, uint8_t *buff)
         }
 
         /*
-         * check serial_number
+         * check uart_id
          */
         //to do....
 
@@ -415,11 +415,11 @@ int analysis_packet(struct uart_package *recv_packet, uint8_t *buff)
  *      set computer first send packet
  * PARAMETERS:
  *      fd:ile point
- *      serial_number: serial number
+ *      uart_id: uart ID
  * Return:
  *      test status
  */
-int first_send_port(int fd, uint8_t serial_number)
+int first_send_port(int fd, uint8_t uart_id)
 {
     int status = -1;
     uint8_t buff[BUFF_SIZE];
@@ -447,7 +447,7 @@ int first_send_port(int fd, uint8_t serial_number)
     }
 
     _send_pack_count++;//creat send pack number
-    creat_uart_pack(uart_pack, _send_pack_count, serial_number);
+    creat_uart_pack(uart_pack, _send_pack_count, uart_id);
     printf("send %d\n", (uint32_t)_send_pack_count);
     n = send_uart_packet(fd, uart_pack, BUFF_SIZE);
     if (n != BUFF_SIZE) {
@@ -483,11 +483,11 @@ int first_send_port(int fd, uint8_t serial_number)
  *      set computer first received packet
  * PARAMETERS:
  *      fd:ile point
- *      serial_number: serial number
+ *      uart_id: uart ID
  * Return:
  *      test status (-1 for error; 0 for pass;)
  */
-int first_recv_port(int fd, uint8_t serial_number)
+int first_recv_port(int fd, uint8_t uart_id)
 {
     int status;
 
@@ -529,7 +529,7 @@ int first_recv_port(int fd, uint8_t serial_number)
     }
 
     _send_pack_count++;//creat send pack number
-    creat_uart_pack(uart_pack, _send_pack_count, serial_number);
+    creat_uart_pack(uart_pack, _send_pack_count, uart_id);
     printf("send %d\n", (uint32_t)_send_pack_count);
     n = send_uart_packet(fd, uart_pack, 265);
     if (n != BUFF_SIZE) {
@@ -560,14 +560,14 @@ void sim_test(void *args)
 
     struct uart_attr *uart_param = (struct uart_attr *)args;
 
-    int (*uart_function)(int fd, uint8_t serial_number);
+    int (*uart_function)(int fd, uint8_t uart_id);
 
     int fd;
     char *port;
 
     int status;
 
-    uint8_t serial_number = (uint8_t)(uart_param->dev_name[9]);
+    uint8_t uart_id = (uint8_t)(uart_param->dev_name[9]);
 
     int log_fd = test_mod_sim.log_fd;
 
@@ -600,7 +600,7 @@ void sim_test(void *args)
     log_print(log_fd, "Begin test!\n\n");
 
     while (g_running) {
-        status = (*uart_function)(fd, serial_number);
+        status = (*uart_function)(fd, uart_id);
         if (status != 0) {
             test_mod_sim.pass = -1;
         }
