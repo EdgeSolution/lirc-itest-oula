@@ -29,21 +29,34 @@ typedef struct _ether_port_para {
 
 #define TESC_NUM 4
 
-#define TESC0_LOCAL_IP "192.100.1.2"
-#define TESC1_LOCAL_IP "192.100.2.2"
-#define TESC2_LOCAL_IP "192.100.3.2"
-#define TESC3_LOCAL_IP "192.100.4.2"
+#define IP_UNIT_0_A "192.100.1.2"
+#define IP_UNIT_1_A "192.100.2.2"
+#define IP_UNIT_2_A "192.100.3.2"
+#define IP_UNIT_3_A "192.100.4.2"
 
-#define TESC0_TARGET_IP "192.100.1.3"
-#define TESC1_TARGET_IP "192.100.2.3"
-#define TESC2_TARGET_IP "192.100.3.3"
-#define TESC3_TARGET_IP "192.100.4.3"
+#define IP_UNIT_0_B "192.100.1.3"
+#define IP_UNIT_1_B "192.100.2.3"
+#define IP_UNIT_2_B "192.100.3.3"
+#define IP_UNIT_3_B "192.100.4.3"
+
+//#ifdef MACHINE_A
+#define TESC0_LOCAL_IP "192.100.1.3"
+#define TESC1_LOCAL_IP "192.100.2.3"
+#define TESC2_LOCAL_IP "192.100.3.3"
+#define TESC3_LOCAL_IP "192.100.4.3"
+
+#define TESC0_TARGET_IP "192.100.1.2"
+#define TESC1_TARGET_IP "192.100.2.2"
+#define TESC2_TARGET_IP "192.100.3.2"
+#define TESC3_TARGET_IP "192.100.4.2"
+//#endif
+
 
 #define TESC0_PORT  0x7000
 #define TESC1_PORT  0x8000
 #define TESC2_PORT  0x9000
 #define TESC3_PORT  0xa000
-#define NET_MAX_NUM 2048
+#define NET_MAX_NUM 1024
 
 void udp_test_start(uint32_t ethid, uint16_t portid);
 int udp_test_init(uint32_t ethid, uint16_t portid);
@@ -55,7 +68,7 @@ void udp_recv_test(ether_port_para *net_port_para);
 int32_t udp_send(int sockfd, char *target_ip, uint16_t port, uint8_t *buff, int32_t length, int32_t ethid);
 int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int32_t ethid);
 
-int is_udp_write_ready(int *sockfd);
-int is_udp_read_ready(int *sockfd);
+int is_udp_write_ready(int sockfd);
+int is_udp_read_ready(int sockfd);
 
 #endif /* _NIM_TEST_H_ */
