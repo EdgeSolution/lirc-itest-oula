@@ -14,7 +14,7 @@ CFLAGS = -Wall -O $(INC_DIRS) #-g -DDEBUG
 #LDFLAGS = -L.
 
 #The list of libraries to link with
-LDLIBS = -pthread
+LDLIBS = -pthread -lz
 
 
 ################################################################
