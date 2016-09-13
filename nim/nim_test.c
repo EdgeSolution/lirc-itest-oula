@@ -46,6 +46,8 @@ static uint32_t tesc_lost_no[TESC_NUM] = {0};
 static int32_t udp_send_task_id[TESC_NUM];
 static int32_t udp_recv_task_id[TESC_NUM];
 
+static ether_port_para net_port_para_recv[TESC_NUM];
+static ether_port_para net_port_para_send[TESC_NUM];
 
 /* Function Defination */
 void nim_print_status();
@@ -83,50 +85,82 @@ void nim_print_status()
 void nim_print_result(int fd)
 {
     if (test_mod_nim.pass) {
-        write_file(fd, "NIM: PASS\n");
+        //write_file(fd, "NIM: PASS\n");
     } else {
-        write_file(fd, "NIM: FAIL\n");
+        //write_file(fd, "NIM: FAIL\n");
     }
 }
 
 
 void *nim_test(void *args)
 {
+    int i = 0;
+    int ret = 0;
     int log_fd = test_mod_nim.log_fd;
 
-    log_print(log_fd, "Begin test!\n\n");
+    pthread_t ptid_r[4];
+    pthread_t ptid_s[4];
+
+    //log_print(log_fd, "Begin test!\n\n");
 
     /* test init */
-    udp_test_init(0, TESC0_PORT);
-    udp_test_init(1, TESC1_PORT);
-    udp_test_init(2, TESC2_PORT);
-    udp_test_init(3, TESC3_PORT);
+    ret = udp_test_init(0, TESC0_PORT);
+    if(ret != 0) {
+        printf("udp_test_init 0 failed!\n");
+        pthread_exit(NULL);
+    }
+    ret = udp_test_init(1, TESC1_PORT);
+    if(ret != 0) {
+        printf("udp_test_init 1 failed!\n");
+        pthread_exit(NULL);
+    }
+    ret = udp_test_init(2, TESC2_PORT);
+    if(ret != 0) {
+        printf("udp_test_init 2 failed!\n");
+        pthread_exit(NULL);
+    }
+    ret = udp_test_init(3, TESC3_PORT);
+    if(ret != 0) {
+        printf("udp_test_init 3 failed!\n");
+        pthread_exit(NULL);
+    }
 
-    /* test start */
-    udp_test_start(0, TESC0_PORT);
-    udp_test_start(1, TESC1_PORT);
-    udp_test_start(2, TESC2_PORT);
-    udp_test_start(3, TESC3_PORT);
-   
-    return NULL; 
-    //log_print(log_fd, "Test end\n\n");
-    //pthread_exit(NULL);
+    /* ethernet port init */
+    ether_port_init(0, TESC0_PORT);
+    ether_port_init(1, TESC1_PORT);
+    ether_port_init(2, TESC2_PORT);
+    ether_port_init(3, TESC3_PORT);
+
+ 
+    for(i = 0; i < 4; i++) {    
+        udp_recv_task_id[i] = pthread_create(&ptid_r[i], NULL, (void *)udp_recv_test, &net_port_para_recv[i]);
+        if(udp_recv_task_id[i] != 0) {
+            printf("Port %d recv spawn failed!\n", i);
+        }
+        udp_send_task_id[i] = pthread_create(&ptid_s[i], NULL, (void *)udp_send_test, &net_port_para_send[i]);
+        if(udp_send_task_id[i] != 0) {
+            printf("Port %d send spawn failed!\n", i);
+        }
+    }
+
+#ifdef DGB_PRINT    
+    nim_print_status();    
+#endif
+
+    /* Wait all udp send packet thread and all udp receive packet thread to endup */
+    for(i = 0; i < 4; i++) {
+        pthread_join(ptid_r[i], NULL);
+        pthread_join(ptid_s[i], NULL);
+    }
+     
+    //return NULL; 
+    log_print(log_fd, "Test end\n\n");
+    pthread_exit(NULL);
 }
 
-void udp_test_start(uint32_t ethid, uint16_t portid)
+void ether_port_init(uint32_t ethid, uint16_t portid)
 {
-    char task_send[10];
-    char task_recv[10];
-   
-    pthread_t ptid_r;
-    pthread_t ptid_s;
- 
-    ether_port_para net_port_para_send;
-    ether_port_para net_port_para_recv;
-
     memset(target_ip[ethid], 0, 20);
-    sprintf(task_send, "tnetsend%d", ethid);
-    sprintf(task_recv, "tnetrecv%d", ethid);
 
     switch(ethid) {
         case 0:
@@ -144,31 +178,15 @@ void udp_test_start(uint32_t ethid, uint16_t portid)
         default:
             break;
     }
+    
+    net_port_para_recv[ethid].sockfd = net_sockid[ethid];
+    net_port_para_recv[ethid].port = portid;
+    net_port_para_recv[ethid].ethid = ethid;
 
-    net_port_para_recv.sockfd = net_sockid[ethid];
-    net_port_para_recv.port = portid;
-    net_port_para_recv.ethid = ethid;
-
-    net_port_para_send.sockfd = net_sockid[ethid];
-    net_port_para_send.port = portid;
-    net_port_para_send.ethid = ethid; 
-    net_port_para_send.ip = target_ip[ethid];
-   
-    printf("ethernet port %d, net_sockid[%d] = %d; ", ethid, ethid, net_sockid[ethid]); 
-    
-    udp_recv_task_id[ethid] = pthread_create(&ptid_r, NULL, (void *)udp_recv_test, &net_port_para_recv);
-    if(udp_recv_task_id[ethid] != 0) {
-        printf("task %s spawn failed!\n", task_recv);
-    }
-    
-    udp_send_task_id[ethid] = pthread_create(&ptid_s, NULL, (void *)udp_send_test, &net_port_para_send);
-    if(udp_send_task_id[ethid] != 0) {
-        printf("task %s spawn failed!\n", task_send);
-    }
-    
-    /* Wait udp send packet thread and udp receive packet thread to endup */
-    //pthread_join(ptid_r, NULL);
-    //pthread_join(ptid_s, NULL);
+    net_port_para_send[ethid].sockfd = net_sockid[ethid];
+    net_port_para_send[ethid].port = portid;
+    net_port_para_send[ethid].ethid = ethid; 
+    net_port_para_send[ethid].ip = target_ip[ethid];
 } 
 
 int udp_test_init(uint32_t ethid, uint16_t portid)

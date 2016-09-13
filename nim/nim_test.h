@@ -17,6 +17,7 @@
 #include <stdint.h>
 
 #include "../common.h"
+#include "../log.h"
 
 extern test_mod_t test_mod_nim;
 
@@ -25,7 +26,7 @@ typedef struct _ether_port_para {
     char * ip;
     uint16_t port;
     uint32_t ethid;
-} ether_port_para;
+} __attribute__((packed)) ether_port_para;
 
 #define TESC_NUM 4
 
@@ -67,7 +68,7 @@ typedef struct _ether_port_para {
 #define TESC3_PORT  0xa000
 #define NET_MAX_NUM 1024
 
-void udp_test_start(uint32_t ethid, uint16_t portid);
+void ether_port_init(uint32_t ethid, uint16_t portid);
 int udp_test_init(uint32_t ethid, uint16_t portid);
 int socket_init(int *sockfd, char *ipaddr, uint16_t portid);
 
