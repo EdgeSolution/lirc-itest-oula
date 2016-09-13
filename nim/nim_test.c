@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <net/if.h>
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
 #include <pthread.h>
@@ -48,8 +49,9 @@ static int32_t udp_recv_task_id[TESC_NUM];
 static ether_port_para net_port_para_recv[TESC_NUM];
 static ether_port_para net_port_para_send[TESC_NUM];
 
-//int log_fd;
-//char g_machine = 'B';
+int log_fd;
+char g_machine = 'A';
+int g_running = 1;
 
 #define log_print(fd, s) printf(s);
 
@@ -105,7 +107,7 @@ void *nim_test(void *args)
 {
     int i = 0;
     int ret = 0;
-    int log_fd = test_mod_nim.log_fd;
+    log_fd = test_mod_nim.log_fd;
 
     pthread_t ptid_r[4];
     pthread_t ptid_s[4];
@@ -254,6 +256,22 @@ int udp_test_init(uint32_t ethid, uint16_t portid)
         }
     }
 
+    /* config local ip for ethernet port */
+    switch(ethid) {
+        case 0:
+            set_ipaddr(ETH0, local_ip, NETMASK);
+            break;
+        case 1:
+            set_ipaddr(ETH1, local_ip, NETMASK);
+            break;
+        case 2:
+            set_ipaddr(ETH2, local_ip, NETMASK);
+            break;
+        case 3:
+            set_ipaddr(ETH3, local_ip, NETMASK);
+            break;
+    }
+
     if(socket_init((int *)&net_sockid[ethid], local_ip, portid) != 0) {
         log_print(log_fd, "socket init failed!\n");
         return -1;
@@ -321,7 +339,7 @@ void udp_send_test(ether_port_para *net_port_para)
         send_buf[i] = i;
     }
     
-    while(1) {
+    while(g_running) {
         /* Send packages count */
         send_buf[NET_MAX_NUM - 5] = udp_cnt_send[ethid] & 0xff;
         send_buf[NET_MAX_NUM - 6] = udp_cnt_send[ethid] >> 8 & 0xff;
@@ -364,7 +382,7 @@ void udp_recv_test(ether_port_para *net_port_para)
     
     memset(recv_buf, 0, NET_MAX_NUM);
 
-    while(1) {
+    while(g_running) {
         recv_num = udp_recv(sockfd, portid, recv_buf, NET_MAX_NUM, ethid);
     
         if(recv_num == NET_MAX_NUM) {
@@ -456,7 +474,7 @@ int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int
     return recv_num; 
 }
 
-int is_udp_write_ready(int sockfd)
+static int is_udp_write_ready(int sockfd)
 {
     fd_set wfds;
     int retval = 0, ret = -1;
@@ -484,7 +502,7 @@ int is_udp_write_ready(int sockfd)
     return ret;
 }
 
-int is_udp_read_ready(int sockfd)
+static int is_udp_read_ready(int sockfd)
 {
     fd_set rfds;
     int retval = 0, ret = -1;
@@ -513,13 +531,58 @@ int is_udp_read_ready(int sockfd)
     return ret;
 }
 
-#if 0
+static int set_ipaddr(char *ifname, char *ipaddr, char *netmask) 
+{
+    int sockfd = -1;
+    struct ifreq ifr;
+    struct sockaddr_in *sin;
+
+    if((ifname == NULL) || (ipaddr == NULL)) {
+        log_print(log_fd, "illegal do config ip!\n");
+        return -1;
+    }
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if(sockfd == -1) {
+        printf("socket failed for setting ip! err: %s\n", strerror(errno));
+        return -1;
+    }
+
+    memset(&ifr, 0, sizeof(ifr));
+    strcpy(ifr.ifr_name, ifname);
+    sin = (struct sockaddr_in *)&ifr.ifr_addr;
+
+    sin->sin_family = AF_INET;
+    
+    /* config ip address */
+    sin->sin_addr.s_addr = inet_addr(ipaddr);
+    if(ioctl(sockfd, SIOCSIFADDR, &ifr) < 0) {
+        close(sockfd);
+        printf("ioctl failed for set ip address! err: %s\n", strerror(errno));
+        return -1;
+    }
+
+    /* config netmask */
+    sin->sin_addr.s_addr = inet_addr(netmask);
+    if(ioctl(sockfd, SIOCSIFNETMASK, &ifr) < 0) {
+        close(sockfd);
+        printf("ioctl failed for set netmask! err: %s\n", strerror(errno));
+        return -1;
+    }
+
+    close(sockfd); 
+    
+    return 0;
+}
+
+
+#if 1
 int main(int argc, char *argv[])
 {
     nim_test(NULL);
     
     nim_print_status();
-     
+    
     printf("hello world\n");
     
     return 0;

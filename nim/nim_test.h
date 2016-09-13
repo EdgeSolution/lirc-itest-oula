@@ -39,10 +39,20 @@ typedef struct _ether_port_para {
 #define IP_UNIT_2_B "192.100.3.3"
 #define IP_UNIT_3_B "192.100.4.3"
 
+#define NETMASK "255.255.255.0"
+
 #define TESC0_PORT  0x7000
 #define TESC1_PORT  0x8000
 #define TESC2_PORT  0x9000
 #define TESC3_PORT  0xa000
+
+/* Interface name */
+#define ETH0    "eth34"
+#define ETH1    "eth35"
+#define ETH2    "eth36"
+#define ETH3    "eth37"
+
+/* package size */
 #define NET_MAX_NUM 1024
 
 void ether_port_init(uint32_t ethid, uint16_t portid);
@@ -55,7 +65,9 @@ void udp_recv_test(ether_port_para *net_port_para);
 int32_t udp_send(int sockfd, char *target_ip, uint16_t port, uint8_t *buff, int32_t length, int32_t ethid);
 int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int32_t ethid);
 
-int is_udp_write_ready(int sockfd);
-int is_udp_read_ready(int sockfd);
+static int is_udp_write_ready(int sockfd);
+static int is_udp_read_ready(int sockfd);
+
+static int set_ipaddr(char *ifname, char *ipaddr, char *netmask);
 
 #endif /* _NIM_TEST_H_ */
