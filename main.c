@@ -34,8 +34,8 @@ char g_tester[MAX_STR_LENGTH];
 /* Product Serial Number */
 char g_product_sn[MAX_STR_LENGTH];
 
-/* Test duration(seconds) */
-int g_duration = 600;
+/* Test duration(minutes) */
+int g_duration = 60;
 
 /* Machine A or B */
 char g_machine = 'A';
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
     start_test_module(&test_mod_mem);
 
     /* Set test duration. */
-    set_timeout(g_duration);
+    set_timeout(g_duration*60);
 
     /* Print the status of test module */
     while (g_running) {
@@ -188,7 +188,7 @@ int get_parameter(void)
     strncpy(g_product_sn, p, sizeof(g_product_sn));
 
     /* Get the test time */
-    printf("Please input the Test time(seconds):\n");
+    printf("Please input the Test time(minutes):\n");
     if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
         printf("input error\n");
         return -1;
