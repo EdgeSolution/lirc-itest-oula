@@ -104,7 +104,8 @@ struct uart_count_list {
 	uint32_t target_send_pack_num;//Record target amount of packets sent
 }__attribute__ ((packed));
 
-static struct uart_count_list _uart_array[16] = { {0} };//init uart_count
+static struct uart_count_list _uart_array[16];//init uart_count
+static float _rate[16];
 
 int read_pack_head_1_byte(int fd, uint8_t *buff);
 
@@ -296,6 +297,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
         /*timeout*/
         if (retry_count > MAX_RETRY_COUNT) {
             printf("check PACKET HEAD timeout\n");
+            test_mod_sim.pass = 0;
             return bytes;
         }
     }
@@ -308,10 +310,12 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
         ret = read(fd, buff + bytes, len);
         if (ret < 0) {
             DBG_PRINT("Read error\n");
+            test_mod_sim.pass = 0;
             break;
         } else if (ret == 0) {
             if (++retry_count > MAX_RETRY_COUNT) {
             DBG_PRINT("received timeout\n");
+            test_mod_sim.pass = 0;
             break;
             } else {
                 sleep(1);
@@ -342,7 +346,6 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
  */
 int analysis_packet(uint8_t *buff, int list_id)
 {
-    uint8_t i = 0;
     uint32_t crc_check = 0xFFFFFFFF;
 
     struct uart_package *recv_packet;
@@ -360,6 +363,7 @@ int analysis_packet(uint8_t *buff, int list_id)
         /*means received error packet*/
         DBG_PRINT("Received packet error\n");
         _uart_array[list_id].err_count++;
+        test_mod_sim.pass = 0;
 
         /*
          * check HEAD
@@ -368,12 +372,6 @@ int analysis_packet(uint8_t *buff, int list_id)
         /*
          * check data
          */
-        for (i=0; i<=0xF9; i++) {
-            if ((uint8_t)recv_packet->pack_data[i] != i) {
-                DBG_PRINT("Received the %d data error .The true data = %x, received data = %x\n",
-                                    (uint8_t)i, (uint8_t)i, (uint8_t)recv_packet->pack_data[i]);
-            }
-        }
 
         /*
          * check uart_id
@@ -387,6 +385,7 @@ int analysis_packet(uint8_t *buff, int list_id)
         return -1;
     } else {
         _uart_array[list_id].target_send_pack_num = recv_packet->pack_num;
+        _rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recived_pack_count) / _uart_array[list_id].target_send_pack_num;
     }
     return 0;
 
@@ -480,7 +479,7 @@ void *port_send_event(void *args)
         }
 
         _uart_array[list_id].send_pack_count++;
-        creat_uart_pack(uart_pack, _uart_array[list_id].send_pack_count++, uart_id);
+        creat_uart_pack(uart_pack, _uart_array[list_id].send_pack_count, uart_id);
 
         n = send_uart_packet(fd, uart_pack, BUFF_SIZE);
         if (n != BUFF_SIZE) {
@@ -489,6 +488,7 @@ void *port_send_event(void *args)
         }
         free(uart_pack);
         sleep_ms(1000/(uart_param->baudrate/10/264));
+        sleep_ms(20);
 
     }
 
@@ -514,7 +514,7 @@ void *sim_test(void *args)
     long th_send_stat[16];
 
     pthread_t th_recv_id[16];
-    long th_recv_stat[16];
+    //long th_recv_stat[16];
     
     int port_num;
 
@@ -522,6 +522,9 @@ void *sim_test(void *args)
     int fd;
 
     int log_fd = test_mod_sim.log_fd;
+
+    memset(_uart_array, 0, sizeof(struct uart_count_list));/*init global _uart_array*/
+    memset(_rate, 0, 16 * sizeof(float));
 
     port_num = 8 * g_board_num;
 
@@ -561,7 +564,7 @@ void *sim_test(void *args)
     }
 
     for (i=0; i<port_num; i++) {
-        pthread_join(th_recv_id[i], (void *)&th_recv_stat[i]);
+     /*   pthread_join(th_recv_id[i], (void *)&th_recv_stat[i]);*/
         pthread_join(th_send_id[i], (void *)&th_send_stat[i]);
     }
 
@@ -581,15 +584,6 @@ void *sim_test(void *args)
  */
 void sim_print_result(int fd)
 {
-
-    int i;
-    int port_num = 8 * g_board_num;
-    for (i=0; i<port_num; i++) {
-        if ((_uart_array[i].err_count) > 0 || (_uart_array[i].recived_pack_count != _uart_array[i].target_send_pack_num)) {
-            test_mod_sim.pass = 0;
-        }
-    }
-
     if (test_mod_sim.pass) {
         write_file(fd, "SIM: PASS\n");
     } else {
@@ -612,15 +606,13 @@ void sim_print_status(void)
 {
     int i;
     int port_num = 8 * g_board_num;
-    float rate;
 
     for (i=0; i<port_num; i++) {
-        rate = (float)(_uart_array[i].target_send_pack_num - _uart_array[i].recived_pack_count) / _uart_array[i].recived_pack_count;
-
         printf("%s test result:\n", port_list[i]);
-        printf("                \\-- Packet loss rate = %.2f\n", rate);
-        printf("                \\-- Error packet = %d\n",_uart_array[i].err_count);
+        printf("                \\-- Packet loss rate = %.2f\n", _rate[i]);
+        printf("                \\-- Error packet = %d\n",(uint32_t)_uart_array[i].err_count);
         printf("                \\-- Send %d packet\n", (uint32_t)_uart_array[i].send_pack_count);
+        printf("                \\-- Recived %d packet\n",(uint32_t)_uart_array[i].recived_pack_count);
         printf("                \\-- target send packet = %d\n",(uint32_t)_uart_array[i].target_send_pack_num);
     }
 }
