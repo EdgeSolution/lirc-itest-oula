@@ -68,25 +68,18 @@ test_mod_t test_mod_nim = {
 
 void nim_print_status()
 {
-    int ethid = 0;
+    int i = 0;
     
-    for(ethid=0; ethid < 4; ) {
+    for(i = 0; i < 4; i++) {
 
-#ifdef DBG_PRINT
-        printf("Port %d:udp_cnt_recv = %u, tesc_test_no =%u, test_lst_no = %u, test_err_no = %u\n", \
-            ethid, udp_cnt_recv[ethid], tesc_test_no[ethid],  tesc_lost_no[ethid], tesc_err_no[ethid]);
-        printf("Port %d:udp_cnt_send = %u\n", ethid, udp_cnt_send[ethid]);
-#endif
- 
+        /*
+        DBG_PRINT("Port %d:udp_cnt_recv = %u, tesc_test_no =%u, test_lst_no = %u, test_err_no = %u\n", \
+            i, udp_cnt_recv[i], tesc_test_no[i],  tesc_lost_no[i], tesc_err_no[i]);
+        DBG_PRINT("Port %d:udp_cnt_send = %u\n", i, udp_cnt_send[i]);
+        */
+
         printf("Ethernet Port %d, Test number: %u, Lost packages: %u, CRC err packages: %u.\n", \
-            ethid, tesc_test_no[ethid], tesc_lost_no[ethid], tesc_err_no[ethid]);        
-        
-        ethid++;
-        if(ethid == 4) {
-            ethid = 0;
-            /* sleep 2 second */
-            sleep(2);
-        }
+            i, tesc_test_no[i], tesc_lost_no[i], tesc_err_no[i]);        
     }
 }
     
@@ -123,21 +116,25 @@ void *nim_test(void *args)
     ret = udp_test_init(0, TESC0_PORT);
     if(ret != 0) {
         log_print(log_fd, "udp_test_init 0 failed!\n");
+        test_mod_nim.pass = -1;
         pthread_exit(NULL);
     }
     ret = udp_test_init(1, TESC1_PORT);
     if(ret != 0) {
         log_print(log_fd, "udp_test_init 1 failed!\n");
+        test_mod_nim.pass = -1;
         pthread_exit(NULL);
     }
     ret = udp_test_init(2, TESC2_PORT);
     if(ret != 0) {
         log_print(log_fd, "udp_test_init 2 failed!\n");
+        test_mod_nim.pass = -1;
         pthread_exit(NULL);
     }
     ret = udp_test_init(3, TESC3_PORT);
     if(ret != 0) {
         log_print(log_fd, "udp_test_init 3 failed!\n");
+        test_mod_nim.pass = -1;
         pthread_exit(NULL);
     }
 
@@ -150,18 +147,16 @@ void *nim_test(void *args)
     for(i = 0; i < 4; i++) {    
         udp_recv_task_id[i] = pthread_create(&ptid_r[i], NULL, (void *)udp_recv_test, &net_port_para_recv[i]);
         if(udp_recv_task_id[i] != 0) {
-            //log_print(log_fd, "Port %d recv spawn failed!\n", i);
+            log_print(log_fd, "Port %d recv spawn failed!\n", i);
+            test_mod_nim.pass = -1;
         }
         
         udp_send_task_id[i] = pthread_create(&ptid_s[i], NULL, (void *)udp_send_test, &net_port_para_send[i]);
         if(udp_send_task_id[i] != 0) {
-            //log_print(log_fd, "Port %d send spawn failed!\n", i);
+            log_print(log_fd, "Port %d send spawn failed!\n", i);
+            test_mod_nim.pass = -1;
         }
     }
-
-#ifdef DGB_PRINT    
-    nim_print_status();    
-#endif
 
     /* Wait all udp send packet thread and all udp receive packet thread to endup */
     for(i = 0; i < 4; i++) {
@@ -264,16 +259,24 @@ int udp_test_init(uint32_t ethid, uint16_t portid)
     /* config local ip for ethernet port */
     switch(ethid) {
         case 0:
-            set_ipaddr(ETH0, local_ip, NETMASK);
+            if(set_ipaddr(ETH0, local_ip, NETMASK) == -1) {
+                return -1;
+            }
             break;
         case 1:
-            set_ipaddr(ETH1, local_ip, NETMASK);
+            if(set_ipaddr(ETH1, local_ip, NETMASK) == -1) {
+                return -1;
+            }
             break;
         case 2:
-            set_ipaddr(ETH2, local_ip, NETMASK);
+            if(set_ipaddr(ETH2, local_ip, NETMASK) == -1) {
+                return -1;
+            }
             break;
         case 3:
-            set_ipaddr(ETH3, local_ip, NETMASK);
+            if(set_ipaddr(ETH3, local_ip, NETMASK) == -1) {
+                return -1;
+            }
             break;
     }
 
@@ -285,10 +288,6 @@ int udp_test_init(uint32_t ethid, uint16_t portid)
     memset(tesc_test_no, 0, TESC_NUM * sizeof(uint32_t));
     memset(tesc_err_no, 0, TESC_NUM * sizeof(uint32_t));
     memset(tesc_lost_no, 0, TESC_NUM * sizeof(uint32_t));
-
-#ifdef DGB_PRINT
-    printf("udp test initial done!\n");
-#endif
 
     return 0;
 }
@@ -304,10 +303,6 @@ int socket_init(int *sockfd, char *ipaddr, uint16_t portid)
     }
     
     memset(&hostaddr, 0, sizeof(struct sockaddr_in));
-
-#ifdef DGB_PRINT
-    printf("socket id = %d, ip address = %s, port number = %d\n", *sockfd, ipaddr, portid);
-#endif
 
     hostaddr.sin_family = AF_INET;
     hostaddr.sin_port = htons(portid);
@@ -435,7 +430,7 @@ int32_t udp_send(int sockfd, char *target_ip, uint16_t port, uint8_t *buff, int3
     int32_t send_num = 0;
     
     if((buff == NULL) || (target_ip == NULL)) {
-        printf("udp_send error: NULL pointer!\n");
+        DBG_PRINT("udp_send error: NULL pointer!\n");
     }
     
     memset(&targetaddr, 0, sizeof(struct sockaddr_in));
@@ -550,7 +545,7 @@ int set_ipaddr(char *ifname, char *ipaddr, char *netmask)
 
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if(sockfd == -1) {
-        printf("socket failed for setting ip! err: %s\n", strerror(errno));
+        DBG_PRINT("socket failed for setting ip! err: %s\n", strerror(errno));
         return -1;
     }
 
@@ -564,7 +559,7 @@ int set_ipaddr(char *ifname, char *ipaddr, char *netmask)
     sin->sin_addr.s_addr = inet_addr(ipaddr);
     if(ioctl(sockfd, SIOCSIFADDR, &ifr) < 0) {
         close(sockfd);
-        printf("ioctl failed for set ip address! err: %s\n", strerror(errno));
+        DBG_PRINT("ioctl failed for set ip address! err: %s\n", strerror(errno));
         return -1;
     }
 
@@ -572,7 +567,7 @@ int set_ipaddr(char *ifname, char *ipaddr, char *netmask)
     sin->sin_addr.s_addr = inet_addr(netmask);
     if(ioctl(sockfd, SIOCSIFNETMASK, &ifr) < 0) {
         close(sockfd);
-        printf("ioctl failed for set netmask! err: %s\n", strerror(errno));
+        DBG_PRINT("ioctl failed for set netmask! err: %s\n", strerror(errno));
         return -1;
     }
 
