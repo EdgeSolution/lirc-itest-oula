@@ -25,21 +25,65 @@
 #include <stdint.h>
 #include <malloc.h>
 #include <signal.h>
+#include <pthread.h>
 #include "sim_test.h"
 #include "term.h"
 
 #define MAX_RETRY_COUNT 20
-#define HEAD_1 0xff
-#define HEAD_2 0xfd
-#define HEAD_3 0xfc
-#define HEAD_4 0xfb
-#define HEAD_5 0xfa
+
 #define TAIL 0xfe
 
 #define BUFF_SIZE 265
 
+ /*Uart head 0xca5c051111 define*/
+static const uint8_t head[5] = {
+    0xca,
+    0x5c,
+    0x05,
+    0x11,
+    0x11
+};
+
+static char *port_list[16] = {
+    "/dev/ttyS2",
+    "/dev/ttyS3",
+    "/dev/ttyS4",
+    "/dev/ttyS5",
+    "/dev/ttyS6",
+    "/dev/ttyS7",
+    "/dev/ttyS8",
+    "/dev/ttyS9",
+    "/dev/ttyS10",
+    "/dev/ttyS11",
+    "/dev/ttyS12",
+    "/dev/ttyS13",
+    "/dev/ttyS14",
+    "/dev/ttyS15",
+    "/dev/ttyS16",
+    "/dev/ttyS17"
+};
+
+static const uint8_t uart_id_list[16] = {
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17
+};
+
 struct uart_package {
-    uint8_t pack_head[5];//0xff 0xfd 0xfc 0xfb 0xfa
+    uint8_t pack_head[5];/*0xca5c051111*/
     uint8_t uart_id;
     uint8_t pack_data[250];//0x00->0xF9
     uint8_t pack_tail;
@@ -48,31 +92,32 @@ struct uart_package {
 }__attribute__ ((packed));
 
 struct uart_attr {
-    char *dev_name;
+    int uart_fd;
     int baudrate;
-    char *test_type;
+    int list_id;
 }__attribute__ ((packed));
 
-static int _err_count = 0;//global variable,count packet loss or error
-static uint32_t _recived_pack_count = 0;//global variable, count recived packet
-static uint32_t _send_pack_count = 1;//global variable, count send packet
-static uint32_t _target_send_pack_num = 0;//Record target amount of packets sent
+struct uart_count_list {
+	uint32_t err_count;//global variable,count packet loss or error
+	uint32_t recived_pack_count;//global variable, count recived packet
+	uint32_t send_pack_count;//global variable, count send packet
+	uint32_t target_send_pack_num;//Record target amount of packets sent
+}__attribute__ ((packed));
+
+static struct uart_count_list _uart_array[16] = { {0} };//init uart_count
 
 int read_pack_head_1_byte(int fd, uint8_t *buff);
 
 void creat_uart_pack(struct uart_package *uart_pack, uint32_t pack_num, uint8_t uart_id);
-int init_uart_port(int fd, int baud_rate);
 int send_uart_packet(int fd, struct uart_package * packet_ptr, int len);
-int recv_uart_packet(int fd, uint8_t *buff, int len);
-void reassembly_packet(struct uart_package * recv_packet, uint8_t *buff);
-int analysis_packet(struct uart_package *recv_packet, uint8_t *buff);
+int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id);
+int analysis_packet(uint8_t *buff, int list_id);
 
-int first_recv_port(int fd, uint8_t uart_id);
-int first_send_port(int fd, uint8_t uart_id);
+void *port_recv_event(void *args);
+void *port_send_event(void *args);
 void sim_print_status(void);
 void sim_print_result(int fd);
-void sim_test(void *args);
-
+void *sim_test(void *args);
 
 
 //test_mod_t no define in this test
@@ -103,12 +148,12 @@ void creat_uart_pack(struct uart_package *uart_pack, uint32_t pack_num, uint8_t 
     uint8_t i = 0;
     uint32_t crc = 0xFFFFFFFF;
 
-    uart_pack->pack_head[0] = HEAD_1;
-    uart_pack->pack_head[1] = HEAD_2;
-    uart_pack->pack_head[2] = HEAD_3;
-    uart_pack->pack_head[3] = HEAD_4;
-    uart_pack->pack_head[4] = HEAD_5;
+    /*creat pack head*/
+    for (i=0; i<5; i++) {
+        uart_pack->pack_head[i] = head[i];
+    }
 
+    /*creat pack data*/
     uart_pack->uart_id = uart_id;
     for (i=0; i<=0xF9; i++) {
         uart_pack->pack_data[i] = i;
@@ -146,8 +191,8 @@ int send_uart_packet(int fd, struct uart_package * packet_ptr, int len)
     int i = 0;
     int bytes = 0;
     if (packet_ptr == NULL) {
-        printf("Have no packet sent\n");
-        return FALSE;
+        DBG_PRINT("Have no packet sent\n");
+        return -1;
     }
     memcpy(buff + 0, packet_ptr->pack_head, sizeof(packet_ptr->pack_head));
 
@@ -216,141 +261,70 @@ int read_pack_head_1_byte(int fd, uint8_t *buff)
  *      fd:file point
  *      buff:save data
  *      len:data length
+ *      list_id:array id number
  * Return:
  *       received bytes
  */
-int recv_uart_packet(int fd, uint8_t *buff, int len)
+int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
 {
     int ret = 0;
+    int i = 0;
     int bytes = 0;
     int retry_count = 0;
 
+    /*matching head*/
     ret = read_pack_head_1_byte(fd, buff + 0);
-    while (1) {
+    while (i < 5) {
+        /*check head[i]*/
+        if (buff[i] == head[i]) {/*start if*/
+            i++;
 
-        /* start if,check head_1 */
-        if ((uint8_t)buff[0] == 0xff) {
-            /*read head_2*/
-            ret = read_pack_head_1_byte(fd, buff + 1);
-            /* check read status*/
-            if (ret != 1) {
-                break;
+            if (i < 5) {
+                ret = read_pack_head_1_byte(fd, buff + i);
             }
-            /* start if,check head_2 */
-            if ((uint8_t)buff[1] == 0xfd) {
-                /* read head_3 */
-                ret = read_pack_head_1_byte(fd, buff + 2);
-                /* check read status*/
-                if (ret != 1) {
-                    break;
-                }
-                /* start if,check head_3 */
-                if ((uint8_t)buff[2] == 0xfc) {
-                    /* read head_3 */
-                    ret = read_pack_head_1_byte(fd, buff + 3);
-                    /* check read status*/
-                    if (ret != 1) {
-                        break;
-                    }
-                    /* start if,check head_4 */
-                    if ((uint8_t)buff[3] == 0xfb) {
-                        /* read head_5 */
-                        ret = read_pack_head_1_byte(fd, buff + 4);
-                        /* check read status*/
-                        if (ret != 1) {
-                            break;
-                        }
-                        /* start if,check head_5 */
-                        if ((uint8_t)buff[4] == 0xfa) {
-                            /*check head matching and received data */
-                            _recived_pack_count++;/* Packet Reception count +1*/
-                            bytes += 5;
-                            len -= 5;
-
-                            while (len > 0) {
-                                ret = read(fd, buff + bytes, len);
-                                if (ret < 0) {
-                                    printf("Read error\n");
-                                    break;
-                                } else if (ret == 0) {
-                                    if (++retry_count > MAX_RETRY_COUNT) {
-                                        printf("received timeout\n");
-                                        break;
-                                    }
-                                    sleep(1);
-                                    printf("Retry:%d\n", retry_count);
-                                } else {
-                                    bytes += ret;
-                                    len = len - ret;
-                                }
-                            } /* end while (len > 0) */
-                            break;
-                        } else {
-                            buff[0] == buff[4];
-                            continue;
-                        } /* end if check head_5 */
-                    } else {
-                        buff[0] == buff[3];
-                        continue;
-                    } /* end if check head_4 */
-                } else {
-                    buff[0] == buff[2];
-                    continue;
-                } /* end if check head_3 */
-            } else {
-                buff[0] == buff[1];
-                continue;
-            } /* end if check head_2 */
         } else {
-            ret = read_pack_head_1_byte(fd, buff + 0);
-            /* check read status*/
-            if (ret != 1) {
-                break;
+            if (i == 0) {
+                retry_count++;
+                ret = read_pack_head_1_byte(fd, buff + 0);
+            } else {
+                retry_count++;
+                buff[0] = buff[i];
+                i = 0;
             }
-            continue;
-        } /* end if check head_1 */
-    } /* end while(1) */
+        }/*end if*/
+
+        /*timeout*/
+        if (retry_count > MAX_RETRY_COUNT) {
+            printf("check PACKET HEAD timeout\n");
+            return bytes;
+        }
+    }
+
+    _uart_array[list_id].recived_pack_count++;/* Packet Reception count +1*/
+    bytes += 5;
+    len -= 5;
+
+    while (len > 0) {
+        ret = read(fd, buff + bytes, len);
+        if (ret < 0) {
+            DBG_PRINT("Read error\n");
+            break;
+        } else if (ret == 0) {
+            if (++retry_count > MAX_RETRY_COUNT) {
+            DBG_PRINT("received timeout\n");
+            break;
+            } else {
+                sleep(1);
+                DBG_PRINT("Retry:%d\n", retry_count);
+            }
+        } else {
+            bytes += ret;
+            len = len - ret;
+        }
+    } /* end while (len > 0) */
+     
     return bytes;
 }
-
-
-/*
- * Name:
- *      recv_uart_packet
- * Description:
- *      reassembly packet by buff
- * PARAMETERS:
- *      recv_packet: packet
- *      buff:data
- * Return:
- *
- */
-void reassembly_packet(struct uart_package * recv_packet, uint8_t *buff)
-{
-    uint32_t crc;
-    uint32_t crc_check;
-
-    memcpy(recv_packet->pack_head, buff + 0, sizeof(recv_packet->pack_head));
-
-    recv_packet->uart_id = buff[5];
-
-    memcpy(recv_packet->pack_data, buff + 6, sizeof(recv_packet->pack_data));
-
-    recv_packet->pack_tail = buff[256];
-
-    memcpy(&recv_packet->pack_num, buff + 257, sizeof(recv_packet->pack_num));
-
-    /*
-     *calculated received-data's CRC code
-     */
-    crc = crc32(0, recv_packet->pack_head, 5);
-    crc = crc32(crc, &recv_packet->uart_id, 1);
-    crc = crc32(crc, recv_packet->pack_data, 250);
-    crc = crc32(crc, &recv_packet->pack_tail, 1);
-    crc = crc32(crc, (uint8_t *)&recv_packet->pack_num, 4);
-    recv_packet->crc_err = crc;
-}
-
 
 /*
  * Name:
@@ -360,22 +334,32 @@ void reassembly_packet(struct uart_package * recv_packet, uint8_t *buff)
  * PARAMETERS:
  *      recv_packet: packet
  *      buff:data
+ *      list_id:array id number
  * Return:
  *      0: packet ok
  *      -1: packet error
  *
  */
-int analysis_packet(struct uart_package *recv_packet, uint8_t *buff)
+int analysis_packet(uint8_t *buff, int list_id)
 {
     uint8_t i = 0;
     uint32_t crc_check = 0xFFFFFFFF;
 
+    struct uart_package *recv_packet;
+    recv_packet = (struct uart_package *)buff;
+
     /*
      * check crc and printf which data is error
      */
-    memcpy(&crc_check, buff + 261, sizeof(crc_check)); /* Get received CRC code */
+    crc_check = crc32(0, recv_packet->pack_head, 5);
+    crc_check = crc32(crc_check, &recv_packet->uart_id, 1);
+    crc_check = crc32(crc_check, recv_packet->pack_data, 250);
+    crc_check = crc32(crc_check, &recv_packet->pack_tail, 1);
+    crc_check = crc32(crc_check, (uint8_t *)&recv_packet->pack_num, 4);
     if ((uint32_t)crc_check != (uint32_t)recv_packet->crc_err) {
-        printf("Received packet error\n");
+        /*means received error packet*/
+        DBG_PRINT("Received packet error\n");
+        _uart_array[list_id].err_count++;
 
         /*
          * check HEAD
@@ -386,7 +370,8 @@ int analysis_packet(struct uart_package *recv_packet, uint8_t *buff)
          */
         for (i=0; i<=0xF9; i++) {
             if ((uint8_t)recv_packet->pack_data[i] != i) {
-                printf("Received the %d data error .The true data = %x, received data = %x\n", (uint8_t)i, (uint8_t)i, (uint8_t)recv_packet->pack_data[i]);
+                DBG_PRINT("Received the %d data error .The true data = %x, received data = %x\n",
+                                    (uint8_t)i, (uint8_t)i, (uint8_t)recv_packet->pack_data[i]);
             }
         }
 
@@ -401,7 +386,7 @@ int analysis_packet(struct uart_package *recv_packet, uint8_t *buff)
         //to do....
         return -1;
     } else {
-        _target_send_pack_num=recv_packet->pack_num;
+        _uart_array[list_id].target_send_pack_num = recv_packet->pack_num;
     }
     return 0;
 
@@ -410,140 +395,106 @@ int analysis_packet(struct uart_package *recv_packet, uint8_t *buff)
 
 /*
  * Name:
- *      first_send_port
+ *      port_recived_event
  * Description:
- *      set computer first send packet
+ *      The thread routine to read data from serial port and verify them
  * PARAMETERS:
- *      fd:ile point
- *      uart_id: uart ID
+ *      uart_param: Argument of thread routine
  * Return:
- *      test status
+ *      Exit code of thread
+ *
  */
-int first_send_port(int fd, uint8_t uart_id)
+void *port_recived_event(void *args)
 {
-    int status = -1;
+    struct uart_attr *uart_param;
     uint8_t buff[BUFF_SIZE];
+    int fd;
+
+    int list_id;
 
     int n;
+    int status;
 
-    int flag = 0;
+    uart_param = (struct uart_attr *)args;
 
-    struct uart_package * uart_pack;
-    struct uart_package * recv_packet;
+    fd = uart_param->uart_fd;
+    list_id = uart_param->list_id;
 
-    uart_pack = (struct uart_package *)malloc(sizeof(struct uart_package));
-    if (!uart_pack) {
-        printf("Not Enough Memory\n");
-        free(uart_pack);
-        return -1;
+    while (g_running) {
+        n = recv_uart_packet(fd, buff, BUFF_SIZE, list_id);
+        if (n != BUFF_SIZE) {
+            DBG_PRINT("recv_uart_packet data error\n");
+        }
+    
+        status = analysis_packet(buff,list_id);
+        if (status != 0) {
+            test_mod_sim.pass = 0;
+            //to do 
+            //break while(1)
+            //pthread_exit((void *)-1);
+        }
     }
 
-    recv_packet = (struct uart_package *)malloc(sizeof(struct uart_package));
-    if (!recv_packet) {
-        printf("Not Enough Memory\n");
-        free(uart_pack);
-        free(recv_packet);
-        return -1;
-    }
-
-    _send_pack_count++;//creat send pack number
-    creat_uart_pack(uart_pack, _send_pack_count, uart_id);
-    printf("send %d\n", (uint32_t)_send_pack_count);
-    n = send_uart_packet(fd, uart_pack, BUFF_SIZE);
-    if (n != BUFF_SIZE) {
-        printf("send data error\n");
-        flag = -1;
-    }
-
-    n = recv_uart_packet(fd, buff, BUFF_SIZE);
-    if (n != BUFF_SIZE) {
-        printf("recv_uart_packet data error\n");
-        flag = -1;
-    }
-
-    reassembly_packet(recv_packet, buff);
-    status = analysis_packet(recv_packet, buff);
-    if (status != 0) {
-        _err_count++;
-        flag = -1;
-
-    }
-
-    free(uart_pack);
-    free(recv_packet);
-
-    return flag;
+    pthread_exit((void *)0);
 }
-
 
 /*
  * Name:
- *      first_recv_port
+ *      port_send_event
  * Description:
- *      set computer first received packet
+ *      The thread routine to write data to serial port
  * PARAMETERS:
- *      fd:ile point
- *      uart_id: uart ID
+ *      uart_param: Argument of thread routine
  * Return:
- *      test status (-1 for error; 0 for pass;)
+ *      Exit code of thread
+ *
  */
-int first_recv_port(int fd, uint8_t uart_id)
+void *port_send_event(void *args)
 {
-    int status;
+    struct uart_attr *uart_param;
 
-    int flag = 0;
+    int fd;
 
-    uint8_t buff[BUFF_SIZE];
+    int list_id;
+    int uart_id;
 
     int n;
+
     struct uart_package * uart_pack;
-    struct uart_package * recv_packet;
 
-    uart_pack = (struct uart_package *)malloc(sizeof(struct uart_package));
-    if (!uart_pack) {
-        printf("Not Enough Memory\n");
+    uart_param = (struct uart_attr *)args;
+
+    fd = uart_param->uart_fd;
+    list_id = uart_param->list_id;
+    uart_id = uart_id_list[list_id];
+
+    _uart_array[list_id].send_pack_count = 0;
+
+    while (g_running) {
+        uart_pack = (struct uart_package *)malloc(sizeof(struct uart_package));
+        if (!uart_pack) {
+            DBG_PRINT("Not Enough Memory\n");
+            free(uart_pack);
+            test_mod_sim.pass = 0;
+            pthread_exit((void *)-1);
+        }
+
+        _uart_array[list_id].send_pack_count++;
+        creat_uart_pack(uart_pack, _uart_array[list_id].send_pack_count++, uart_id);
+
+        n = send_uart_packet(fd, uart_pack, BUFF_SIZE);
+        if (n != BUFF_SIZE) {
+            DBG_PRINT("send data error\n");
+            test_mod_sim.pass = 0;
+        }
         free(uart_pack);
-        return -1;
+        sleep_ms(1000/(uart_param->baudrate/10/264));
+
     }
 
-    recv_packet = (struct uart_package *)malloc(sizeof(struct uart_package));
-    if (!recv_packet) {
-        printf("Not Enough Memory\n");
-        free(recv_packet);
-        free(uart_pack);
-        return -1;
-    }
+    pthread_exit((void *)0);
 
-    n = recv_uart_packet(fd, buff, 265);
-    if (n != BUFF_SIZE) {
-        printf("recv_uart_packet data error\n");
-        flag = -1;
-    }
-
-    reassembly_packet(recv_packet, buff);
-
-    status = analysis_packet(recv_packet, buff);
-    if (status != 0) {
-        _err_count++;
-        flag = -1;
-    }
-
-    _send_pack_count++;//creat send pack number
-    creat_uart_pack(uart_pack, _send_pack_count, uart_id);
-    printf("send %d\n", (uint32_t)_send_pack_count);
-    n = send_uart_packet(fd, uart_pack, 265);
-    if (n != BUFF_SIZE) {
-        printf("send data error\n");
-        flag = -1;
-    }
-
-
-    free(uart_pack);
-    free(recv_packet);
-
-    return flag;
 }
-
 
 /*
  * Name:
@@ -551,60 +502,67 @@ int first_recv_port(int fd, uint8_t uart_id)
  * Description:
  *      test uart
  * PARAMETERS:
- *      args: uart attribute
+ *      NULL
  * Return:
  *      NULL
  */
-void sim_test(void *args)
+void *sim_test(void *args)
 {
 
-    struct uart_attr *uart_param = (struct uart_attr *)args;
+    struct uart_attr uart_param[16];
+    pthread_t th_send_id[16];
+    long th_send_stat[16];
 
-    int (*uart_function)(int fd, uint8_t uart_id);
+    pthread_t th_recv_id[16];
+    long th_recv_stat[16];
+    
+    int port_num;
 
+    int i;
     int fd;
-    char *port;
-
-    int status;
-
-    uint8_t uart_id = (uint8_t)(uart_param->dev_name[9]);
 
     int log_fd = test_mod_sim.log_fd;
 
-    _send_pack_count = 0;//init _send_pack_count;
+    port_num = 8 * g_board_num;
 
-    port = uart_param->dev_name;
-    fd = tc_init(uart_param->dev_name);
-    if (fd < 0) {
-        printf("Open %s error\n",port);
-    }
+    /*init uart_param*/
+    for (i=0; i<port_num; i++) {
+        fd = tc_init(port_list[i]);
+        if (fd < 0) {
+            DBG_PRINT("Open %s error\n",port_list[i]);
+            test_mod_sim.pass = 0;
+            return NULL;
+        }
 
-    /* Set databits, stopbits, parity ... */
-    if (tc_set_port(fd, 8, 1, 0) == -1) {
-        tc_deinit(fd);
-        return NULL;
-    }
+        /* Set databits, stopbits, parity ... */
+        if (tc_set_port(fd, 8, 1, 0) == -1) {
+            tc_deinit(fd);
+            test_mod_sim.pass = 0;
+            return NULL;
+        }
 
-    tc_set_baudrate(fd, uart_param->baudrate);
+        tc_set_baudrate(fd, g_baudrate);
 
-    if ((strcmp(uart_param->test_type, "B") == 0 )) {
-        uart_function = first_recv_port;
-    } else if ((strcmp(uart_param->test_type, "A") == 0 )) {
-        uart_function = first_send_port;
-    } else {
-        printf("Set Uart param error\n");
-        printf("Please check it\n");
-        return;
+        /*assigned value to a struct uart_attr*/
+        uart_param[i].uart_fd = fd;
+        uart_param[i].baudrate = g_baudrate;
+        uart_param[i].list_id = i;
     }
 
     log_print(log_fd, "Begin test!\n\n");
 
-    while (g_running) {
-        status = (*uart_function)(fd, uart_id);
-        if (status != 0) {
-            test_mod_sim.pass = -1;
-        }
-        sleep(1);
+    /*creat pthread for received*/
+    for (i=0; i<port_num; i++) {
+        pthread_create(&th_recv_id[i], NULL, port_recived_event, &uart_param[i]);
+    }
+
+    for (i=0; i<port_num; i++) {
+        pthread_create(&th_send_id[i], NULL, port_send_event, &uart_param[i]);
+    }
+
+    for (i=0; i<port_num; i++) {
+        pthread_join(th_recv_id[i], (void *)&th_recv_stat[i]);
+        pthread_join(th_send_id[i], (void *)&th_send_stat[i]);
     }
 
     log_print(log_fd, "Test end\n\n");
@@ -623,6 +581,15 @@ void sim_test(void *args)
  */
 void sim_print_result(int fd)
 {
+
+    int i;
+    int port_num = 8 * g_board_num;
+    for (i=0; i<port_num; i++) {
+        if ((_uart_array[i].err_count) > 0 || (_uart_array[i].recived_pack_count != _uart_array[i].target_send_pack_num)) {
+            test_mod_sim.pass = 0;
+        }
+    }
+
     if (test_mod_sim.pass) {
         write_file(fd, "SIM: PASS\n");
     } else {
@@ -643,33 +610,17 @@ void sim_print_result(int fd)
  */
 void sim_print_status(void)
 {
+    int i;
+    int port_num = 8 * g_board_num;
     float rate;
 
-    rate = (float)(_target_send_pack_num - _recived_pack_count)/_recived_pack_count;
+    for (i=0; i<port_num; i++) {
+        rate = (float)(_uart_array[i].target_send_pack_num - _uart_array[i].recived_pack_count) / _uart_array[i].recived_pack_count;
 
-    printf("Packet loss rate = %.2f\n", rate);
-    printf("Error packet = %d\n",_err_count);
-    printf("Send %d packet\n", (uint32_t)_send_pack_count);
-    printf("target send packet = %d\n",(uint32_t)_target_send_pack_num);
-}
-
-void main(int argc, char *argv[])
-{
-    struct uart_attr *uart_param;
-    int baudrate;
-
-    uart_param = (struct uart_attr *)malloc(sizeof(struct uart_attr));
-    if (!uart_param) {
-        printf("Not Enough Memory\n");
-        free(uart_param);
-        return;
+        printf("%s test result:\n", port_list[i]);
+        printf("                \\-- Packet loss rate = %.2f\n", rate);
+        printf("                \\-- Error packet = %d\n",_uart_array[i].err_count);
+        printf("                \\-- Send %d packet\n", (uint32_t)_uart_array[i].send_pack_count);
+        printf("                \\-- target send packet = %d\n",(uint32_t)_uart_array[i].target_send_pack_num);
     }
-
-    uart_param->test_type = argv[1];
-    uart_param->dev_name = argv[2];
-    uart_param->baudrate = atoi(argv[3]);
-
-    sim_test(uart_param);
-
-    sim_print_status();
 }
