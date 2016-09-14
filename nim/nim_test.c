@@ -92,6 +92,14 @@ void nim_print_status()
     
 void nim_print_result(int fd)
 {
+    int i;
+
+    /* check if package lost */
+    for(i = 0; i < 4; i++) {
+        if(tesc_lost_no[i] != 0)
+            test_mod_nim.pass = -1;
+    }
+    
     if (test_mod_nim.pass) {
         write_file(fd, "NIM: PASS\n");
     } else {
