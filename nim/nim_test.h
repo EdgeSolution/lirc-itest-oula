@@ -7,8 +7,8 @@
  *     Header file for test module: NIM
  *
  * REVISION(MM/DD/YYYY):
- *     07/29/2016  Shengkui Leng (shengkui.leng@advantech.com.cn)
  *     09/12/2016  Lin Du (lin.du@advantech.com.cn)
+*     - Initial version 
  *
  ******************************************************************************/
 #ifndef _NIM_TEST_H_
