@@ -90,7 +90,7 @@ void nim_print_result(int fd)
     /* check if package lost */
     for(i = 0; i < 4; i++) {
         if(((float)tesc_lost_no[i] / (float)tesc_lost_no[i]) < FRAME_LOSS_RATE)
-            test_mod_nim.pass = -1;
+            test_mod_nim.pass = 0;
     }
     
     if (test_mod_nim.pass) {
@@ -116,25 +116,25 @@ void *nim_test(void *args)
     ret = udp_test_init(0, TESC0_PORT);
     if(ret != 0) {
         log_print(log_fd, "udp_test_init 0 failed!\n");
-        test_mod_nim.pass = -1;
+        test_mod_nim.pass = 0;
         pthread_exit(NULL);
     }
     ret = udp_test_init(1, TESC1_PORT);
     if(ret != 0) {
         log_print(log_fd, "udp_test_init 1 failed!\n");
-        test_mod_nim.pass = -1;
+        test_mod_nim.pass = 0;
         pthread_exit(NULL);
     }
     ret = udp_test_init(2, TESC2_PORT);
     if(ret != 0) {
         log_print(log_fd, "udp_test_init 2 failed!\n");
-        test_mod_nim.pass = -1;
+        test_mod_nim.pass = 0;
         pthread_exit(NULL);
     }
     ret = udp_test_init(3, TESC3_PORT);
     if(ret != 0) {
         log_print(log_fd, "udp_test_init 3 failed!\n");
-        test_mod_nim.pass = -1;
+        test_mod_nim.pass = 0;
         pthread_exit(NULL);
     }
 
@@ -148,13 +148,13 @@ void *nim_test(void *args)
         udp_recv_task_id[i] = pthread_create(&ptid_r[i], NULL, (void *)udp_recv_test, &net_port_para_recv[i]);
         if(udp_recv_task_id[i] != 0) {
             log_print(log_fd, "Port %d recv spawn failed!\n", i);
-            test_mod_nim.pass = -1;
+            test_mod_nim.pass = 0;
         }
         
         udp_send_task_id[i] = pthread_create(&ptid_s[i], NULL, (void *)udp_send_test, &net_port_para_send[i]);
         if(udp_send_task_id[i] != 0) {
             log_print(log_fd, "Port %d send spawn failed!\n", i);
-            test_mod_nim.pass = -1;
+            test_mod_nim.pass = 0;
         }
     }
 
@@ -298,7 +298,7 @@ int socket_init(int *sockfd, char *ipaddr, uint16_t portid)
     
     *sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP /*0*/);
     if(*sockfd == -1) {
-        //log_print(log_fd, "create socket failed! errno=%d, %s\n", errno, strerror(errno));
+        log_print(log_fd, "create socket failed! errno=%d, %s\n", errno, strerror(errno));
         return -1;
     }
     
@@ -309,7 +309,7 @@ int socket_init(int *sockfd, char *ipaddr, uint16_t portid)
     hostaddr.sin_addr.s_addr = inet_addr(ipaddr);
 
     if(bind(*sockfd, (struct sockaddr *)(&hostaddr), sizeof(struct sockaddr)) == -1) {
-        //log_print(log_fd, "ip bind error: %s errno=%d, %s\n", ipaddr, errno, strerror(errno));
+        log_print(log_fd, "ip bind error: %s errno=%d, %s\n", ipaddr, errno, strerror(errno));
         return -1;
     }
     
