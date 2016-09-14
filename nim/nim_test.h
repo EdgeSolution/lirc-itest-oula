@@ -8,7 +8,7 @@
  *
  * REVISION(MM/DD/YYYY):
  *     07/29/2016  Shengkui Leng (shengkui.leng@advantech.com.cn)
- *     - Initial version 
+ *     09/12/2016  Lin Du (lin.du@advantech.com.cn)
  *
  ******************************************************************************/
 #ifndef _NIM_TEST_H_
@@ -16,7 +16,7 @@
 
 #include <stdint.h>
 
-#include "../common.h"
+#include "common.h"
 
 extern test_mod_t test_mod_nim;
 
@@ -47,10 +47,10 @@ typedef struct _ether_port_para {
 #define TESC3_PORT  0xa000
 
 /* Interface name */
-#define ETH0    "eth34"
-#define ETH1    "eth35"
-#define ETH2    "eth36"
-#define ETH3    "eth37"
+#define ETH0    "eth0"
+#define ETH1    "eth1"
+#define ETH2    "eth2"
+#define ETH3    "eth3"
 
 /* package size */
 #define NET_MAX_NUM 1024
@@ -65,9 +65,9 @@ void udp_recv_test(ether_port_para *net_port_para);
 int32_t udp_send(int sockfd, char *target_ip, uint16_t port, uint8_t *buff, int32_t length, int32_t ethid);
 int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int32_t ethid);
 
-static int is_udp_write_ready(int sockfd);
-static int is_udp_read_ready(int sockfd);
+int is_udp_write_ready(int sockfd);
+int is_udp_read_ready(int sockfd);
 
-static int set_ipaddr(char *ifname, char *ipaddr, char *netmask);
+int set_ipaddr(char *ifname, char *ipaddr, char *netmask);
 
 #endif /* _NIM_TEST_H_ */

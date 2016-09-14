@@ -50,10 +50,6 @@ static ether_port_para net_port_para_recv[TESC_NUM];
 static ether_port_para net_port_para_send[TESC_NUM];
 
 int log_fd;
-char g_machine = 'A';
-int g_running = 1;
-
-#define log_print(fd, s) printf(s);
 
 /* Function Defination */
 void nim_print_status();
@@ -77,11 +73,12 @@ void nim_print_status()
     for(ethid=0; ethid < 4; ) {
 
 #ifdef DBG_PRINT
-        printf("Port %d:udp_cnt_recv = %d, tesc_test_no =%d, test_lst_no = %d, test_err_no = %d\n", \
+        printf("Port %d:udp_cnt_recv = %u, tesc_test_no =%u, test_lst_no = %u, test_err_no = %u\n", \
             ethid, udp_cnt_recv[ethid], tesc_test_no[ethid],  tesc_lost_no[ethid], tesc_err_no[ethid]);
-        printf("Port %d:udp_cnt_send = %d\n", ethid, udp_cnt_send[ethid]);
-#endif 
-        printf("Ethernet Port %d, Test number: %d, Lost packages: %d, CRC err packages: %d.\n", \
+        printf("Port %d:udp_cnt_send = %u\n", ethid, udp_cnt_send[ethid]);
+#endif
+ 
+        printf("Ethernet Port %d, Test number: %u, Lost packages: %u, CRC err packages: %u.\n", \
             ethid, tesc_test_no[ethid], tesc_lost_no[ethid], tesc_err_no[ethid]);        
         
         ethid++;
@@ -96,9 +93,9 @@ void nim_print_status()
 void nim_print_result(int fd)
 {
     if (test_mod_nim.pass) {
-        //write_file(fd, "NIM: PASS\n");
+        write_file(fd, "NIM: PASS\n");
     } else {
-        //write_file(fd, "NIM: FAIL\n");
+        write_file(fd, "NIM: FAIL\n");
     }
 }
 
@@ -341,10 +338,10 @@ void udp_send_test(ether_port_para *net_port_para)
     
     while(g_running) {
         /* Send packages count */
-        send_buf[NET_MAX_NUM - 5] = udp_cnt_send[ethid] & 0xff;
-        send_buf[NET_MAX_NUM - 6] = udp_cnt_send[ethid] >> 8 & 0xff;
-        send_buf[NET_MAX_NUM - 7] = udp_cnt_send[ethid] >> 16 & 0xff;
-        send_buf[NET_MAX_NUM - 8] = udp_cnt_send[ethid] >> 24 & 0xff;
+        send_buf[NET_MAX_NUM - 5] = (uint8_t)(udp_cnt_send[ethid] & 0xff);
+        send_buf[NET_MAX_NUM - 6] = (uint8_t)(udp_cnt_send[ethid] >> 8 & 0xff);
+        send_buf[NET_MAX_NUM - 7] = (uint8_t)(udp_cnt_send[ethid] >> 16 & 0xff);
+        send_buf[NET_MAX_NUM - 8] = (uint8_t)(udp_cnt_send[ethid] >> 24 & 0xff);
 
         /* calucate CRC */
         calculated_crc = crc32(0, send_buf, NET_MAX_NUM - 4);
@@ -408,17 +405,18 @@ void udp_recv_test(ether_port_para *net_port_para)
                         tesc_lost_no[ethid] += (udp_cnt_read - udp_cnt_recv[ethid]);
                         udp_cnt_recv[ethid] = udp_cnt_read;
                     } else if (udp_cnt_read < udp_cnt_recv[ethid]) {
-                        /* printf("receive packet count error, may be not an integrated packet!\n"); */
+                        /* printf("receive packet count error, may be not an integrated packet! \
+                                Or have received packages from other machines. \n"); */
                     }
                 }
             }
             udp_cnt_recv[ethid]++;
         
         } else if ((recv_num > 0) && (recv_num < NET_MAX_NUM)) {
-            //log_print(log_fd, "Ethernet Port %d: receive packet of %d bytes, lost %d bytes!\n", \
+            log_print(log_fd, "Ethernet Port %d: receive packet of %d bytes, lost %d bytes!\n", \
                     ethid, recv_num, NET_MAX_NUM - recv_num); 
         } else {
-            //log_print(log_fd, "Ethernet Port %d: receive error = %d\n", ethid, recv_num);
+            log_print(log_fd, "Ethernet Port %d: receive error = %d\n", ethid, recv_num);
         }
     }
 }
@@ -441,11 +439,11 @@ int32_t udp_send(int sockfd, char *target_ip, uint16_t port, uint8_t *buff, int3
     if(is_udp_write_ready(sockfd) == 0) {
         send_num = sendto(sockfd, buff, length, 0, (struct sockaddr *)(&targetaddr), sizeof(struct sockaddr_in));
         if(send_num == -1) {
-            //log_print(log_fd, "sendto: port %d send to %s failed!\n", ethid, target_ip);
+            log_print(log_fd, "sendto: port %d send to %s failed!\n", ethid, target_ip);
             return -1;
         }
     } else {
-        //log_print(log_fd, "udp_send failed: now Ethernet Port %d busy!\n", ethid);
+        log_print(log_fd, "udp_send failed: now Ethernet Port %d busy!\n", ethid);
         return -1;
     }
 
@@ -465,7 +463,7 @@ int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int
         recv_num = recvfrom(sockfd, buff, length, 0, (struct sockaddr *)&recv_from_addr, &addrlen);
         
         if(recv_num == -1) {
-            //log_print(log_fd, "udp_recv error: %d!\n", ethid);
+            log_print(log_fd, "udp_recv error: %d!\n", ethid);
         } 
     } else {
         log_print(log_fd, "is_udp_read_ready not ready!\n");
@@ -474,7 +472,7 @@ int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int
     return recv_num; 
 }
 
-static int is_udp_write_ready(int sockfd)
+int is_udp_write_ready(int sockfd)
 {
     fd_set wfds;
     int retval = 0, ret = -1;
@@ -502,7 +500,7 @@ static int is_udp_write_ready(int sockfd)
     return ret;
 }
 
-static int is_udp_read_ready(int sockfd)
+int is_udp_read_ready(int sockfd)
 {
     fd_set rfds;
     int retval = 0, ret = -1;
@@ -531,7 +529,7 @@ static int is_udp_read_ready(int sockfd)
     return ret;
 }
 
-static int set_ipaddr(char *ifname, char *ipaddr, char *netmask) 
+int set_ipaddr(char *ifname, char *ipaddr, char *netmask) 
 {
     int sockfd = -1;
     struct ifreq ifr;
@@ -575,16 +573,3 @@ static int set_ipaddr(char *ifname, char *ipaddr, char *netmask)
     return 0;
 }
 
-
-#if 1
-int main(int argc, char *argv[])
-{
-    nim_test(NULL);
-    
-    nim_print_status();
-    
-    printf("hello world\n");
-    
-    return 0;
-}
-#endif 
