@@ -55,6 +55,8 @@ typedef struct _ether_port_para {
 /* package size */
 #define NET_MAX_NUM 1024
 
+#define FRAME_LOSS_RATE ((float)1 / (float)100000)
+
 void ether_port_init(uint32_t ethid, uint16_t portid);
 int udp_test_init(uint32_t ethid, uint16_t portid);
 int socket_init(int *sockfd, char *ipaddr, uint16_t portid);

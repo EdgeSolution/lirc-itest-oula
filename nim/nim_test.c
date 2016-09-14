@@ -89,7 +89,7 @@ void nim_print_result(int fd)
 
     /* check if package lost */
     for(i = 0; i < 4; i++) {
-        if(tesc_lost_no[i] != 0)
+        if(((float)tesc_lost_no[i] / (float)tesc_lost_no[i]) < FRAME_LOSS_RATE)
             test_mod_nim.pass = -1;
     }
     
