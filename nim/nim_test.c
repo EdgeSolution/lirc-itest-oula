@@ -376,10 +376,19 @@ void udp_recv_test(ether_port_para *net_port_para)
     uint32_t calculated_crc;
     uint32_t udp_cnt_read;
 
+    /* set timeout 1 sencond */
+    struct timeval timeout = {1, 0};
+    int ret;
+    
     sockfd = net_port_para->sockfd;
     ethid = net_port_para->ethid;
     portid = net_port_para->port;
     
+    ret = setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+    if(ret != 0) {
+        log_print(log_fd, "setsockopt failed! err: %s\n", strerror(errno)); 
+    }
+
     memset(recv_buf, 0, NET_MAX_NUM);
 
     while(g_running) {
@@ -507,15 +516,16 @@ int is_udp_read_ready(int sockfd)
 {
     fd_set rfds;
     int retval = 0, ret = -1;
+    struct timeval tv;
 
     FD_ZERO(&rfds);
     FD_SET(sockfd, &rfds);
 
-    /* Wait up to 200000 microseconds.
-     * tv.tv_sec = 0;
-     * tv.tv_usec = 200000; */
+    /* Wait up to 200000 microseconds. */
+    tv.tv_sec = 0;
+    tv.tv_usec = 200000;
 
-    retval = select(sockfd + 1, &rfds, NULL, NULL, NULL/* or no-blocking: &tv */);
+    retval = select(sockfd + 1, &rfds, NULL, NULL, &tv /* no-blocking*/);
     if(retval > 0) {
         if(FD_ISSET(sockfd, &rfds)) {
             ret = 0;
