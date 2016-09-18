@@ -90,7 +90,7 @@ void nim_print_result(int fd)
     /* check if package lost */
     for(i = 0; i < 4; i++) {
         if(((float)tesc_lost_no[i] / (float)tesc_lost_no[i]) < FRAME_LOSS_RATE)
-            test_mod_nim.pass = -1;
+            test_mod_nim.pass = 0;
     }
     
     if (test_mod_nim.pass) {
@@ -116,25 +116,25 @@ void *nim_test(void *args)
     ret = udp_test_init(0, TESC0_PORT);
     if(ret != 0) {
         log_print(log_fd, "udp_test_init 0 failed!\n");
-        test_mod_nim.pass = -1;
+        test_mod_nim.pass = 0;
         pthread_exit(NULL);
     }
     ret = udp_test_init(1, TESC1_PORT);
     if(ret != 0) {
         log_print(log_fd, "udp_test_init 1 failed!\n");
-        test_mod_nim.pass = -1;
+        test_mod_nim.pass = 0;
         pthread_exit(NULL);
     }
     ret = udp_test_init(2, TESC2_PORT);
     if(ret != 0) {
         log_print(log_fd, "udp_test_init 2 failed!\n");
-        test_mod_nim.pass = -1;
+        test_mod_nim.pass = 0;
         pthread_exit(NULL);
     }
     ret = udp_test_init(3, TESC3_PORT);
     if(ret != 0) {
         log_print(log_fd, "udp_test_init 3 failed!\n");
-        test_mod_nim.pass = -1;
+        test_mod_nim.pass = 0;
         pthread_exit(NULL);
     }
 
@@ -148,13 +148,13 @@ void *nim_test(void *args)
         udp_recv_task_id[i] = pthread_create(&ptid_r[i], NULL, (void *)udp_recv_test, &net_port_para_recv[i]);
         if(udp_recv_task_id[i] != 0) {
             log_print(log_fd, "Port %d recv spawn failed!\n", i);
-            test_mod_nim.pass = -1;
+            test_mod_nim.pass = 0;
         }
         
         udp_send_task_id[i] = pthread_create(&ptid_s[i], NULL, (void *)udp_send_test, &net_port_para_send[i]);
         if(udp_send_task_id[i] != 0) {
             log_print(log_fd, "Port %d send spawn failed!\n", i);
-            test_mod_nim.pass = -1;
+            test_mod_nim.pass = 0;
         }
     }
 
@@ -298,7 +298,7 @@ int socket_init(int *sockfd, char *ipaddr, uint16_t portid)
     
     *sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP /*0*/);
     if(*sockfd == -1) {
-        //log_print(log_fd, "create socket failed! errno=%d, %s\n", errno, strerror(errno));
+        log_print(log_fd, "create socket failed! errno=%d, %s\n", errno, strerror(errno));
         return -1;
     }
     
@@ -309,7 +309,7 @@ int socket_init(int *sockfd, char *ipaddr, uint16_t portid)
     hostaddr.sin_addr.s_addr = inet_addr(ipaddr);
 
     if(bind(*sockfd, (struct sockaddr *)(&hostaddr), sizeof(struct sockaddr)) == -1) {
-        //log_print(log_fd, "ip bind error: %s errno=%d, %s\n", ipaddr, errno, strerror(errno));
+        log_print(log_fd, "ip bind error: %s errno=%d, %s\n", ipaddr, errno, strerror(errno));
         return -1;
     }
     
@@ -376,10 +376,19 @@ void udp_recv_test(ether_port_para *net_port_para)
     uint32_t calculated_crc;
     uint32_t udp_cnt_read;
 
+    /* set timeout 1 sencond */
+    struct timeval timeout = {1, 0};
+    int ret;
+    
     sockfd = net_port_para->sockfd;
     ethid = net_port_para->ethid;
     portid = net_port_para->port;
     
+    ret = setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+    if(ret != 0) {
+        log_print(log_fd, "setsockopt failed! err: %s\n", strerror(errno)); 
+    }
+
     memset(recv_buf, 0, NET_MAX_NUM);
 
     while(g_running) {
@@ -507,15 +516,16 @@ int is_udp_read_ready(int sockfd)
 {
     fd_set rfds;
     int retval = 0, ret = -1;
+    struct timeval tv;
 
     FD_ZERO(&rfds);
     FD_SET(sockfd, &rfds);
 
-    /* Wait up to 200000 microseconds.
-     * tv.tv_sec = 0;
-     * tv.tv_usec = 200000; */
+    /* Wait up to 200000 microseconds. */
+    tv.tv_sec = 0;
+    tv.tv_usec = 200000;
 
-    retval = select(sockfd + 1, &rfds, NULL, NULL, NULL/* or no-blocking: &tv */);
+    retval = select(sockfd + 1, &rfds, NULL, NULL, &tv /* no-blocking*/);
     if(retval > 0) {
         if(FD_ISSET(sockfd, &rfds)) {
             ret = 0;
