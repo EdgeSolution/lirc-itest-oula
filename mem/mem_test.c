@@ -39,8 +39,9 @@ test_mod_t test_mod_mem = {
 
 void mem_print_status()
 {
-    printf("%-*s %s\n", COL_FIX_WIDTH, "MEM",
+    /*printf("%-*s %s\n", COL_FIX_WIDTH, "MEM",
         test_mod_mem.pass?STR_MOD_OK:STR_MOD_ERROR);
+    */
 }
 
 

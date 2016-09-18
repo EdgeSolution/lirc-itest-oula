@@ -38,8 +38,9 @@ test_mod_t test_mod_cpu = {
 
 void cpu_print_status()
 {
-    printf("%-*s %s\n", COL_FIX_WIDTH, "CPU",
+    /*printf("%-*s %s\n", COL_FIX_WIDTH, "CPU",
         test_mod_cpu.pass?STR_MOD_OK:STR_MOD_ERROR);
+    */
 }
 
 
