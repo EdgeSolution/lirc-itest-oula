@@ -138,7 +138,8 @@ void *msm_test(void *args)
 
             /* Set data pattern to other side */
             if (send_data_pattern(com, data[0]) <= 0) {
-                log_print(log_fd, "send data via serial port FAIL!\n");
+                if (g_running)
+                    log_print(log_fd, "send data via serial port FAIL!\n");
             }
 
 
@@ -240,7 +241,8 @@ void *msm_test(void *args)
             
             /* Set data pattern to other side */
             if (send_data_pattern(com, data[0]) <= 0) {
-                log_print(log_fd, "send data via serial port FAIL!\n");
+                if (g_running)
+                    log_print(log_fd, "send data via serial port FAIL!\n");
             }
         }
     }
