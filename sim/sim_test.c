@@ -44,6 +44,14 @@ static const uint8_t head[5] = {
     0x11
 };
 
+static const uint8_t stop_sign[5] = {
+    0x7e,
+    0x57,
+    0xe1,
+    0x1d,
+    0xff
+};
+
 static char *port_list[16] = {
     "/dev/ttyS2",
     "/dev/ttyS3",
@@ -235,19 +243,14 @@ int send_uart_packet(int fd, struct uart_package * packet_ptr, int len)
 int read_pack_head_1_byte(int fd, uint8_t *buff)
 {
     int ret = 0;
-    int retry_count = 0;
     do {
         ret = read(fd, buff, 1);
         if (ret < 0) {
             printf("Read error\n");
             break;
         } else if (ret == 0) {
-            if (++retry_count > MAX_RETRY_COUNT) {
-                printf("received timeout\n");
-                break;
-            }
-
-            sleep(1);/* do not read anything then stop 1 second and read again*/
+            printf("received timeout\n");
+            break;
         }
     } while (ret != 1);
     return ret;
@@ -277,7 +280,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
     ret = read_pack_head_1_byte(fd, buff + 0);
     while (i < 5) {
         /*check head[i]*/
-        if (buff[i] == head[i]) {/*start if*/
+        if (buff[i] == head[i] || buff[i] == stop_sign[i]) {/*start if*/
             i++;
 
             if (i < 5) {
@@ -297,11 +300,18 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
         /*timeout*/
         if (retry_count > MAX_RETRY_COUNT) {
             printf("check PACKET HEAD timeout\n");
-            test_mod_sim.pass = 0;
+            if(g_running) {
+                test_mod_sim.pass = 0;
+            }
             return bytes;
         }
     }
 
+    if (buff[4] == stop_sign[4]) {
+        return -1;/* means will be stop test*/
+    }
+
+    /*if head is not stop_sign then*/
     _uart_array[list_id].recived_pack_count++;/* Packet Reception count +1*/
     bytes += 5;
     len -= 5;
@@ -314,8 +324,10 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
             break;
         } else if (ret == 0) {
             if (++retry_count > MAX_RETRY_COUNT) {
-            DBG_PRINT("received timeout\n");
-            test_mod_sim.pass = 0;
+                if(g_running) {
+                    DBG_PRINT("received timeout\n");
+                    test_mod_sim.pass = 0;
+                }
             break;
             } else {
                 sleep(1);
@@ -422,12 +434,18 @@ void *port_recived_event(void *args)
     while (g_running) {
         n = recv_uart_packet(fd, buff, BUFF_SIZE, list_id);
         if (n != BUFF_SIZE) {
+            if (n == -1) {
+                g_running = 0;
+                pthread_exit((void *)0);
+            }
             DBG_PRINT("recv_uart_packet data error\n");
         }
     
         status = analysis_packet(buff,list_id);
         if (status != 0) {
-            test_mod_sim.pass = 0;
+            if (g_running) {
+                test_mod_sim.pass = 0;
+            }
             //to do 
             //break while(1)
             //pthread_exit((void *)-1);
@@ -458,6 +476,7 @@ void *port_send_event(void *args)
     int uart_id;
 
     int n;
+    int i;
 
     struct uart_package * uart_pack;
 
@@ -466,6 +485,8 @@ void *port_send_event(void *args)
     fd = uart_param->uart_fd;
     list_id = uart_param->list_id;
     uart_id = uart_id_list[list_id];
+
+    sleep(1);/* waiting recived thread ready */
 
     _uart_array[list_id].send_pack_count = 0;
 
@@ -488,8 +509,21 @@ void *port_send_event(void *args)
         }
         free(uart_pack);
         sleep_ms(1000/(uart_param->baudrate/10/264));
-        sleep_ms(20);
+    //    sleep_ms(20);
 
+    }
+
+    /*if g_running == 0, send stop mark to other machine*/
+    if(g_running == 0) {
+        for (i=0; i<5; ) {
+            n = write(fd, stop_sign + i, 5 - i);
+            if (n == -1) {
+                sleep(1);
+                continue;
+            } else {
+                i += n;
+            }
+        }
     }
 
     pthread_exit((void *)0);
@@ -514,7 +548,7 @@ void *sim_test(void *args)
     long th_send_stat[16];
 
     pthread_t th_recv_id[16];
-    //long th_recv_stat[16];
+    long th_recv_stat[16];
     
     int port_num;
 
@@ -564,9 +598,11 @@ void *sim_test(void *args)
     }
 
     for (i=0; i<port_num; i++) {
-     /*   pthread_join(th_recv_id[i], (void *)&th_recv_stat[i]);*/
+        pthread_join(th_recv_id[i], (void *)&th_recv_stat[i]);
         pthread_join(th_send_id[i], (void *)&th_send_stat[i]);
     }
+
+    sleep(1);/*waiting read end, not use pthread_join, because it will be blocking and not exits successfully */
 
     log_print(log_fd, "Test end\n\n");
     pthread_exit(NULL);
@@ -611,8 +647,7 @@ void sim_print_status(void)
         printf("%s test result:\n", port_list[i]);
         printf("                \\-- Packet loss rate = %.2f\n", _rate[i]);
         printf("                \\-- Error packet = %d\n",(uint32_t)_uart_array[i].err_count);
-        printf("                \\-- Send %d packet\n", (uint32_t)_uart_array[i].send_pack_count);
+        printf("                \\-- sent %d packet\n", (uint32_t)_uart_array[i].send_pack_count);
         printf("                \\-- Recived %d packet\n",(uint32_t)_uart_array[i].recived_pack_count);
-        printf("                \\-- target send packet = %d\n",(uint32_t)_uart_array[i].target_send_pack_num);
     }
 }
