@@ -125,6 +125,9 @@ void *msm_test(void *args)
                 break;
             }
             if (bytes != PACKET_SIZE) {
+                if (bytes < 0) {
+                    bytes = 0;
+                }
                 log_print(log_fd, "write %d bytes(%02X)   FALSE!\n", bytes, (unsigned char)data[0]);
                 counter_fail++;
                 test_mod_msm.pass = 0;
@@ -135,8 +138,7 @@ void *msm_test(void *args)
 
             /* Set data pattern to other side */
             send_data_pattern(com, data[0]);
-            
-            sleep(10);
+
 
             /* Get data pattern from other side */
             pattern = get_data_pattern(com);
@@ -170,7 +172,7 @@ void *msm_test(void *args)
                 counter_success++;
             }
 
-            sleep(2);
+            sleep(1);
         }
     } else {
         while (g_running) {
@@ -215,7 +217,7 @@ void *msm_test(void *args)
                 log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, pattern);
                 counter_success++;
             }
-            sleep(2);
+            sleep(1);
 
             /* Write data */
             bytes = advspi_write_b(spi, data, PACKET_SIZE, 0);
@@ -223,6 +225,9 @@ void *msm_test(void *args)
                 break;
             }
             if (bytes != PACKET_SIZE) {
+                if (bytes < 0) {
+                    bytes = 0;
+                }
                 log_print(log_fd, "write %d bytes(%02X)   FALSE!\n", bytes, (unsigned char)data[0]);
                 counter_fail++;
                 test_mod_msm.pass = 0;
@@ -233,8 +238,6 @@ void *msm_test(void *args)
             
             /* Set data pattern to other side */
             send_data_pattern(com, data[0]);
-
-            sleep(10);
         }
     }
 
