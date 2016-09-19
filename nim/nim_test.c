@@ -89,7 +89,7 @@ void nim_print_status()
         printf("Ethernet Port %d, Test number: %u, Lost packages: %u, CRC err packages: %u.\n", \
             i, tesc_test_no[i], tesc_lost_no[i], tesc_err_no[i]);
         */
-        printf("eth:%-*u TEST:%-*u LOST:%-*u ERR:%-*u\n",
+        printf("eth%-*u TEST:%-*u LOST:%-*u ERR:%-*u\n",
             COL_FIX_WIDTH-3, i, COL_FIX_WIDTH-5, tesc_test_no[i],
             COL_FIX_WIDTH-5, tesc_lost_no[i], COL_FIX_WIDTH-4, tesc_err_no[i]);
     }
