@@ -199,6 +199,7 @@ int send_uart_packet(int fd, struct uart_package * packet_ptr, int len)
     int ret = 0;
     int i = 0;
     int bytes = 0;
+
     if (packet_ptr == NULL) {
         DBG_PRINT("Have no packet sent\n");
         return -1;
@@ -246,10 +247,12 @@ int read_pack_head_1_byte(int fd, uint8_t *buff)
     do {
         ret = read(fd, buff, 1);
         if (ret < 0) {
-            printf("Read error\n");
+            buff[0] = 0; /* if read error, init buff[0] = 0*/
+            DBG_PRINT("Read error\n");
             break;
         } else if (ret == 0) {
-            printf("received timeout\n");
+            buff[0] = 0;/*if read anything, init buff[0] = 0*/
+            DBG_PRINT("received timeout\n");
             break;
         }
     } while (ret != 1);
@@ -276,6 +279,10 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
     int bytes = 0;
     int retry_count = 0;
 
+    int log_fd;
+
+    log_fd = test_mod_sim.log_fd;
+
     /*matching head*/
     ret = read_pack_head_1_byte(fd, buff + 0);
     while (i < 5) {
@@ -299,8 +306,10 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
 
         /*timeout*/
         if (retry_count > MAX_RETRY_COUNT) {
-            printf("check PACKET HEAD timeout\n");
             if(g_running) {
+                log_print(log_fd,"%s check PACKET HEAD timeout\n", port_list[list_id]);
+                _uart_array[list_id].target_send_pack_num++;/*timeout so estimate the target_send_pack_num+1*/
+                _rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recived_pack_count) / _uart_array[list_id].target_send_pack_num;
                 test_mod_sim.pass = 0;
             }
             return bytes;
@@ -308,6 +317,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
     }
 
     if (buff[4] == stop_sign[4]) {
+        log_print(log_fd,"%s recived stop signal, sim test will be stop\n", port_list[list_id]);
         return -1;/* means will be stop test*/
     }
 
@@ -325,6 +335,8 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
         } else if (ret == 0) {
             if (++retry_count > MAX_RETRY_COUNT) {
                 if(g_running) {
+                    _uart_array[list_id].target_send_pack_num++;/*timeout so estimate the target_send_pack_num+1*/
+                    _rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recived_pack_count) / _uart_array[list_id].target_send_pack_num;
                     DBG_PRINT("received timeout\n");
                     test_mod_sim.pass = 0;
                 }
@@ -359,10 +371,12 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
 int analysis_packet(uint8_t *buff, int list_id)
 {
     uint32_t crc_check = 0xFFFFFFFF;
+    int log_fd;
 
     struct uart_package *recv_packet;
     recv_packet = (struct uart_package *)buff;
 
+    log_fd = test_mod_sim.log_fd;
     /*
      * check crc and printf which data is error
      */
@@ -372,10 +386,13 @@ int analysis_packet(uint8_t *buff, int list_id)
     crc_check = crc32(crc_check, &recv_packet->pack_tail, 1);
     crc_check = crc32(crc_check, (uint8_t *)&recv_packet->pack_num, 4);
     if ((uint32_t)crc_check != (uint32_t)recv_packet->crc_err) {
-        /*means received error packet*/
-        DBG_PRINT("Received packet error\n");
-        _uart_array[list_id].err_count++;
-        test_mod_sim.pass = 0;
+
+        if (g_running) {
+            /*means received error packet*/
+            log_print(log_fd, "%s Received packet error\n", port_list[list_id]);
+            _uart_array[list_id].err_count++;
+            test_mod_sim.pass = 0;
+        }
 
         /*
          * check HEAD
@@ -420,6 +437,7 @@ void *port_recived_event(void *args)
     struct uart_attr *uart_param;
     uint8_t buff[BUFF_SIZE];
     int fd;
+    int log_fd;
 
     int list_id;
 
@@ -431,10 +449,12 @@ void *port_recived_event(void *args)
     fd = uart_param->uart_fd;
     list_id = uart_param->list_id;
 
+    log_fd = test_mod_sim.log_fd;
+
     while (g_running) {
         n = recv_uart_packet(fd, buff, BUFF_SIZE, list_id);
         if (n != BUFF_SIZE) {
-            if (n == -1) {
+            if (n == -1) { /*recived stop signal*/
                 g_running = 0;
                 pthread_exit((void *)0);
             }
@@ -449,8 +469,12 @@ void *port_recived_event(void *args)
             //to do 
             //break while(1)
             //pthread_exit((void *)-1);
+        } else {
+            if (_uart_array[list_id].recived_pack_count % 1000 == 0) {
+                log_print(log_fd,"%s recived %d packet successfully \n", port_list[list_id], (uint32_t)_uart_array[list_id].recived_pack_count);
+            }
         }
-    }
+    } /*end while(g_running)*/
 
     pthread_exit((void *)0);
 }
@@ -471,6 +495,7 @@ void *port_send_event(void *args)
     struct uart_attr *uart_param;
 
     int fd;
+    int log_fd;
 
     int list_id;
     int uart_id;
@@ -481,6 +506,8 @@ void *port_send_event(void *args)
     struct uart_package * uart_pack;
 
     uart_param = (struct uart_attr *)args;
+
+    log_fd = test_mod_sim.log_fd;
 
     fd = uart_param->uart_fd;
     list_id = uart_param->list_id;
@@ -493,7 +520,7 @@ void *port_send_event(void *args)
     while (g_running) {
         uart_pack = (struct uart_package *)malloc(sizeof(struct uart_package));
         if (!uart_pack) {
-            DBG_PRINT("Not Enough Memory\n");
+            DBG_PRINT("not enough memory\n");
             free(uart_pack);
             test_mod_sim.pass = 0;
             pthread_exit((void *)-1);
@@ -506,6 +533,10 @@ void *port_send_event(void *args)
         if (n != BUFF_SIZE) {
             DBG_PRINT("send data error\n");
             test_mod_sim.pass = 0;
+        } else {
+            if (_uart_array[list_id].send_pack_count % 1000 == 0) {
+                log_print(log_fd,"%s send %d packet ok \n", port_list[list_id], (uint32_t)_uart_array[list_id].send_pack_count);
+            }
         }
         free(uart_pack);
         sleep_ms(1000/(uart_param->baudrate/10/264));
