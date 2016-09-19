@@ -362,6 +362,18 @@ void udp_send_test(ether_port_para *net_port_para)
 
         usleep(1000);
     }
+
+    /* for sync */
+    if(g_running == 0) {
+        for(i = 0; i < 4; i++) {
+            send_buf[i] = 0x55;
+        }
+        
+        send_num = udp_send(sockfd, (char *)tgt_ip, portid, send_buf, NET_MAX_NUM, ethid);
+        if(send_num != NET_MAX_NUM) {
+            log_print(log_fd, "udp send failed!\n");
+        }
+    }
 }
 
 void udp_recv_test(ether_port_para *net_port_para)
@@ -378,7 +390,7 @@ void udp_recv_test(ether_port_para *net_port_para)
 
     /* set timeout 1 sencond */
     struct timeval timeout = {1, 0};
-    int ret;
+    int ret, i = 0;
     
     sockfd = net_port_para->sockfd;
     ethid = net_port_para->ethid;
@@ -395,6 +407,12 @@ void udp_recv_test(ether_port_para *net_port_para)
         recv_num = udp_recv(sockfd, portid, recv_buf, NET_MAX_NUM, ethid);
     
         if(recv_num == NET_MAX_NUM) {
+            /* sync for stopping */
+            if(((recv_buf[i] & 0xaa) || (recv_buf[i + 1] & 0xaa) || (recv_buf[i + 2] & 0xaa) || (recv_buf[i + 3] & 0xaa)) == 0) {
+                g_running = 0;
+                break;            
+            }        
+     
             calculated_crc = crc32(0, recv_buf, NET_MAX_NUM - 4);
             
             stored_crc = (uint32_t)((recv_buf[NET_MAX_NUM - 1]) | (recv_buf[NET_MAX_NUM - 2] << 8)  \
