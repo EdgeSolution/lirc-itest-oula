@@ -70,16 +70,28 @@ void nim_print_status()
 {
     int i = 0;
     
-    for(i = 0; i < 4; i++) {
+    for (i = 0; i < 4; i++) {
+        if(((float)tesc_lost_no[i] / (float)tesc_lost_no[i]) < FRAME_LOSS_RATE)
+            test_mod_nim.pass = 0;
+    }
+    printf("%-*s %s\n",
+        COL_FIX_WIDTH, "NIM", (test_mod_nim.pass) ? STR_MOD_OK : STR_MOD_ERROR);
 
+
+    for (i = 0; i < 4; i++) {
         /*
         DBG_PRINT("Port %d:udp_cnt_recv = %u, tesc_test_no =%u, test_lst_no = %u, test_err_no = %u\n", \
             i, udp_cnt_recv[i], tesc_test_no[i],  tesc_lost_no[i], tesc_err_no[i]);
         DBG_PRINT("Port %d:udp_cnt_send = %u\n", i, udp_cnt_send[i]);
         */
 
+        /*
         printf("Ethernet Port %d, Test number: %u, Lost packages: %u, CRC err packages: %u.\n", \
-            i, tesc_test_no[i], tesc_lost_no[i], tesc_err_no[i]);        
+            i, tesc_test_no[i], tesc_lost_no[i], tesc_err_no[i]);
+        */
+        printf("eth:%-*u TEST:%-*u LOST:%-*u ERR:%-*u\n",
+            COL_FIX_WIDTH-3, i, COL_FIX_WIDTH-5, tesc_test_no[i],
+            COL_FIX_WIDTH-5, tesc_lost_no[i], COL_FIX_WIDTH-4, tesc_err_no[i]);
     }
 }
     

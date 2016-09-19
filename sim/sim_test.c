@@ -674,11 +674,21 @@ void sim_print_status(void)
     int i;
     int port_num = 8 * g_board_num;
 
+    printf("%-*s %s\n",
+        COL_FIX_WIDTH, "SIM", (test_mod_sim.pass) ? STR_MOD_OK : STR_MOD_ERROR);
     for (i=0; i<port_num; i++) {
-        printf("%s test result:\n", port_list[i]);
-        printf("                \\-- Packet loss rate = %.2f\n", _rate[i]);
-        printf("                \\-- Error packet = %d\n",(uint32_t)_uart_array[i].err_count);
-        printf("                \\-- sent %d packet\n", (uint32_t)_uart_array[i].send_pack_count);
-        printf("                \\-- Recived %d packet\n",(uint32_t)_uart_array[i].recived_pack_count);
+        printf("%-*s SENT:%-*u RECV:%-*u ERR:%-*u\n",
+            COL_FIX_WIDTH, port_list[i],
+            COL_FIX_WIDTH-5, _uart_array[i].send_pack_count,
+            COL_FIX_WIDTH-5, _uart_array[i].recived_pack_count,
+            COL_FIX_WIDTH-4, _uart_array[i].err_count);
     }
+
+    //for (i=0; i<port_num; i++) {
+    //    printf("%s test result:\n", port_list[i]);
+    //    printf("                \\-- Packet loss rate = %.2f\n", _rate[i]);
+    //    printf("                \\-- Error packet = %d\n",(uint32_t)_uart_array[i].err_count);
+    //    printf("                \\-- sent %d packet\n", (uint32_t)_uart_array[i].send_pack_count);
+    //    printf("                \\-- Recived %d packet\n",(uint32_t)_uart_array[i].recived_pack_count);
+    //}
 }
