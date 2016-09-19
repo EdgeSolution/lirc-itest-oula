@@ -530,7 +530,7 @@ int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int
             log_print(log_fd, "udp_recv error: %d!\n", ethid);
         } 
     } else {
-        log_print(log_fd, "is_udp_read_ready not ready!\n");
+        //log_print(log_fd, "is_udp_read_ready not ready!\n");
     }   
     
     return recv_num; 
@@ -554,11 +554,6 @@ int is_udp_write_ready(int sockfd)
             ret = 0;
     } else {
         ret = -1;
-        if(retval == 0) {
-            log_print(log_fd, "write select time out!\n");
-        } else {
-            log_print(log_fd, "write select error!\n");
-        }
     }
      
     return ret;
@@ -584,11 +579,6 @@ int is_udp_read_ready(int sockfd)
         }
     }else {
         ret = -1; 
-        if(retval == 0) {
-            log_print(log_fd, "read select timeout!\n");
-        } else { 
-            log_print(log_fd, "read select error!\n");
-        }
     }
 
     return ret;
@@ -601,7 +591,7 @@ int set_ipaddr(char *ifname, char *ipaddr, char *netmask)
     struct sockaddr_in *sin;
 
     if((ifname == NULL) || (ipaddr == NULL)) {
-        log_print(log_fd, "illegal do config ip!\n");
+        DBG_PRINT(log_fd, "illegal do config ip!\n");
         return -1;
     }
 
