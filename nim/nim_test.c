@@ -289,6 +289,8 @@ int udp_test_init(uint32_t ethid, uint16_t portid)
     memset(tesc_err_no, 0, TESC_NUM * sizeof(uint32_t));
     memset(tesc_lost_no, 0, TESC_NUM * sizeof(uint32_t));
 
+    log_print(log_fd, "Ethernet port %d test init done !\n", ethid);
+
     return 0;
 }
 
@@ -313,6 +315,8 @@ int socket_init(int *sockfd, char *ipaddr, uint16_t portid)
         return -1;
     }
     
+    log_print(log_fd, "socket %d init done !\n", *sockfd);    
+    
     return 0;
 }
 
@@ -323,7 +327,7 @@ void udp_send_test(ether_port_para *net_port_para)
     uint16_t portid;
     char tgt_ip[255];
 
-    int i, send_num;
+    int i, j = 0, send_num;
     uint8_t send_buf[NET_MAX_NUM];    
 
     uint32_t calculated_crc;
@@ -357,13 +361,20 @@ void udp_send_test(ether_port_para *net_port_para)
         if(send_num != NET_MAX_NUM) {
             log_print(log_fd, "udp send failed!\n");
         } else {
-            udp_cnt_send[ethid]++;   
+            udp_cnt_send[ethid]++;
+            
+            j++;
+            /* print log per 1000 time */
+            if(j >= 1000) {
+                log_print(log_fd, "ethernet port %d: send udp packets count %u.\n", ethid, udp_cnt_send[ethid]);
+                j = 0;
+            }
         }
-
+      
         usleep(1000);
     }
 
-    /* for sync */
+    /* sync for stopping*/
     if(g_running == 0) {
         for(i = 0; i < 4; i++) {
             send_buf[i] = 0x55;
@@ -373,6 +384,8 @@ void udp_send_test(ether_port_para *net_port_para)
         if(send_num != NET_MAX_NUM) {
             log_print(log_fd, "udp send failed!\n");
         }
+
+        log_print(log_fd, "send sync packet for stopping!\n");
     }
 }
 
@@ -390,7 +403,7 @@ void udp_recv_test(ether_port_para *net_port_para)
 
     /* set timeout 1 sencond */
     struct timeval timeout = {1, 0};
-    int ret, i = 0;
+    int ret, i = 0, j = 0;
     
     sockfd = net_port_para->sockfd;
     ethid = net_port_para->ethid;
@@ -420,6 +433,7 @@ void udp_recv_test(ether_port_para *net_port_para)
 
             if(calculated_crc != stored_crc) {
                 tesc_err_no[ethid]++;
+                log_print(log_fd, "ethernet port %d: CRC error, number %u.\n", ethid, tesc_err_no[ethid]);
             } else {  /* crc is good */
                 udp_cnt_read = (uint32_t)((recv_buf[NET_MAX_NUM - 5]) | (recv_buf[NET_MAX_NUM - 6] << 8)    \
                     | (recv_buf[NET_MAX_NUM - 7] << 16) | (recv_buf[NET_MAX_NUM - 8] << 24));
@@ -442,11 +456,19 @@ void udp_recv_test(ether_port_para *net_port_para)
             }
             udp_cnt_recv[ethid]++;
         
+            j++;
+            /* print log per 1000 time */
+            if(j >= 1000) {
+                log_print(log_fd, "ethernet port %d: recv udp count = %u, test no = %u, lost no = %u, err no = %u\n", \
+                    ethid, udp_cnt_recv[ethid], tesc_test_no[ethid],  tesc_lost_no[ethid], tesc_err_no[ethid]);
+                j = 0;
+             }
+
         } else if ((recv_num > 0) && (recv_num < NET_MAX_NUM)) {
-            log_print(log_fd, "Ethernet Port %d: receive packet of %d bytes, lost %d bytes!\n", \
+            log_print(log_fd, "ethernet port %d: receive packet of %d bytes, lost %d bytes!\n", \
                     ethid, recv_num, NET_MAX_NUM - recv_num); 
         } else {
-            log_print(log_fd, "Ethernet Port %d: receive error = %d\n", ethid, recv_num);
+            log_print(log_fd, "ethernet port %d: receive error = %d\n", ethid, recv_num);
         }
     }
 }
