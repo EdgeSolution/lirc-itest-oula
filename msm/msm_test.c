@@ -176,7 +176,7 @@ void *msm_test(void *args)
                 counter_success++;
             }
 
-            sleep(1);
+            sleep(2);
         }
     } else {
         while (g_running) {
@@ -222,7 +222,7 @@ void *msm_test(void *args)
                 log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, pattern);
                 counter_success++;
             }
-            sleep(1);
+            sleep(2);
 
             /* Write data */
             bytes = advspi_write_b(spi, data, PACKET_SIZE, 0);
