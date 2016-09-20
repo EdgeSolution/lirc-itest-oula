@@ -107,7 +107,7 @@ struct uart_attr {
 
 struct uart_count_list {
 	uint32_t err_count;//global variable,count packet loss or error
-	uint32_t recived_pack_count;//global variable, count recived packet
+	uint32_t recv_pack_count;//global variable, count received packet
 	uint32_t send_pack_count;//global variable, count send packet
 	uint32_t target_send_pack_num;//Record target amount of packets sent
 }__attribute__ ((packed));
@@ -309,20 +309,19 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
             if(g_running) {
                 log_print(log_fd,"%s check PACKET HEAD timeout\n", port_list[list_id]);
                 _uart_array[list_id].target_send_pack_num++;/*timeout so estimate the target_send_pack_num+1*/
-                _rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recived_pack_count) / _uart_array[list_id].target_send_pack_num;
-                test_mod_sim.pass = 0;
+                _rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num; test_mod_sim.pass = 0;
             }
             return bytes;
         }
     }
 
     if (buff[4] == stop_sign[4]) {
-        log_print(log_fd,"%s recived stop signal, sim test will be stop\n", port_list[list_id]);
+        log_print(log_fd,"%s received stop signal, sim test will be stop\n", port_list[list_id]);
         return -1;/* means will be stop test*/
     }
 
     /*if head is not stop_sign then*/
-    _uart_array[list_id].recived_pack_count++;/* Packet Reception count +1*/
+    _uart_array[list_id].recv_pack_count++;/* Packet Reception count +1*/
     bytes += 5;
     len -= 5;
 
@@ -336,7 +335,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
             if (++retry_count > MAX_RETRY_COUNT) {
                 if(g_running) {
                     _uart_array[list_id].target_send_pack_num++;/*timeout so estimate the target_send_pack_num+1*/
-                    _rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recived_pack_count) / _uart_array[list_id].target_send_pack_num;
+                    _rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num;
                     DBG_PRINT("received timeout\n");
                     test_mod_sim.pass = 0;
                 }
@@ -414,7 +413,7 @@ int analysis_packet(uint8_t *buff, int list_id)
         return -1;
     } else {
         _uart_array[list_id].target_send_pack_num = recv_packet->pack_num;
-        _rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recived_pack_count) / _uart_array[list_id].target_send_pack_num;
+        _rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num;
     }
     return 0;
 
@@ -423,7 +422,7 @@ int analysis_packet(uint8_t *buff, int list_id)
 
 /*
  * Name:
- *      port_recived_event
+ *      port_recv_event
  * Description:
  *      The thread routine to read data from serial port and verify them
  * PARAMETERS:
@@ -432,7 +431,7 @@ int analysis_packet(uint8_t *buff, int list_id)
  *      Exit code of thread
  *
  */
-void *port_recived_event(void *args)
+void *port_recv_event(void *args)
 {
     struct uart_attr *uart_param;
     uint8_t buff[BUFF_SIZE];
@@ -454,7 +453,7 @@ void *port_recived_event(void *args)
     while (g_running) {
         n = recv_uart_packet(fd, buff, BUFF_SIZE, list_id);
         if (n != BUFF_SIZE) {
-            if (n == -1) { /*recived stop signal*/
+            if (n == -1) { /*received stop signal*/
                 g_running = 0;
                 pthread_exit((void *)0);
             }
@@ -470,8 +469,8 @@ void *port_recived_event(void *args)
             //break while(1)
             //pthread_exit((void *)-1);
         } else {
-            if (_uart_array[list_id].recived_pack_count % 1000 == 0) {
-                log_print(log_fd,"%s recived %d packet successfully \n", port_list[list_id], (uint32_t)_uart_array[list_id].recived_pack_count);
+            if (_uart_array[list_id].recv_pack_count % 1000 == 0) {
+                log_print(log_fd,"%s received %d packet successfully \n", port_list[list_id], (uint32_t)_uart_array[list_id].recv_pack_count);
             }
         }
     } /*end while(g_running)*/
@@ -513,7 +512,7 @@ void *port_send_event(void *args)
     list_id = uart_param->list_id;
     uart_id = uart_id_list[list_id];
 
-    sleep(1);/* waiting recived thread ready */
+    sleep(1);/* waiting received thread ready */
 
     _uart_array[list_id].send_pack_count = 0;
 
@@ -621,7 +620,7 @@ void *sim_test(void *args)
 
     /*creat pthread for received*/
     for (i=0; i<port_num; i++) {
-        pthread_create(&th_recv_id[i], NULL, port_recived_event, &uart_param[i]);
+        pthread_create(&th_recv_id[i], NULL, port_recv_event, &uart_param[i]);
     }
 
     for (i=0; i<port_num; i++) {
@@ -680,7 +679,7 @@ void sim_print_status(void)
         printf("%-*s SENT:%-*u RECV:%-*u ERR:%-*u\n",
             COL_FIX_WIDTH, port_list[i],
             COL_FIX_WIDTH-5, _uart_array[i].send_pack_count,
-            COL_FIX_WIDTH-5, _uart_array[i].recived_pack_count,
+            COL_FIX_WIDTH-5, _uart_array[i].recv_pack_count,
             COL_FIX_WIDTH-4, _uart_array[i].err_count);
     }
 
@@ -689,6 +688,6 @@ void sim_print_status(void)
     //    printf("                \\-- Packet loss rate = %.2f\n", _rate[i]);
     //    printf("                \\-- Error packet = %d\n",(uint32_t)_uart_array[i].err_count);
     //    printf("                \\-- sent %d packet\n", (uint32_t)_uart_array[i].send_pack_count);
-    //    printf("                \\-- Recived %d packet\n",(uint32_t)_uart_array[i].recived_pack_count);
+    //    printf("                \\-- Recived %d packet\n",(uint32_t)_uart_array[i].recv_pack_count);
     //}
 }
