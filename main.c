@@ -25,7 +25,7 @@
 #include "main.h"
 
 /* Version of the program */
-#define PROGRAM_VERSION     "0.1"
+#define PROGRAM_VERSION     "0.2"
 
 
 /* Tester */
