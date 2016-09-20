@@ -38,6 +38,7 @@ static uint32_t udp_cnt_send[TESC_NUM] = {0};
 static uint32_t udp_cnt_recv[TESC_NUM] = {0};
 static uint32_t udp_fst_cnt[TESC_NUM] = {0};
 static int udp_test_flag[TESC_NUM] = {0};
+static uint32_t timeout_flag[TESC_NUM] = {0};
 
 static uint32_t tesc_test_no[TESC_NUM] = {0};
 static uint32_t tesc_err_no[TESC_NUM] = {0};
@@ -77,6 +78,13 @@ void nim_print_status()
     printf("%-*s %s\n",
         COL_FIX_WIDTH, "NIM", (test_mod_nim.pass) ? STR_MOD_OK : STR_MOD_ERROR);
 
+    for (i = 0; i < 4; i++) {
+        if (timeout_flag[i] >= 50) {
+            test_mod_nim.pass = 0;
+            log_print(log_fd, "eth%-*u %s\n", COL_FIX_WIDTH-3, i, STR_MOD_ERROR);
+        }
+    
+    }
 
     for (i = 0; i < 4; i++) {
         /*
@@ -89,6 +97,7 @@ void nim_print_status()
         printf("Ethernet Port %d, Test number: %u, Lost packages: %u, CRC err packages: %u.\n", \
             i, tesc_test_no[i], tesc_lost_no[i], tesc_err_no[i]);
         */
+
         printf("eth%-*u TEST:%-*u LOST:%-*u ERR:%-*u\n",
             COL_FIX_WIDTH-3, i, COL_FIX_WIDTH-5, tesc_test_no[i],
             COL_FIX_WIDTH-5, tesc_lost_no[i], COL_FIX_WIDTH-4, tesc_err_no[i]);
@@ -101,7 +110,7 @@ void nim_print_result(int fd)
 
     /* check if package lost */
     for(i = 0; i < 4; i++) {
-        if ((float)tesc_lost_no[i] > (float)tesc_lost_no[i] * FRAME_LOSS_RATE)
+        if ((float)tesc_lost_no[i] > (float)tesc_test_no[i] * FRAME_LOSS_RATE)
             test_mod_nim.pass = 0;
     }
     
@@ -519,17 +528,20 @@ int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int
     struct sockaddr_in recv_from_addr;
     int32_t recv_num = 0;
     socklen_t addrlen;
+    int tv;
 
     memset(&recv_from_addr, 0, sizeof(struct sockaddr_in));
     addrlen = sizeof(struct sockaddr_in);
 
-    if(is_udp_read_ready(sockfd) == 0) {
+    tv = is_udp_read_ready(sockfd);
+    if(tv == 0) {
         recv_num = recvfrom(sockfd, buff, length, 0, (struct sockaddr *)&recv_from_addr, &addrlen);
         
         if(recv_num == -1) {
             log_print(log_fd, "udp_recv error: %d!\n", ethid);
         } 
-    } else {
+    } else if(tv == 1) {    /* select timeout */
+        timeout_flag[ethid]++; 
         //log_print(log_fd, "is_udp_read_ready not ready!\n");
     }   
     
@@ -577,8 +589,10 @@ int is_udp_read_ready(int sockfd)
         if(FD_ISSET(sockfd, &rfds)) {
             ret = 0;
         }
-    }else {
-        ret = -1; 
+    } else if(retval == 0) { /* timeout */
+        ret = 1;
+    } else {
+        ret = -1;
     }
 
     return ret;
