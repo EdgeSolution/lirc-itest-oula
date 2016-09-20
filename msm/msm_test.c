@@ -145,6 +145,7 @@ void *msm_test(void *args)
 
             /* Get data pattern from other side */
             pattern = get_data_pattern(com);
+            sleep(2);
 
             /* Read data and verify */
             switch (pattern) {
@@ -190,6 +191,7 @@ void *msm_test(void *args)
 
             /* Get data pattern from other side */
             pattern = get_data_pattern(com);
+            sleep(2);
 
             /* Read data and verify */
             switch (pattern) {
