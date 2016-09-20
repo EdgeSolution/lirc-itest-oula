@@ -525,7 +525,7 @@ void *port_send_event(void *args)
     uart_pack = (struct uart_package *)malloc(sizeof(struct uart_package));
     if (!uart_pack) {
         DBG_PRINT("not enough memory\n");
-        free(uart_pack);
+        //free(uart_pack);
         test_mod_sim.pass = 0;
         pthread_exit((void *)-1);
     }
