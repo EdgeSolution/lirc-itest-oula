@@ -53,6 +53,8 @@ unsigned long counter_fail = 0;
 
 static int read_data_a(int fd, char *cmp_buf);
 static int read_data_b(int fd, char *cmp_buf);
+int write_data_a(int fd, char *buf, size_t len);
+int write_data_b(int fd, char *buf, size_t len);
 static void log_result(int log_fd);
 static unsigned char get_data_pattern(int fd);
 static int send_data_pattern(int fd, unsigned char pattern);
@@ -97,11 +99,10 @@ void *msm_test(void *args)
     /* Open serial port */
     int com = ser_open(CCM_SERIAL_PORT);
     if (com < 0) {
-        log_print(log_fd, "open serial port %s Failed!\n", CCM_SERIAL_PORT);
+        log_print(log_fd, "open serial port Failed!\n");
         test_mod_msm.pass = 0;
         pthread_exit(NULL);
     }
-    log_print(log_fd, "open serial port %s OK\n", CCM_SERIAL_PORT);
 
     /* Set data pattern to write */
     memset(data_55, 0x55, sizeof(data_55));
@@ -121,7 +122,7 @@ void *msm_test(void *args)
             }
 
             /* Write data */
-            bytes = advspi_write_a(spi, data, PACKET_SIZE, 0);
+            bytes = write_data_a(spi, data, PACKET_SIZE);
             if (!g_running) {
                 break;
             }
@@ -177,7 +178,7 @@ void *msm_test(void *args)
                 counter_success++;
             }
 
-            sleep(2);
+            sleep(1);
         }
     } else {
         while (g_running) {
@@ -223,10 +224,10 @@ void *msm_test(void *args)
                 log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, pattern);
                 counter_success++;
             }
-            sleep(2);
+            sleep(1);
 
             /* Write data */
-            bytes = advspi_write_b(spi, data, PACKET_SIZE, 0);
+            bytes = write_data_b(spi, data, PACKET_SIZE);
             if (!g_running) {
                 break;
             }
@@ -279,13 +280,21 @@ static int read_data_a(int fd, char *cmp_buf)
 {
     int ret = 0;
     int len = PACKET_SIZE;
+    int bytes = 0;
+    int step = 1024;
     char buf[PACKET_SIZE];
 
     memset(buf, 0, sizeof(buf));
 
-    ret = advspi_read_a(fd, buf, len, 0);
-    if (ret <= 0) {
-        return 0;
+    while (g_running && (bytes < len)) {
+        while (g_running) {
+            ret = advspi_read_a(fd, buf+bytes, step, bytes);
+            if (ret == step) {
+                bytes += step;
+                break;
+            }
+            sleep_ms(200);
+        }
     }
 
     if (memcmp(cmp_buf, buf, len) == 0) {
@@ -314,13 +323,21 @@ static int read_data_b(int fd, char *cmp_buf)
 {
     int ret = 0;
     int len = PACKET_SIZE;
+    int bytes = 0;
+    int step = 1024;
     char buf[PACKET_SIZE];
 
     memset(buf, 0, sizeof(buf));
 
-    ret = advspi_read_b(fd, buf, len, 0);
-    if (ret <= 0) {
-        return 0;
+    while (g_running && (bytes < len)) {
+        while (g_running) {
+            ret = advspi_read_b(fd, buf+bytes, step, bytes);
+            if (ret == step) {
+                bytes += step;
+                break;
+            }
+            sleep_ms(200);
+        }
     }
 
     if (memcmp(cmp_buf, buf, len) == 0) {
@@ -328,6 +345,78 @@ static int read_data_b(int fd, char *cmp_buf)
     }
 
     return 0;
+}
+
+
+/******************************************************************************
+ * NAME:
+ *      write_data_a
+ *
+ * DESCRIPTION:
+ *      Write data to storage adapter.
+ *
+ * PARAMETERS:
+ *      fd   - The fd
+ *      buf  - The buffer of data
+ *      len  - The length of data
+ *
+ * RETURN:
+ *      Number of bytes wrote
+ ******************************************************************************/
+int write_data_a(int fd, char *buf, size_t len)
+{
+    int bytes = 0;
+    int ret = 0;
+    int step = 1024;
+
+    while (g_running && (bytes < len)) {
+        while (g_running) {
+            ret = advspi_write_a(fd, buf+bytes, step, bytes);
+            if (ret == step) {
+                bytes += step;
+                break;
+            }
+            sleep_ms(100);
+        }
+    }
+
+    return bytes;
+}
+
+
+/******************************************************************************
+ * NAME:
+ *      write_data_b
+ *
+ * DESCRIPTION:
+ *      Write data to storage adapter.
+ *
+ * PARAMETERS:
+ *      fd   - The fd
+ *      buf  - The buffer of data
+ *      len  - The length of data
+ *
+ * RETURN:
+ *      Number of bytes wrote
+ ******************************************************************************/
+int write_data_b(int fd, char *buf, size_t len)
+{
+    int bytes = 0;
+    int ret = 0;
+    int step = 1024;
+
+    while (g_running && (bytes < len)) {
+        while (g_running) {
+            ret = advspi_write_b(fd, buf+bytes, step, bytes);
+            if (ret == step) {
+                bytes += step;
+                break;
+            }
+            sleep_ms(200);
+        }
+    }
+
+    return bytes;
 }
 
 
