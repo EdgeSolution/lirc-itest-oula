@@ -97,10 +97,11 @@ void *msm_test(void *args)
     /* Open serial port */
     int com = ser_open(CCM_SERIAL_PORT);
     if (com < 0) {
-        log_print(log_fd, "open serial port Failed!\n");
+        log_print(log_fd, "open serial port %s Failed!\n", CCM_SERIAL_PORT);
         test_mod_msm.pass = 0;
         pthread_exit(NULL);
     }
+    log_print(log_fd, "open serial port %s OK\n", CCM_SERIAL_PORT);
 
     /* Set data pattern to write */
     memset(data_55, 0x55, sizeof(data_55));
