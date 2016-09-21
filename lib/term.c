@@ -63,6 +63,11 @@ void tc_set_baudrate(int fd, int speed)
             cfsetospeed(&opt,B38400);
             break;
 
+        case 57600:
+            cfsetispeed(&opt,B57600);
+            cfsetospeed(&opt,B57600);
+            break;
+
         case 115200:
             cfsetispeed(&opt,B115200);
             cfsetospeed(&opt,B115200);
