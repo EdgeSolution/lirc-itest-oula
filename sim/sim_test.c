@@ -314,6 +314,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
                        (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num; test_mod_sim.pass = 0;
                 */
                 _loss_pack_count[list_id] = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;
+		test_mod_sim.pass = 0;
             }
             return bytes;
         }
