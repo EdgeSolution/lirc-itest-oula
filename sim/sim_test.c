@@ -314,7 +314,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
                        (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num; test_mod_sim.pass = 0;
                 */
                 _loss_pack_count[list_id] = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;
-		test_mod_sim.pass = 0;
+                test_mod_sim.pass = 0;
             }
             return bytes;
         }
@@ -333,7 +333,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
     while (len > 0) {
         ret = read(fd, buff + bytes, len);
         if (ret < 0) {
-            DBG_PRINT("Read error\n");
+            log_print(log_fd,"%s read error\n", port_list[list_id]);
             test_mod_sim.pass = 0;
             break;
         } else if (ret == 0) {
@@ -342,7 +342,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
                     _uart_array[list_id].target_send_pack_num++;/*timeout so estimate the target_send_pack_num+1*/
                     /*_rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num;*/
                     _loss_pack_count[list_id] = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;
-                    DBG_PRINT("received timeout\n");
+                    log_print(log_fd,"%s receive data time out\n", port_list[list_id]);
                     test_mod_sim.pass = 0;
                 }
             break;
@@ -477,7 +477,8 @@ void *port_recv_event(void *args)
             //pthread_exit((void *)-1);
         } else {
             if (_uart_array[list_id].recv_pack_count % 1000 == 0) {
-                log_print(log_fd,"%s received %d packet successfully \n", port_list[list_id], (uint32_t)_uart_array[list_id].recv_pack_count);
+                log_print(log_fd,"%s received %d packet successfully \n",
+                    port_list[list_id], (uint32_t)_uart_array[list_id].recv_pack_count);
             }
         }
     } /*end while(g_running)*/
@@ -525,7 +526,7 @@ void *port_send_event(void *args)
 
     uart_pack = (struct uart_package *)malloc(sizeof(struct uart_package));
     if (!uart_pack) {
-        DBG_PRINT("not enough memory\n");
+        log_print(log_fd, "not enough memory\n");
         //free(uart_pack);
         test_mod_sim.pass = 0;
         pthread_exit((void *)-1);
@@ -539,11 +540,12 @@ void *port_send_event(void *args)
 
         n = send_uart_packet(fd, uart_pack, BUFF_SIZE);
         if (n != BUFF_SIZE) {
-            DBG_PRINT("send data error\n");
+            log_print(log_fd, "%s send data error\n", port_list[list_id]);
             test_mod_sim.pass = 0;
         } else {
             if (_uart_array[list_id].send_pack_count % 1000 == 0) {
-                log_print(log_fd,"%s send %d packet ok \n", port_list[list_id], (uint32_t)_uart_array[list_id].send_pack_count);
+                log_print(log_fd,"%s send %d packet ok \n", port_list[list_id],
+                    (uint32_t)_uart_array[list_id].send_pack_count);
             }
         }
         sleep_ms(1000/(uart_param->baudrate/10/264));
@@ -607,7 +609,7 @@ void *sim_test(void *args)
     for (i=0; i<port_num; i++) {
         fd = tc_init(port_list[i]);
         if (fd < 0) {
-            DBG_PRINT("Open %s error\n",port_list[i]);
+            log_print(log_fd, "Open %s error\n", port_list[i]);
             test_mod_sim.pass = 0;
             return NULL;
         }
