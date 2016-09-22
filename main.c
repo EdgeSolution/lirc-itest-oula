@@ -16,6 +16,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <time.h>
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
@@ -36,6 +37,8 @@ char g_product_sn[MAX_STR_LENGTH];
 
 /* Test duration(minutes) */
 int g_duration = 60;
+int g_runned_minute = 0;
+int g_runned_second = 0;
 
 /* Machine A or B */
 char g_machine = 'A';
@@ -102,6 +105,8 @@ int main(int argc, char **argv)
     }
     printf("OK\n");
 
+    time_t time_start = time(NULL);
+
     /* Start test modules */
     mod_index = 0;
     start_test_module(&test_mod_led);
@@ -133,6 +138,21 @@ int main(int argc, char **argv)
             if (g_test_module[i]->pass == 0) {
                 move_log_to_error(g_test_module[i]->log_file);
             }
+        }
+    }
+
+    /* Compute runned time for test promgam. */
+    time_t time_end = time(NULL);
+    time_t time_total = time_end - time_start;
+    if ((time_start != -1) || (time_end != -1)) {
+        g_runned_minute = time_total / 60;
+        g_runned_second = time_total % 60;
+        if (g_runned_minute >= g_duration) {
+            g_runned_minute = g_duration;
+            g_runned_second = 0;
+        } else if (time_total < 0) {
+            g_runned_minute = 0;
+            g_runned_second = 0;
         }
     }
 
@@ -524,7 +544,8 @@ void generate_report(void)
     write_file(fd, "================== Test Report ==================\n");
     write_file(fd, "Tester: %s\n", g_tester);
     write_file(fd, "Product SN: %s\n", g_product_sn);
-    write_file(fd, "Test time: %d\n", g_duration);
+    write_file(fd, "Test time(plan): %d min\n", g_duration);
+    write_file(fd, "Test time(real): %d min %d sec\n", g_runned_minute, g_runned_second);
     write_file(fd, "\n");
 
     for (i = 0; i < mod_index; i++) {
