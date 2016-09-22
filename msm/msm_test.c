@@ -133,7 +133,7 @@ void *msm_test(void *args)
                 log_print(log_fd, "write %d bytes(%02X)   FALSE!\n", bytes, (unsigned char)data[0]);
                 counter_fail++;
                 test_mod_msm.pass = 0;
-                continue;
+                //continue;
             } else {
                 log_print(log_fd, "write %d bytes(%02X)   OK!\n", bytes, (unsigned char)data[0]);
             }
@@ -219,7 +219,7 @@ void *msm_test(void *args)
                 log_print(log_fd, "read %d bytes(%02X)   FALSE!\n", bytes, pattern);
                 counter_fail++;
                 test_mod_msm.pass = 0;
-                continue;
+                //continue;
             } else {
                 log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, pattern);
                 counter_success++;
@@ -238,7 +238,7 @@ void *msm_test(void *args)
                 log_print(log_fd, "write %d bytes(%02X)   FALSE!\n", bytes, (unsigned char)data[0]);
                 counter_fail++;
                 test_mod_msm.pass = 0;
-                continue;
+                //continue;
             } else {
                 log_print(log_fd, "write %d bytes(%02X)   OK!\n", bytes, (unsigned char)data[0]);
             }
@@ -427,7 +427,7 @@ static void log_result(int log_fd)
             counter_test, counter_fail);
         log_print(log_fd, "FAIL\n");
         test_mod_msm.pass = 0;
-    } if (counter_success == 0) {
+    } else if (counter_success == 0) {
         log_print(log_fd, "Serial port communication error!\n");
         test_mod_msm.pass = 0;
     } else {
