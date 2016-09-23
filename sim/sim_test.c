@@ -29,7 +29,7 @@
 #include "sim_test.h"
 #include "term.h"
 
-#define MAX_RETRY_COUNT 20
+#define MAX_RETRY_COUNT 3
 
 #define TAIL 0xfe
 
@@ -342,7 +342,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
                     _uart_array[list_id].target_send_pack_num++;/*timeout so estimate the target_send_pack_num+1*/
                     /*_rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num;*/
                     _loss_pack_count[list_id] = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;
-                    log_print(log_fd,"%s receive data time out\n", port_list[list_id]);
+                    log_print(log_fd,"%s receive data timeout\n", port_list[list_id]);
                     test_mod_sim.pass = 0;
                 }
             break;
