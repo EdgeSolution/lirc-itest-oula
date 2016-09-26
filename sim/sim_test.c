@@ -461,6 +461,10 @@ void *port_recv_event(void *args)
     uart_param = (struct uart_attr *)args;
 
     fd = uart_param->uart_fd;
+    if (fd < 0) {
+        pthread_exit((void *)-1);
+    }
+
     list_id = uart_param->list_id;
 
     log_fd = test_mod_sim.log_fd;
@@ -525,6 +529,11 @@ void *port_send_event(void *args)
     log_fd = test_mod_sim.log_fd;
 
     fd = uart_param->uart_fd;
+
+    if (fd < 0) {
+        pthread_exit((void *)-1);
+    }
+
     list_id = uart_param->list_id;
     uart_id = uart_id_list[list_id];
 
@@ -619,14 +628,18 @@ void *sim_test(void *args)
         if (fd < 0) {
             log_print(log_fd, "Open %s error\n", port_list[i]);
             test_mod_sim.pass = 0;
-            return NULL;
+            uart_param[i].uart_fd = -1;
+            uart_param[i].baudrate = g_baudrate;
+            uart_param[i].list_id = i;
+            continue;
+        /*    return NULL;*/
         }
 
         /* Set databits, stopbits, parity ... */
         if (tc_set_port(fd, 8, 1, 0) == -1) {
             tc_deinit(fd);
             test_mod_sim.pass = 0;
-            return NULL;
+            /*return NULL;*/
         }
 
         tc_set_baudrate(fd, g_baudrate);
