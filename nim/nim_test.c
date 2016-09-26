@@ -620,7 +620,7 @@ int set_ipaddr(char *ifname, char *ipaddr, char *netmask)
     struct sockaddr_in *sin;
 
     if((ifname == NULL) || (ipaddr == NULL)) {
-        DBG_PRINT(log_fd, "illegal do config ip!\n");
+        DBG_PRINT("illegal do config ip!\n");
         return -1;
     }
 
