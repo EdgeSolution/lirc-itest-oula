@@ -309,11 +309,11 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
         if (retry_count > MAX_RETRY_COUNT) {
             if(g_running) {
                 log_print(log_fd,"%s check PACKET HEAD timeout\n", port_list[list_id]);
-                _uart_array[list_id].target_send_pack_num++;/*timeout so estimate the target_send_pack_num+1*/
+                /*_uart_array[list_id].target_send_pack_num++;*//*timeout so estimate the target_send_pack_num+1*/
                 /* _rate[list_id] = 
                        (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num; test_mod_sim.pass = 0;
                 */
-                _loss_pack_count[list_id] = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;
+                /*_loss_pack_count[list_id] = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;*/
                 test_mod_sim.pass = 0;
             }
             return bytes;
@@ -339,9 +339,9 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
         } else if (ret == 0) {
             if (++retry_count > MAX_RETRY_COUNT) {
                 if(g_running) {
-                    _uart_array[list_id].target_send_pack_num++;/*timeout so estimate the target_send_pack_num+1*/
+                    /*_uart_array[list_id].target_send_pack_num++;*//*timeout so estimate the target_send_pack_num+1*/
                     /*_rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num;*/
-                    _loss_pack_count[list_id] = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;
+                    /*_loss_pack_count[list_id] = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;*/
                     log_print(log_fd,"%s receive data timeout\n", port_list[list_id]);
                     test_mod_sim.pass = 0;
                 }
@@ -377,6 +377,7 @@ int analysis_packet(uint8_t *buff, int list_id)
 {
     uint32_t crc_check = 0xFFFFFFFF;
     int log_fd;
+    int tmp;
 
     struct uart_package *recv_packet;
     recv_packet = (struct uart_package *)buff;
@@ -420,9 +421,13 @@ int analysis_packet(uint8_t *buff, int list_id)
     } else {
         _uart_array[list_id].target_send_pack_num = recv_packet->pack_num;
         /* _rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num;*/
-        _loss_pack_count[list_id] = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;
-        if (_loss_pack_count[list_id] > 0) {
+        tmp = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;
+        if (tmp > 0) {
             test_mod_sim.pass = 0;
+            if (tmp != _loss_pack_count[list_id]) {
+                _loss_pack_count[list_id] = tmp;
+                log_print(log_fd, "%s lost %d package\n", port_list[list_id], _loss_pack_count[list_id]);
+            }
         }
     }
     return 0;

@@ -81,7 +81,7 @@ void *cpu_test(void *args)
         break;
 
     case 0:
-        snprintf(cmd, sizeof(cmd), "%s -n 3 > %s", prog_path, log_file);
+        snprintf(cmd, sizeof(cmd), "%s -n 2 > %s", prog_path, log_file);
         system(cmd);
         return NULL;
 
