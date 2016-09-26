@@ -234,7 +234,7 @@ int get_parameter(void)
         printf("input error\n");
         return -1;
     }
-    g_machine = toupper(buf[0]);
+    g_machine = toupper(p[0]);
     switch (g_machine) {
     case 'a':
     case 'A':
