@@ -136,22 +136,22 @@ void *nim_test(void *args)
     /* test init */
     ret[0] = udp_test_init(0, TESC0_PORT);
     if(ret[0] != 0) {
-        log_print(log_fd, "udp_test_init 0 failed!\n");
+        log_print(log_fd, "Ethernet port 0 init error!\n");
         test_mod_nim.pass = 0;
     }
     ret[1] = udp_test_init(1, TESC1_PORT);
     if(ret[1] != 0) {
-        log_print(log_fd, "udp_test_init 1 failed!\n");
+        log_print(log_fd, "Ethernet port 1 init error!\n");
         test_mod_nim.pass = 0;
     }
     ret[2] = udp_test_init(2, TESC2_PORT);
     if(ret[2] != 0) {
-        log_print(log_fd, "udp_test_init 2 failed!\n");
+        log_print(log_fd, "Ethernet port 2 init error!\n");
         test_mod_nim.pass = 0;
     }
     ret[3] = udp_test_init(3, TESC3_PORT);
     if(ret[3] != 0) {
-        log_print(log_fd, "udp_test_init 3 failed!\n");
+        log_print(log_fd, "Ethernet port 3 init error!\n");
         test_mod_nim.pass = 0;
     }
 
