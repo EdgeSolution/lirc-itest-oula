@@ -422,7 +422,7 @@ int analysis_packet(uint8_t *buff, int list_id)
         _uart_array[list_id].target_send_pack_num = recv_packet->pack_num;
         /* _rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num;*/
         tmp = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;
-        if (_loss_pack_count[list_id] > 0) {
+        if (tmp > 0) {
             test_mod_sim.pass = 0;
             if (tmp != _loss_pack_count[list_id]) {
                 _loss_pack_count[list_id] = tmp;
