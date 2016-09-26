@@ -135,22 +135,22 @@ void *nim_test(void *args)
 
     /* test init */
     ret[0] = udp_test_init(0, TESC0_PORT);
-    if(ret != 0) {
+    if(ret[0] != 0) {
         log_print(log_fd, "udp_test_init 0 failed!\n");
         test_mod_nim.pass = 0;
     }
     ret[1] = udp_test_init(1, TESC1_PORT);
-    if(ret != 0) {
+    if(ret[1] != 0) {
         log_print(log_fd, "udp_test_init 1 failed!\n");
         test_mod_nim.pass = 0;
     }
     ret[2] = udp_test_init(2, TESC2_PORT);
-    if(ret != 0) {
+    if(ret[2] != 0) {
         log_print(log_fd, "udp_test_init 2 failed!\n");
         test_mod_nim.pass = 0;
     }
     ret[3] = udp_test_init(3, TESC3_PORT);
-    if(ret != 0) {
+    if(ret[3] != 0) {
         log_print(log_fd, "udp_test_init 3 failed!\n");
         test_mod_nim.pass = 0;
     }
@@ -169,7 +169,11 @@ void *nim_test(void *args)
         ether_port_init(3, TESC3_PORT);
     }
  
-    for(i = 0; (i < 4) && (ret[i] == 0); i++) {    
+    for(i = 0; i < 4; i++) {
+        /* Skip ports which not be initialized */ 
+        if(ret[i] != 0)
+            continue;
+        
         udp_recv_task_id[i] = pthread_create(&ptid_r[i], NULL, (void *)udp_recv_test, &net_port_para_recv[i]);
         if(udp_recv_task_id[i] != 0) {
             log_print(log_fd, "Port %d recv spawn failed!\n", i);
@@ -184,7 +188,10 @@ void *nim_test(void *args)
     }
 
     /* Wait all udp send packet thread and all udp receive packet thread to endup */
-    for(i = 0; (i < 4) && (ret[i] == 0); i++) {
+    for(i = 0; i < 4; i++) {
+        if(ret[i] != 0) 
+            continue;
+
         pthread_join(ptid_r[i], NULL);
         pthread_join(ptid_s[i], NULL);
     }
