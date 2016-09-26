@@ -71,9 +71,9 @@ void msm_print_status()
 void msm_print_result(int fd)
 {
     if (test_mod_msm.pass) {
-        write_file(fd, "MSM: PASS. Test time:%lu\n", counter_test);
+        write_file(fd, "MSM: PASS. Test count:%lu\n", counter_test);
     } else {
-        write_file(fd, "MSM: FAIL. Test time:%lu;  Failed:%lu;\n",
+        write_file(fd, "MSM: FAIL. Test count:%lu;  Failed:%lu;\n",
             counter_test, counter_fail);
     }
 }
@@ -423,7 +423,7 @@ int write_data_b(int fd, char *buf, size_t len)
 static void log_result(int log_fd)
 {
     if (counter_fail > 0) {
-        log_print(log_fd, "Test FALSE. Test time:%lu;  Failed:%lu;\n",
+        log_print(log_fd, "Test FALSE. Test count:%lu;  Failed:%lu;\n",
             counter_test, counter_fail);
         log_print(log_fd, "FAIL\n");
         test_mod_msm.pass = 0;
@@ -431,7 +431,7 @@ static void log_result(int log_fd)
         log_print(log_fd, "Serial port communication error!\n");
         test_mod_msm.pass = 0;
     } else {
-        log_print(log_fd, "Test OK. Test time:%lu\n", counter_test);
+        log_print(log_fd, "Test OK. Test count:%lu\n", counter_test);
         log_print(log_fd, "PASS\n");
     }
 }
