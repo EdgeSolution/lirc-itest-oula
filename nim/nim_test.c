@@ -125,7 +125,7 @@ void nim_print_result(int fd)
 void *nim_test(void *args)
 {
     int i = 0;
-    int ret = 0;
+    int ret[4] = {0};
     log_fd = test_mod_nim.log_fd;
 
     pthread_t ptid_r[4];
@@ -134,38 +134,42 @@ void *nim_test(void *args)
     log_print(log_fd, "Begin test!\n\n");
 
     /* test init */
-    ret = udp_test_init(0, TESC0_PORT);
+    ret[0] = udp_test_init(0, TESC0_PORT);
     if(ret != 0) {
         log_print(log_fd, "udp_test_init 0 failed!\n");
         test_mod_nim.pass = 0;
-        pthread_exit(NULL);
     }
-    ret = udp_test_init(1, TESC1_PORT);
+    ret[1] = udp_test_init(1, TESC1_PORT);
     if(ret != 0) {
         log_print(log_fd, "udp_test_init 1 failed!\n");
         test_mod_nim.pass = 0;
-        pthread_exit(NULL);
     }
-    ret = udp_test_init(2, TESC2_PORT);
+    ret[2] = udp_test_init(2, TESC2_PORT);
     if(ret != 0) {
         log_print(log_fd, "udp_test_init 2 failed!\n");
         test_mod_nim.pass = 0;
-        pthread_exit(NULL);
     }
-    ret = udp_test_init(3, TESC3_PORT);
+    ret[3] = udp_test_init(3, TESC3_PORT);
     if(ret != 0) {
         log_print(log_fd, "udp_test_init 3 failed!\n");
         test_mod_nim.pass = 0;
-        pthread_exit(NULL);
     }
 
     /* ethernet port init */
-    ether_port_init(0, TESC0_PORT);
-    ether_port_init(1, TESC1_PORT);
-    ether_port_init(2, TESC2_PORT);
-    ether_port_init(3, TESC3_PORT);
+    if(ret[0] == 0) {
+        ether_port_init(0, TESC0_PORT);
+    }
+    if(ret[1] == 0) {
+        ether_port_init(1, TESC1_PORT);
+    }
+    if(ret[2] == 0) {
+        ether_port_init(2, TESC2_PORT);
+    }
+    if(ret[3] == 0) {
+        ether_port_init(3, TESC3_PORT);
+    }
  
-    for(i = 0; i < 4; i++) {    
+    for(i = 0; (i < 4) && (ret[i] == 0); i++) {    
         udp_recv_task_id[i] = pthread_create(&ptid_r[i], NULL, (void *)udp_recv_test, &net_port_para_recv[i]);
         if(udp_recv_task_id[i] != 0) {
             log_print(log_fd, "Port %d recv spawn failed!\n", i);
@@ -180,7 +184,7 @@ void *nim_test(void *args)
     }
 
     /* Wait all udp send packet thread and all udp receive packet thread to endup */
-    for(i = 0; i < 4; i++) {
+    for(i = 0; (i < 4) && (ret[i] == 0); i++) {
         pthread_join(ptid_r[i], NULL);
         pthread_join(ptid_s[i], NULL);
     }
