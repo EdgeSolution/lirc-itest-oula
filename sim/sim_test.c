@@ -377,6 +377,7 @@ int analysis_packet(uint8_t *buff, int list_id)
 {
     uint32_t crc_check = 0xFFFFFFFF;
     int log_fd;
+    int tmp;
 
     struct uart_package *recv_packet;
     recv_packet = (struct uart_package *)buff;
@@ -420,9 +421,13 @@ int analysis_packet(uint8_t *buff, int list_id)
     } else {
         _uart_array[list_id].target_send_pack_num = recv_packet->pack_num;
         /* _rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num;*/
-        _loss_pack_count[list_id] = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;
+        tmp = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;
         if (_loss_pack_count[list_id] > 0) {
             test_mod_sim.pass = 0;
+            if (tmp != _loss_pack_count[list_id]) {
+                _loss_pack_count[list_id] = tmp;
+                log_print(log_fd, "%s lost %d package\n", port_list[list_id], _loss_pack_count[list_id]);
+            }
         }
     }
     return 0;
