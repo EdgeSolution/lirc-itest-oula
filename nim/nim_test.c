@@ -79,7 +79,7 @@ void nim_print_status()
         COL_FIX_WIDTH, "NIM", (test_mod_nim.pass) ? STR_MOD_OK : STR_MOD_ERROR);
 
     for (i = 0; i < 4; i++) {
-        if (timeout_flag[i] >= 50) {
+        if (timeout_flag[i] >= 20) {
             test_mod_nim.pass = 0;
             log_print(log_fd, "eth%-*u %s\n", COL_FIX_WIDTH-3, i, STR_MOD_ERROR);
         }
@@ -363,7 +363,10 @@ void udp_send_test(ether_port_para *net_port_para)
     for(i = 0; i < NET_MAX_NUM - 8; i++) {
         send_buf[i] = i;
     }
-    
+   
+    /* Wait receive thread to ready */
+    usleep(500000); 
+
     while(g_running) {
         /* Send packages count */
         send_buf[NET_MAX_NUM - 5] = (uint8_t)(udp_cnt_send[ethid] & 0xff);
@@ -461,7 +464,8 @@ void udp_recv_test(ether_port_para *net_port_para)
                 /* First package received */
                 if(udp_test_flag[ethid] == 0) {
                     udp_fst_cnt[ethid] = udp_cnt_read;
-                    udp_cnt_recv[ethid] = udp_cnt_read;   
+                    udp_cnt_recv[ethid] = udp_cnt_read;
+                    tesc_lost_no[ethid] = udp_cnt_read;   
                     udp_test_flag[ethid] = 1; 
                 } else {
                     tesc_test_no[ethid] = udp_cnt_read - udp_fst_cnt[ethid];
