@@ -183,6 +183,7 @@ int get_parameter(void)
 
     /* Get the information of tester */
     printf("Please input the Tester:\n");
+    memset(buf, 0, sizeof(buf));
     if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
         printf("input error\n");
         return -1;
@@ -196,6 +197,7 @@ int get_parameter(void)
 
     /* Get the product SN */
     printf("Please input the Product SN:\n");
+    memset(buf, 0, sizeof(buf));
     if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
         printf("input error\n");
         return -1;
@@ -209,6 +211,7 @@ int get_parameter(void)
 
     /* Get the test time */
     printf("Please input the Test time(minutes):\n");
+    memset(buf, 0, sizeof(buf));
     if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
         printf("input error\n");
         return -1;
@@ -221,11 +224,17 @@ int get_parameter(void)
 
     /* Get the machine A or B */
     printf("Please input A or B for this machine:\n");
-    if (scanf("%c", &g_machine) != 1) {
+    memset(buf, 0, sizeof(buf));
+    if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
         printf("input error\n");
         return -1;
     }
-    g_machine = toupper(g_machine);
+    p = left_trim(right_trim(buf));
+    if (strlen(p) != 1) {
+        printf("input error\n");
+        return -1;
+    }
+    g_machine = toupper(buf[0]);
     switch (g_machine) {
     case 'a':
     case 'A':
