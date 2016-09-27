@@ -38,7 +38,7 @@ static uint32_t udp_cnt_send[TESC_NUM] = {0};
 static uint32_t udp_cnt_recv[TESC_NUM] = {0};
 static uint32_t udp_fst_cnt[TESC_NUM] = {0};
 static int udp_test_flag[TESC_NUM] = {0};
-static uint32_t timeout_flag[TESC_NUM] = {0};
+static uint32_t timeout_cnt[TESC_NUM] = {0};
 
 static uint32_t tesc_test_no[TESC_NUM] = {0};
 static uint32_t tesc_err_no[TESC_NUM] = {0};
@@ -74,17 +74,11 @@ void nim_print_status()
     for (i = 0; i < 4; i++) {
         if ((float)tesc_lost_no[i] > (float)tesc_test_no[i] * FRAME_LOSS_RATE)
             test_mod_nim.pass = 0;
+        if (timeout_cnt[i] >= 5)
+            test_mod_nim.pass = 0;
     }
     printf("%-*s %s\n",
         COL_FIX_WIDTH, "NIM", (test_mod_nim.pass) ? STR_MOD_OK : STR_MOD_ERROR);
-
-    for (i = 0; i < 4; i++) {
-        if (timeout_flag[i] >= 20) {
-            test_mod_nim.pass = 0;
-            log_print(log_fd, "eth%-*u %s\n", COL_FIX_WIDTH-3, i, STR_MOD_ERROR);
-        }
-    
-    }
 
     for (i = 0; i < 4; i++) {
         /*
@@ -98,9 +92,10 @@ void nim_print_status()
             i, tesc_test_no[i], tesc_lost_no[i], tesc_err_no[i]);
         */
 
-        printf("eth%-*u TEST:%-*u LOST:%-*u ERR:%-*u\n",
+        printf("eth%-*u TEST:%-*u LOST:%-*u ERR:%-*u TIMEOUT:%-*u\n",
             COL_FIX_WIDTH-3, i, COL_FIX_WIDTH-5, tesc_test_no[i],
-            COL_FIX_WIDTH-5, tesc_lost_no[i], COL_FIX_WIDTH-4, tesc_err_no[i]);
+            COL_FIX_WIDTH-5, tesc_lost_no[i], COL_FIX_WIDTH-4, tesc_err_no[i],
+            COL_FIX_WIDTH-8, timeout_cnt[i]);
     }
 }
     
@@ -556,7 +551,7 @@ int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int
             log_print(log_fd, "udp_recv error: %d!\n", ethid);
         } 
     } else if(tv == 1) {    /* select timeout */
-        timeout_flag[ethid]++; 
+        timeout_cnt[ethid]++; 
         //log_print(log_fd, "is_udp_read_ready not ready!\n");
     }   
     
