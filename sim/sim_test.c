@@ -106,10 +106,10 @@ struct uart_attr {
 }__attribute__ ((packed));
 
 struct uart_count_list {
-	uint32_t err_count;//global variable,count packet loss or error
-	uint32_t recv_pack_count;//global variable, count received packet
-	uint32_t send_pack_count;//global variable, count send packet
-	uint32_t target_send_pack_num;//Record target amount of packets sent
+    uint32_t err_count;//global variable,count packet loss or error
+    uint32_t recv_pack_count;//global variable, count received packet
+    uint32_t send_pack_count;//global variable, count send packet
+    uint32_t target_send_pack_num;//Record target amount of packets sent
 }__attribute__ ((packed));
 
 static struct uart_count_list _uart_array[16];//init uart_count
@@ -310,7 +310,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
             if(g_running) {
                 log_print(log_fd,"%s check PACKET HEAD timeout\n", port_list[list_id]);
                 /*_uart_array[list_id].target_send_pack_num++;*//*timeout so estimate the target_send_pack_num+1*/
-                /* _rate[list_id] = 
+                /* _rate[list_id] =
                        (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num; test_mod_sim.pass = 0;
                 */
                 /*_loss_pack_count[list_id] = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;*/
@@ -355,7 +355,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
             len = len - ret;
         }
     } /* end while (len > 0) */
-     
+
     return bytes;
 }
 
@@ -475,16 +475,18 @@ void *port_recv_event(void *args)
             if (n == -1) { /*received stop signal*/
                 g_running = 0;
                 pthread_exit((void *)0);
+            } else if (n == 0) {
+                continue; //Fix unexpect error count increase
             }
             DBG_PRINT("recv_uart_packet data error\n");
         }
-    
+
         status = analysis_packet(buff,list_id);
         if (status != 0) {
             if (g_running) {
                 test_mod_sim.pass = 0;
             }
-            //to do 
+            //to do
             //break while(1)
             //pthread_exit((void *)-1);
         } else {
@@ -608,7 +610,7 @@ void *sim_test(void *args)
 
     pthread_t th_recv_id[16];
     long th_recv_stat[16];
-    
+
     int port_num;
 
     int i;
