@@ -92,10 +92,9 @@ void nim_print_status()
             i, tesc_test_no[i], tesc_lost_no[i], tesc_err_no[i]);
         */
 
-        printf("eth%-*u TEST:%-*u LOST:%-*u ERR:%-*u TIMEOUT:%-*u\n",
+        printf("eth%-*u TEST:%-*u LOST:%-*u ERR:%-*u\n",
             COL_FIX_WIDTH-3, i, COL_FIX_WIDTH-5, tesc_test_no[i],
-            COL_FIX_WIDTH-5, tesc_lost_no[i], COL_FIX_WIDTH-4, tesc_err_no[i],
-            COL_FIX_WIDTH-8, timeout_cnt[i]);
+            COL_FIX_WIDTH-5, tesc_lost_no[i], COL_FIX_WIDTH-4, tesc_err_no[i]);
     }
 }
     
@@ -590,9 +589,9 @@ int is_udp_read_ready(int sockfd)
     FD_ZERO(&rfds);
     FD_SET(sockfd, &rfds);
 
-    /* Wait up to 200000 microseconds. */
-    tv.tv_sec = 0;
-    tv.tv_usec = 200000;
+    /* Wait up to 1 second */
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
 
     retval = select(sockfd + 1, &rfds, NULL, NULL, &tv /* no-blocking*/);
     if(retval > 0) {
@@ -651,4 +650,3 @@ int set_ipaddr(char *ifname, char *ipaddr, char *netmask)
     
     return 0;
 }
-
