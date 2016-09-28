@@ -308,11 +308,11 @@ static int read_data_a(int fd, char *buf)
     while (g_running && (bytes < len)) {
         while (g_running) {
             ret = advspi_read_a(fd, buf+bytes, step, bytes);
+            sleep_ms(100);
             if (ret == step) {
                 bytes += step;
                 break;
             }
-            sleep_ms(200);
         }
     }
 
@@ -346,11 +346,11 @@ static int read_data_b(int fd, char *buf)
     while (g_running && (bytes < len)) {
         while (g_running) {
             ret = advspi_read_b(fd, buf+bytes, step, bytes);
+            sleep_ms(100);
             if (ret == step) {
                 bytes += step;
                 break;
             }
-            sleep_ms(200);
         }
     }
 
@@ -382,11 +382,11 @@ int write_data_a(int fd, char *buf, size_t len)
     while (g_running && (bytes < len)) {
         while (g_running) {
             ret = advspi_write_a(fd, buf+bytes, step, bytes);
+            sleep_ms(100);
             if (ret == step) {
                 bytes += step;
                 break;
             }
-            sleep_ms(100);
         }
     }
 
@@ -418,11 +418,11 @@ int write_data_b(int fd, char *buf, size_t len)
     while (g_running && (bytes < len)) {
         while (g_running) {
             ret = advspi_write_b(fd, buf+bytes, step, bytes);
+            sleep_ms(100);
             if (ret == step) {
                 bytes += step;
                 break;
             }
-            sleep_ms(100);
         }
     }
 
