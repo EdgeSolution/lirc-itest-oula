@@ -297,7 +297,9 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
         } else {
             if (i == 0) {
                 retry_count++;
-                ret = read_pack_head_1_byte(fd, buff + 0);
+                if (retry_count <= MAX_RETRY_COUNT) {/*if timeout,not read again to avoid data loss*/
+                    ret = read_pack_head_1_byte(fd, buff + 0);
+                }
             } else {
                 retry_count++;
                 buff[0] = buff[i];
