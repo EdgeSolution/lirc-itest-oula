@@ -317,6 +317,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
                 */
                 /*_loss_pack_count[list_id] = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;*/
                 test_mod_sim.pass = 0;
+                retry_count = 0;
             }
             return bytes;
         }
@@ -326,6 +327,8 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
         log_print(log_fd,"%s received stop signal, sim test will be stop\n", port_list[list_id]);
         return -1;/* means will be stop test*/
     }
+
+    retry_count = 0;
 
     /*if head is not stop_sign then*/
     _uart_array[list_id].recv_pack_count++;/* Packet Reception count +1*/
@@ -347,7 +350,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
                     log_print(log_fd,"%s receive data timeout\n", port_list[list_id]);
                     test_mod_sim.pass = 0;
                 }
-            break;
+                break;
             } else {
                 sleep(1);
                 DBG_PRINT("Retry:%d\n", retry_count);

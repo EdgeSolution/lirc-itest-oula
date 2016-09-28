@@ -58,6 +58,7 @@ int write_data_b(int fd, char *buf, size_t len);
 static void log_result(int log_fd);
 static unsigned char get_data_pattern(int fd);
 static int send_data_pattern(int fd, unsigned char pattern);
+static void dump_data(int log_fd, char *buf, int len);
 
 
 void msm_print_status()
@@ -108,8 +109,11 @@ void *msm_test(void *args)
     memset(data_55, 0x55, sizeof(data_55));
     memset(data_aa, 0xAA, sizeof(data_aa));
 
+    char rbuf[PACKET_SIZE];
     char *data = NULL;
     unsigned char pattern = 0;
+    char *cbuf;
+
     if (g_machine == 'A') {
         while (g_running) {
             counter_test++;
@@ -133,7 +137,6 @@ void *msm_test(void *args)
                 log_print(log_fd, "write %d bytes(%02X)   FALSE!\n", bytes, (unsigned char)data[0]);
                 counter_fail++;
                 test_mod_msm.pass = 0;
-                //continue;
             } else {
                 log_print(log_fd, "write %d bytes(%02X)   OK!\n", bytes, (unsigned char)data[0]);
             }
@@ -152,32 +155,41 @@ void *msm_test(void *args)
             /* Read data and verify */
             switch (pattern) {
             case 0xAA:
-                bytes = read_data_b(spi, data_aa);
-                break;
-            
             case 0x55:
-                bytes = read_data_b(spi, data_55);
+                /* Read data */
+                bytes = read_data_b(spi, rbuf);
+                if (bytes != PACKET_SIZE) {
+                    log_print(log_fd, "read %d bytes(%02X)   FALSE!\n", bytes, pattern);
+                } else {
+                    log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, pattern);
+                }
+
+                /* Verify data */
+                if (pattern == 0xAA) {
+                    cbuf = data_aa;
+                } else {
+                    cbuf = data_55;
+                }
+                if (memcmp(cbuf, rbuf, bytes) == 0) {
+                    log_print(log_fd, "verify data(%02X)   OK!\n", pattern);
+                    counter_success++;
+                } else {
+                    log_print(log_fd, "verify data(%02X expected)   FALSE!\n", pattern);
+                    dump_data(log_fd, rbuf, bytes);
+                    counter_fail++;
+                    test_mod_msm.pass = 0;
+                }
                 break;
 
             default:
-                bytes = 0;
+                //log_print(log_fd, "Receive invalid pattern data(%02X) from serial port!\n", pattern);
+                //counter_fail++;
                 break;
             }
 
             if (!g_running) {
                 break;
             }
-
-            /* Update counter */
-            if (bytes != PACKET_SIZE) {
-                log_print(log_fd, "read %d bytes(%02X)   FALSE!\n", bytes, pattern);
-                counter_fail++;
-                test_mod_msm.pass = 0;
-            } else {
-                log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, pattern);
-                counter_success++;
-            }
-
             sleep(1);
         }
     } else {
@@ -198,31 +210,40 @@ void *msm_test(void *args)
             /* Read data and verify */
             switch (pattern) {
             case 0xAA:
-                bytes = read_data_a(spi, data_aa);
-                break;
-            
             case 0x55:
-                bytes = read_data_a(spi, data_55);
+                /* Read data */
+                bytes = read_data_a(spi, rbuf);
+                if (bytes != PACKET_SIZE) {
+                    log_print(log_fd, "read %d bytes(%02X)   FALSE!\n", bytes, pattern);
+                } else {
+                    log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, pattern);
+                }
+
+                /* Verify data */
+                if (pattern == 0xAA) {
+                    cbuf = data_aa;
+                } else {
+                    cbuf = data_55;
+                }
+                if (memcmp(cbuf, rbuf, bytes) == 0) {
+                    log_print(log_fd, "verify data(%02X)   OK!\n", pattern);
+                    counter_success++;
+                } else {
+                    log_print(log_fd, "verify data(%02X expected)   FALSE!\n", pattern);
+                    dump_data(log_fd, rbuf, bytes);
+                    counter_fail++;
+                    test_mod_msm.pass = 0;
+                }
                 break;
 
             default:
-                bytes = 0;
+                //log_print(log_fd, "Receive invalid pattern data(%02X) from serial port!\n", pattern);
+                //counter_fail++;
                 break;
             }
 
             if (!g_running) {
                 break;
-            }
-
-            /* Update counter */
-            if (bytes != PACKET_SIZE) {
-                log_print(log_fd, "read %d bytes(%02X)   FALSE!\n", bytes, pattern);
-                counter_fail++;
-                test_mod_msm.pass = 0;
-                //continue;
-            } else {
-                log_print(log_fd, "read %d bytes(%02X)   OK!\n", bytes, pattern);
-                counter_success++;
             }
             sleep(1);
 
@@ -238,11 +259,10 @@ void *msm_test(void *args)
                 log_print(log_fd, "write %d bytes(%02X)   FALSE!\n", bytes, (unsigned char)data[0]);
                 counter_fail++;
                 test_mod_msm.pass = 0;
-                //continue;
             } else {
                 log_print(log_fd, "write %d bytes(%02X)   OK!\n", bytes, (unsigned char)data[0]);
             }
-            
+
             /* Set data pattern to other side */
             if (send_data_pattern(com, data[0]) <= 0) {
                 if (g_running)
@@ -267,41 +287,36 @@ void *msm_test(void *args)
  *      read_data_a
  *
  * DESCRIPTION:
- *      Read data from storage zone A, and compare it with predefined pattern.
+ *      Read data from storage zone A.
  *
  * PARAMETERS:
  *      fd       - The fd of serial port
- *      cmp_buf  - The data to compare with the readed data
+ *      buf      - The buffer to keep readed data
  *
  * RETURN:
  *      Number of bytes readed
  ******************************************************************************/
-static int read_data_a(int fd, char *cmp_buf)
+static int read_data_a(int fd, char *buf)
 {
     int ret = 0;
     int len = PACKET_SIZE;
     int bytes = 0;
     int step = 1024;
-    char buf[PACKET_SIZE];
 
-    memset(buf, 0, sizeof(buf));
+    memset(buf, 0, len);
 
     while (g_running && (bytes < len)) {
         while (g_running) {
             ret = advspi_read_a(fd, buf+bytes, step, bytes);
+            sleep_ms(100);
             if (ret == step) {
                 bytes += step;
                 break;
             }
-            sleep_ms(200);
         }
     }
 
-    if (memcmp(cmp_buf, buf, len) == 0) {
-        return len;
-    }
-
-    return 0;
+    return bytes;
 }
 
 
@@ -310,41 +325,36 @@ static int read_data_a(int fd, char *cmp_buf)
  *      read_data_b
  *
  * DESCRIPTION:
- *      Read data from storage zone B, and compare it with predefined pattern.
+ *      Read data from storage zone B.
  *
  * PARAMETERS:
  *      fd       - The fd of serial port
- *      cmp_buf  - The data to compare with the readed data
+ *      buf      - The buffer to keep readed data
  *
  * RETURN:
  *      Number of bytes readed
  ******************************************************************************/
-static int read_data_b(int fd, char *cmp_buf)
+static int read_data_b(int fd, char *buf)
 {
     int ret = 0;
     int len = PACKET_SIZE;
     int bytes = 0;
     int step = 1024;
-    char buf[PACKET_SIZE];
 
-    memset(buf, 0, sizeof(buf));
+    memset(buf, 0, len);
 
     while (g_running && (bytes < len)) {
         while (g_running) {
             ret = advspi_read_b(fd, buf+bytes, step, bytes);
+            sleep_ms(100);
             if (ret == step) {
                 bytes += step;
                 break;
             }
-            sleep_ms(200);
         }
     }
 
-    if (memcmp(cmp_buf, buf, len) == 0) {
-        return len;
-    }
-
-    return 0;
+    return bytes;
 }
 
 
@@ -372,11 +382,11 @@ int write_data_a(int fd, char *buf, size_t len)
     while (g_running && (bytes < len)) {
         while (g_running) {
             ret = advspi_write_a(fd, buf+bytes, step, bytes);
+            sleep_ms(100);
             if (ret == step) {
                 bytes += step;
                 break;
             }
-            sleep_ms(100);
         }
     }
 
@@ -408,11 +418,11 @@ int write_data_b(int fd, char *buf, size_t len)
     while (g_running && (bytes < len)) {
         while (g_running) {
             ret = advspi_write_b(fd, buf+bytes, step, bytes);
+            sleep_ms(100);
             if (ret == step) {
                 bytes += step;
                 break;
             }
-            sleep_ms(200);
         }
     }
 
@@ -496,4 +506,33 @@ static int send_data_pattern(int fd, unsigned char pattern)
     }
 
     return 0;
+}
+
+
+/******************************************************************************
+ * NAME:
+ *      dump_data
+ *
+ * DESCRIPTION: 
+ *      Dump buffer in HEX mode to log
+ *
+ * PARAMETERS:
+ *      log_fd - The log file
+ *      buf    - The buffer
+ *      len    - The count of data in buf
+ *
+ * RETURN:
+ *      None
+ ******************************************************************************/
+static void dump_data(int log_fd, char *buf, int len)
+{
+    int i;
+
+    for (i = 0; i < len; i++) {
+        write_file(log_fd, "%02X ", *((unsigned char *)buf + i));
+        if (((i+1) % 16) == 0) {
+            write_file(log_fd, "\n");
+        }
+    }
+    write_file(log_fd, "\n");
 }
