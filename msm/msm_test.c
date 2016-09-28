@@ -182,8 +182,8 @@ void *msm_test(void *args)
                 break;
 
             default:
-                log_print(log_fd, "Receive invalid pattern data(%02X) from serial port!\n", pattern);
-                counter_fail++;
+                //log_print(log_fd, "Receive invalid pattern data(%02X) from serial port!\n", pattern);
+                //counter_fail++;
                 break;
             }
 
@@ -237,8 +237,8 @@ void *msm_test(void *args)
                 break;
 
             default:
-                log_print(log_fd, "Receive invalid pattern data(%02X) from serial port!\n", pattern);
-                counter_fail++;
+                //log_print(log_fd, "Receive invalid pattern data(%02X) from serial port!\n", pattern);
+                //counter_fail++;
                 break;
             }
 
