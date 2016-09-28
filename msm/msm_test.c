@@ -354,7 +354,7 @@ static int read_data_b(int fd, char *buf)
         }
     }
 
-    return 0;
+    return bytes;
 }
 
 
