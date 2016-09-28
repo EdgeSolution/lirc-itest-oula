@@ -174,7 +174,7 @@ void *msm_test(void *args)
                     log_print(log_fd, "verify data(%02X)   OK!\n", pattern);
                     counter_success++;
                 } else {
-                    log_print(log_fd, "verify data(%02X expected)   FALSE!\n", bytes, pattern);
+                    log_print(log_fd, "verify data(%02X expected)   FALSE!\n", pattern);
                     dump_data(log_fd, rbuf, bytes);
                     counter_fail++;
                     test_mod_msm.pass = 0;
@@ -229,7 +229,7 @@ void *msm_test(void *args)
                     log_print(log_fd, "verify data(%02X)   OK!\n", pattern);
                     counter_success++;
                 } else {
-                    log_print(log_fd, "verify data(%02X expected)   FALSE!\n", bytes, pattern);
+                    log_print(log_fd, "verify data(%02X expected)   FALSE!\n", pattern);
                     dump_data(log_fd, rbuf, bytes);
                     counter_fail++;
                     test_mod_msm.pass = 0;
