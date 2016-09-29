@@ -444,8 +444,7 @@ void udp_recv_test(ether_port_para *net_port_para)
             }
 
             /* reset flag for timeout */
-            if(timeout_rst_cnt[ethid] != 0)
-                timeout_rst_cnt[ethid] = 0;        
+            timeout_rst_cnt[ethid] = 0;        
      
             calculated_crc = crc32(0, recv_buf, NET_MAX_NUM - 4);
             
