@@ -441,7 +441,11 @@ void udp_recv_test(ether_port_para *net_port_para)
             if(((recv_buf[i] & 0xaa) || (recv_buf[i + 1] & 0xaa) || (recv_buf[i + 2] & 0xaa) || (recv_buf[i + 3] & 0xaa)) == 0) {
                 g_running = 0;
                 break;            
-            }        
+            }
+
+            /* reset flag for timeout */
+            if(timeout_rst_cnt[ethid] != 0)
+                timeout_rst_cnt[ethid] = 0;        
      
             calculated_crc = crc32(0, recv_buf, NET_MAX_NUM - 4);
             
@@ -474,10 +478,10 @@ void udp_recv_test(ether_port_para *net_port_para)
 
                 /* judge if pass or fail */
                 if ((float)tesc_lost_no[ethid] > (float)tesc_test_no[ethid] * FRAME_LOSS_RATE)
-                    test_mod_nim.pass = 0;                
+                    test_mod_nim.pass = 0;
             }
             udp_cnt_recv[ethid]++;
-        
+       
             j++;
             /* print log per 1000 time */
             if(j >= 1000) {
@@ -536,10 +540,6 @@ int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int
 
     tv = is_udp_read_ready(sockfd);
     if(tv == 0) {
-        /* reset falg for timeout to 0 */
-        if(timeout_rst_cnt[ethid] < 5)
-            timeout_rst_cnt[ethid] = 0;
-
         recv_num = recvfrom(sockfd, buff, length, 0, (struct sockaddr *)&recv_from_addr, &addrlen);
         
         if(recv_num == -1) {
