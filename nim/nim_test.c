@@ -39,6 +39,7 @@ static uint32_t udp_cnt_recv[TESC_NUM] = {0};
 static uint32_t udp_fst_cnt[TESC_NUM] = {0};
 static int udp_test_flag[TESC_NUM] = {0};
 static uint32_t timeout_cnt[TESC_NUM] = {0};
+static uint32_t timeout_rst_cnt[TESC_NUM] = {0};
 
 static uint32_t tesc_test_no[TESC_NUM] = {0};
 static uint32_t tesc_err_no[TESC_NUM] = {0};
@@ -476,6 +477,10 @@ void udp_recv_test(ether_port_para *net_port_para)
                                 Or have received packages from other machines. \n"); */
                     }
                 }
+
+                /* judge if pass or fail */
+                if ((float)tesc_lost_no[ethid] > (float)tesc_test_no[ethid] * FRAME_LOSS_RATE)
+                    test_mod_nim.pass = 0;                
             }
             udp_cnt_recv[ethid]++;
         
@@ -537,16 +542,24 @@ int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int
 
     tv = is_udp_read_ready(sockfd);
     if(tv == 0) {
+        /* reset falg for timeout to 0 */
+        if(timeout_rst_cnt[ethid] < 5)
+            timeout_rst_cnt[ethid] = 0;
+
         recv_num = recvfrom(sockfd, buff, length, 0, (struct sockaddr *)&recv_from_addr, &addrlen);
         
         if(recv_num == -1) {
             log_print(log_fd, "udp_recv error: %d!\n", ethid);
         } 
     } else if(tv == 1) {    /* select timeout */
-        timeout_cnt[ethid]++; 
+        timeout_cnt[ethid]++;
+        timeout_rst_cnt[ethid]++; 
         //log_print(log_fd, "is_udp_read_ready not ready!\n");
     }   
-    
+   
+    if(timeout_rst_cnt[ethid] >= 5)
+        test_mod_nim.pass = 0;
+ 
     return recv_num; 
 }
 
