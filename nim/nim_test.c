@@ -72,12 +72,6 @@ void nim_print_status()
 {
     int i = 0;
     
-    for (i = 0; i < 4; i++) {
-        if ((float)tesc_lost_no[i] > (float)tesc_test_no[i] * FRAME_LOSS_RATE)
-            test_mod_nim.pass = 0;
-        if (timeout_cnt[i] >= 5)
-            test_mod_nim.pass = 0;
-    }
     printf("%-*s %s\n",
         COL_FIX_WIDTH, "NIM", (test_mod_nim.pass) ? STR_MOD_OK : STR_MOD_ERROR);
 
