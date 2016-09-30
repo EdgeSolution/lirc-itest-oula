@@ -164,6 +164,115 @@ int main(int argc, char **argv)
 
 /******************************************************************************
  * NAME:
+ *      is_product_sn_valid
+ *
+ * DESCRIPTION:
+ *      Check if the product SN valid or not
+ *      The format of the product SN:
+ *          BBBBBBBSCYYMMXXXXX
+ *      SC: letter
+ *      BBBBBBB: digit number
+ *      YYMM: digit number
+ *      XXXXX: digit number
+ *
+ * PARAMETERS:
+ *      psn - The product SN string.
+ *
+ * RETURN:
+ *      1 - OK(Valid)
+ *      0 - Not valid
+ ******************************************************************************/
+int is_product_sn_valid(char *psn)
+{
+    int n;
+
+    if (strcasecmp(psn, "CASCO") == 0) {
+        return 1;
+    }
+
+    if (strlen(psn) != 18) {
+        return 0;
+    }
+
+    /* Check BBBBBBB */
+    for (n = 0; n < 7; n++) {
+        if (!isdigit(psn[n])) {
+            return 0;
+        }
+    }
+
+    /* Check SC */
+    for (n = 7; n < 9; n++) {
+        if (!isalpha(psn[n])) {
+            return 0;
+        }
+    }
+
+    /* Check YYMMXXXXX */
+    for (n = 9; n < 18; n++) {
+        if (!isdigit(psn[n])) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+
+/******************************************************************************
+ * NAME:
+ *      is_board_sn_valid
+ *
+ * DESCRIPTION:
+ *      Check if the board SN valid or not
+ *      The format of the board SN:
+ *          AKOXNNNNNN
+ *      AKO: "AKO"
+ *      X: hexadecimal digit number
+ *      NNNNNN: digit number
+ *
+ * PARAMETERS:
+ *      bsn - The board SN string.
+ *
+ * RETURN:
+ *      1 - OK(Valid)
+ *      0 - Not valid
+ ******************************************************************************/
+int is_board_sn_valid(char *bsn)
+{
+    int n;
+
+    if (strcasecmp(bsn, "CASCO") == 0) {
+        return 1;
+    }
+
+    if (strlen(bsn) != 10) {
+        return 0;
+    }
+
+    /* Check AKO */
+    if (strncasecmp(bsn, "AKO", 3) != 0) {
+        return 0;
+    }
+
+    /* Check X */
+    if (!isxdigit(bsn[3])) {
+        return 0;
+    }
+
+    /* Check NNNNNN */
+    for (n = 4; n < 10; n++) {
+        if (!isdigit(bsn[n])) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+
+/******************************************************************************
+ * NAME:
  *      get_parameter
  *
  * DESCRIPTION:

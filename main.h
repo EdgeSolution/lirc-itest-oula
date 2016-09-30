@@ -30,6 +30,8 @@
 #define MAX_MOD_COUNT       10
 
 /* Function Prototype */
+int is_product_sn_valid(char *psn);
+int is_board_sn_valid(char *bsn);
 int get_parameter(void);
 int load_config(char *config_file);
 int install_sig_handler(void);
