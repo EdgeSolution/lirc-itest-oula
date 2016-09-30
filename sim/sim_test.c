@@ -310,7 +310,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
         /*timeout*/
         if (retry_count > MAX_RETRY_COUNT) {
             if(g_running) {
-                log_print(log_fd,"%s check PACKET HEAD timeout\n", port_list[list_id]);
+                log_print(log_fd,"%s check PACKET HEAD timeout when received %d packet\n", port_list[list_id], _uart_array[list_id].recv_pack_count);
                 /*_uart_array[list_id].target_send_pack_num++;*//*timeout so estimate the target_send_pack_num+1*/
                 /* _rate[list_id] =
                        (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num; test_mod_sim.pass = 0;
@@ -347,7 +347,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
                     /*_uart_array[list_id].target_send_pack_num++;*//*timeout so estimate the target_send_pack_num+1*/
                     /*_rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num;*/
                     /*_loss_pack_count[list_id] = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;*/
-                    log_print(log_fd,"%s receive data timeout\n", port_list[list_id]);
+                    log_print(log_fd,"%s receive %d packet timeout\n", port_list[list_id], _uart_array[list_id].recv_pack_count);
                     test_mod_sim.pass = 0;
                 }
                 break;
@@ -400,7 +400,7 @@ int analysis_packet(uint8_t *buff, int list_id)
 
         if (g_running) {
             /*means received error packet*/
-            log_print(log_fd, "%s Received packet error\n", port_list[list_id]);
+            log_print(log_fd, "%s Received \"%d\"packet error\n", port_list[list_id], _uart_array[list_id].recv_pack_count);
             _uart_array[list_id].err_count++;
             test_mod_sim.pass = 0;
         }
