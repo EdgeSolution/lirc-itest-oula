@@ -343,7 +343,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
             break;
         } else if (ret == 0) {
             if (++retry_count > MAX_RETRY_COUNT) {
-                if(g_running) {
+                if (g_running) {
                     /*_uart_array[list_id].target_send_pack_num++;*//*timeout so estimate the target_send_pack_num+1*/
                     /*_rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num;*/
                     /*_loss_pack_count[list_id] = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;*/
@@ -352,7 +352,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
                 }
                 break;
             } else {
-                sleep(1);
+               /* sleep(1);*//*Delete this sleep, because read function do not wait  write function even if read nothing*/
                 DBG_PRINT("Retry:%d\n", retry_count);
             }
         } else {
