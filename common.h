@@ -78,7 +78,8 @@ typedef struct _test_mod {
 
 
 #define CCM_SERIAL_PORT     "/dev/ttyS1"
-#define DATA_SYNC           0x7E
+#define DATA_SYNC_A         0xFA
+#define DATA_SYNC_B         0xFB
 
 void kill_process(char *name);
 int wait_other_side_ready(void);

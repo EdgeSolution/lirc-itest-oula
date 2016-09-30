@@ -81,20 +81,19 @@ int ser_open(char *dev)
  *      fd - The fd of serial port
  *
  * RETURN:
- *      Bytes wrote
+ *      1 - DATA_SYNC char has been sent
+ *      0 - ERROR.
  ******************************************************************************/
-static int send_sync_data(int fd)
+static int send_sync_data(int fd, char snt_char)
 {
-    char buf[2] = {DATA_SYNC, 0};
+    char buf[2] = {snt_char, 0};
 
-    while (g_running) {
-        int size = write(fd, buf, 1);
-        if (size > 0) {
-            return 1;
-        }
+    int size = write(fd, buf, 1);
+    if (size > 0) {
+        return 1;
+    } else {
+        return 0;
     }
-
-    return 0;
 }
 
 
@@ -109,10 +108,11 @@ static int send_sync_data(int fd)
  *      fd - The fd of serail port
  *
  * RETURN:
- *      1 - Reveived the DATA_SYNC char
- *      0 - Not received.
+ *      1  - Reveived a right SYNC char
+ *      -1 - Reveived a wrong SYNC char
+ *      0  - Not received.
  ******************************************************************************/
-static int recv_sync_data(int fd)
+static int recv_sync_data(int fd, char rcv_char, char snt_char)
 {
     fd_set rfds;
     struct timeval tv;
@@ -124,9 +124,9 @@ static int recv_sync_data(int fd)
     FD_ZERO(&rfds);
     FD_SET(fd, &rfds);
 
-    /* Wait up to five seconds. */
-    tv.tv_sec = 0;
-    tv.tv_usec = 5000;
+    /* Wait up to 3 seconds. */
+    tv.tv_sec = 3;
+    tv.tv_usec = 0;
 
     retval = select(fd+1, &rfds, NULL, NULL, &tv);
     /* Don't rely on the value of tv now! */
@@ -137,8 +137,11 @@ static int recv_sync_data(int fd)
         memset(buf, 0, sizeof(buf));
         size = read(fd, buf, sizeof(buf)-1);
         if (size > 0) {
-            if (strchr(buf, DATA_SYNC)) {
+            /* Search the sync char. */
+            if (strchr(buf, rcv_char)) {
                 return 1;
+            } else if (strchr(buf, snt_char)) {
+                return -1;
             }
         }
     }
@@ -159,11 +162,20 @@ static int recv_sync_data(int fd)
  *
  * RETURN:
  *      1 - Ready.
- *      0 - Not Ready(exit the program).
+ *      0 - Not Ready(fail).
  ******************************************************************************/
 int wait_other_side_ready(void)
 {
     int rc = 0;
+    char snt_char, rcv_char;
+
+    if (g_machine == 'A') {
+        snt_char = DATA_SYNC_A;
+        rcv_char = DATA_SYNC_B;
+    } else /*if (g_machine == 'B')*/ {
+        snt_char = DATA_SYNC_B;
+        rcv_char = DATA_SYNC_A;
+    }
 
     int fd = ser_open(CCM_SERIAL_PORT);
     if (fd < 0) {
@@ -171,31 +183,25 @@ int wait_other_side_ready(void)
         return 0;
     }
 
-    if (g_machine == 'A') {
-        while (g_running) {
-            sleep(1);
-            if (send_sync_data(fd) < 1) {
-                continue;
-            }
-
-            if (recv_sync_data(fd)) {
-                rc = 1;
-                break;
-            }
+    while (g_running) {
+        /* Send sync request */
+        if (send_sync_data(fd, snt_char) == 0) {
+            continue;
         }
-    } else {
-        while (g_running) {
-            sleep(1);
-            if (recv_sync_data(fd)) {
-                if (send_sync_data(fd) < 1) {
-                    continue;
-                }
 
-                rc = 1;
-                break;
-            }
+        /* Wait for response in five seconds. */
+        int ch = recv_sync_data(fd, rcv_char, snt_char);
+        if (ch == 1) {
+            send_sync_data(fd, snt_char);
+            rc = 1;
+            break;
+        } else if (ch == -1) {
+            printf("Invalid machine!\n");
+            rc = 0;
+            break;
         }
     }
+
     close(fd);
     sleep(3);
 
