@@ -6,16 +6,30 @@ LAST UPDATE 2016-09-20
 Versions in brackets () are not official releases, but testing versions.
 
 VERSION  DATE        CHANGES / DESCRIPTION
+0.04     2016-09-30  - [sim]Fix unexpect error count increase
+                     - [sim]Fix #26 increase select timeout from 200ms to 1s
+                     - [sim]Reset retry count if needed
+                     - [sim]Fix unexpect data reading when timeout
+                     - [msm]Dump readed data to log file when verify fail
+                     - [nim]Fix timeout display issue
+                     - [nim]Optimize status checking
 
-0.02     2016-09-20  -Implemented NIM and SIM module.
-                     -Change test approach of MSM module.
-                     -Add 3rd party utlity check for CPU&MEM module.
-                     -Wait test program on both side (machine A and B) to
-                      be ready before starting any test
-                     -Change the unit of test time from second to minute.
+(0.03)   2016-09-27  - [log]Fix test time display issue when press ctrl-c
+                     - [msm]Fix error log show test ok in the end
+                     - [sim]Fix packet-lossing missing issue
+                     - [sim]Fix packet-lossing number display issue
+                     - [sim]Add error message in log file
+                     - [nim]Fix test issue when cable is pull-out
 
-(0.01)   2016-08-26  -First release
-                     -Implemented HSM, MSM, LED, CPU and MEM test module. 
-                     -Support test log and report
-                     -Support config file
+0.02     2016-09-20  - Implemented NIM and SIM module.
+                     - Change test approach of MSM module.
+                     - Add 3rd party utlity check for CPU&MEM module.
+                     - Wait test program on both side (machine A and B) to
+                       be ready before starting any test
+                     - Change the unit of test time from second to minute.
+
+(0.01)   2016-08-26  - First release
+                     - Implemented HSM, MSM, LED, CPU and MEM test module.
+                     - Support test log and report
+                     - Support config file
 
