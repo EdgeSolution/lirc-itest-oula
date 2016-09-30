@@ -496,7 +496,7 @@ void *port_recv_event(void *args)
             //pthread_exit((void *)-1);
         } else {
             if (_uart_array[list_id].recv_pack_count % 1000 == 0) {
-                log_print(log_fd,"%s received %d packet successfully \n",
+                log_print(log_fd,"%s received %d packet successfully\n",
                     port_list[list_id], (uint32_t)_uart_array[list_id].recv_pack_count);
             }
         }
@@ -568,7 +568,7 @@ void *port_send_event(void *args)
             test_mod_sim.pass = 0;
         } else {
             if (_uart_array[list_id].send_pack_count % 1000 == 0) {
-                log_print(log_fd,"%s send %d packet ok \n", port_list[list_id],
+                log_print(log_fd,"%s send %d packet ok\n", port_list[list_id],
                     (uint32_t)_uart_array[list_id].send_pack_count);
             }
         }
