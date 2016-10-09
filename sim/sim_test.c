@@ -295,6 +295,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
                 ret = read_pack_head_1_byte(fd, buff + i);
             }
         } else {
+            log_print(log_fd, "%s received HEAD%d data = %02x\n", port_list[list_id], i, buff[i]);
             if (i == 0) {
                 retry_count++;
                 if (retry_count <= MAX_RETRY_COUNT) {/*if timeout,not read again to avoid data loss*/
@@ -381,6 +382,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
 int analysis_packet(uint8_t *buff, int list_id)
 {
     uint32_t crc_check = 0xFFFFFFFF;
+    int i;
     int log_fd;
     int tmp;
 
@@ -401,6 +403,20 @@ int analysis_packet(uint8_t *buff, int list_id)
         if (g_running) {
             /*means received error packet*/
             log_print(log_fd, "%s Received \"%d\"packet error\n", port_list[list_id], _uart_array[list_id].recv_pack_count);
+            log_print(log_fd, "    ");
+            /*dump received data*/
+            for (i = 0; i < 257; i++) {/*print received pack_head & uart_id &pack_data*/
+                log_print(log_fd, "%02X ", *((uint8_t *)buff + i));
+                if (((i+1) % 16) == 0) {
+                    log_print(log_fd, "\n");
+                    log_print(log_fd, "    ");
+                }
+            }
+            log_print(log_fd, "\n    received pack_num = %d\n", (uint32_t)recv_packet->pack_num);
+            log_print(log_fd, "    received crc = %d\n", (uint32_t)recv_packet->crc_err);
+            log_print(log_fd, "    Calculated crc = %d\n", (uint32_t)crc_check);
+
+
             _uart_array[list_id].err_count++;
             test_mod_sim.pass = 0;
         }
