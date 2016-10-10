@@ -52,9 +52,17 @@ int g_board_num = 2;
 /* Baudrate of serial port (SIM) */
 int g_baudrate = 115200;
 
+/* SIM: start flag, set by hsm_test */
+uint8_t g_sim_starting = FALSE;
+
+/* HSM: test loop */
+uint64_t g_hsm_test_loop = 100;
+
 /* Speed of NIC port (NIM) */
 int g_speed = 1000;
 
+/* NIM: port test flag, set by user input */
+uint8_t g_nim_test_eth[TESC_NUM] = FALSE;
 
 /* Full path of the directory where the log/error/report files put */
 char g_log_dir[PATH_MAX];
