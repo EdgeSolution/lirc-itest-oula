@@ -46,9 +46,9 @@ char data_55[PACKET_SIZE];
 char data_aa[PACKET_SIZE];
 
 /* Counter of test times, successful and failed test. */
-unsigned long counter_test = 0;
-unsigned long counter_success = 0;
-unsigned long counter_fail = 0;
+static unsigned long counter_test = 0;
+static unsigned long counter_success = 0;
+static unsigned long counter_fail = 0;
 
 
 static int read_data_a(int fd, char *cmp_buf);
