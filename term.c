@@ -5,21 +5,6 @@
 #include <termios.h>
 #include "term.h"
 
-static struct termios term_bak;
-
-static void tc_termattr_bak(int fd);
-static void tc_termattr_rst(int fd);
-
-static void tc_termattr_bak(int fd)
-{
-    tcgetattr(fd, &term_bak);
-}
-
-static void tc_termattr_rst(int fd)
-{
-    tcsetattr(fd, TCSANOW, &term_bak);
-}
-
 void tc_set_baudrate(int fd, int speed)
 {
     struct termios opt;
@@ -203,9 +188,6 @@ int tc_init(char *dev)
         return -1;
     }
 
-    //Backup setting
-    tc_termattr_bak(fd);
-
     struct termios options;
     if (tcgetattr(fd, &options) != 0) {
         printf("Fail to get setup of serial port\n");
@@ -224,9 +206,6 @@ int tc_init(char *dev)
 
 void tc_deinit(int fd)
 {
-    //Restore setting
-    tc_termattr_rst(fd);
-
     close(fd);
 }
 
