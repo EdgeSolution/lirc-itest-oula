@@ -16,6 +16,7 @@
 
 #include <limits.h>
 #include <pthread.h>
+#include <stdint.h>
 #include "log.h"
 #include "cfg.h"
 
@@ -31,6 +32,9 @@ extern int g_baudrate;
 extern int g_speed;
 extern char g_progam_path[];
 
+extern uint8_t g_sim_starting;
+extern uint64_t g_hsm_test_loop;
+uint8_t g_nim_test_eth[4];
 
 /* Sturcture for each test module */
 typedef struct _test_mod {
