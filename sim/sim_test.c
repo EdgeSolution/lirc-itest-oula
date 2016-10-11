@@ -639,6 +639,15 @@ void *sim_test(void *args)
 
     int log_fd = test_mod_sim.log_fd;
 
+    //Wait for HSM switch test end
+    while (g_running && !g_sim_starting) {
+        sleep(2);
+    }
+
+    if (!g_running) {
+        pthread_exit(NULL);
+    }
+
     memset(_uart_array, 0, sizeof(struct uart_count_list));/*init global _uart_array*/
     //memset(_rate, 0, 16 * sizeof(float));
     memset(_loss_pack_count, 0, 16 * sizeof(int));/*init global _loss_pack_count*/
@@ -729,6 +738,12 @@ void sim_print_status(void)
 {
     int i;
     int port_num = 8 * g_board_num;
+
+    if (!g_sim_starting) {
+        printf("%-*s %s\n",
+                COL_FIX_WIDTH, "SIM", "Awaiting");
+        return;
+    }
 
     printf("%-*s %s\n",
         COL_FIX_WIDTH, "SIM", (test_mod_sim.pass) ? STR_MOD_OK : STR_MOD_ERROR);
