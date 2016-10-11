@@ -122,42 +122,47 @@ void *nim_test(void *args)
 
     log_print(log_fd, "Begin test!\n\n");
 
-    /* test init */
-    ret[0] = udp_test_init(0, TESC0_PORT);
-    if(ret[0] != 0) {
-        log_print(log_fd, "Ethernet port 0 init error!\n");
-        test_mod_nim.pass = 0;
+    /* test init & ethernet port init*/
+    if(g_nim_test_eth[0] == 1) {
+        ret[0] = udp_test_init(0, TESC0_PORT);
+        if(ret[0] == 0) {
+            ether_port_init(0, TESC0_PORT);
+        }else {
+            log_print(log_fd, "Ethernet port 0 init error!\n");
+            test_mod_nim.pass = 0;
+        }
     }
-    ret[1] = udp_test_init(1, TESC1_PORT);
-    if(ret[1] != 0) {
-        log_print(log_fd, "Ethernet port 1 init error!\n");
-        test_mod_nim.pass = 0;
+     
+    if(g_nim_test_eth[1] == 1) {
+        ret[1] = udp_test_init(1, TESC1_PORT);
+        if(ret[1] == 0) {
+            ether_port_init(1, TESC1_PORT);
+        }else {
+            log_print(log_fd, "Ethernet port 1 init error!\n");
+            test_mod_nim.pass = 0;
+        }
     }
-    ret[2] = udp_test_init(2, TESC2_PORT);
-    if(ret[2] != 0) {
-        log_print(log_fd, "Ethernet port 2 init error!\n");
-        test_mod_nim.pass = 0;
+    
+    if(g_nim_test_eth[2] == 1) {
+        ret[2] = udp_test_init(2, TESC2_PORT);
+        if(ret[2] == 0) {
+            ether_port_init(2, TESC2_PORT);
+        }else {
+            log_print(log_fd, "Ethernet port 2 init error!\n");
+            test_mod_nim.pass = 0;
+        }
     }
-    ret[3] = udp_test_init(3, TESC3_PORT);
-    if(ret[3] != 0) {
-        log_print(log_fd, "Ethernet port 3 init error!\n");
-        test_mod_nim.pass = 0;
+   
+    if(g_nim_test_eth[3] == 1) {
+        ret[3] = udp_test_init(3, TESC3_PORT);
+        if(ret[3] == 0) {
+            ether_port_init(3, TESC3_PORT);
+        }else {
+            log_print(log_fd, "Ethernet port 3 init error!\n");
+            test_mod_nim.pass = 0;
+        }
     }
 
-    /* ethernet port init */
-    if(ret[0] == 0) {
-        ether_port_init(0, TESC0_PORT);
-    }
-    if(ret[1] == 0) {
-        ether_port_init(1, TESC1_PORT);
-    }
-    if(ret[2] == 0) {
-        ether_port_init(2, TESC2_PORT);
-    }
-    if(ret[3] == 0) {
-        ether_port_init(3, TESC3_PORT);
-    }
- 
     for(i = 0; i < 4; i++) {
         /* Skip ports which not be initialized */ 
         if(ret[i] != 0)
@@ -178,6 +183,7 @@ void *nim_test(void *args)
 
     /* Wait all udp send packet thread and all udp receive packet thread to endup */
     for(i = 0; i < 4; i++) {
+        /* Skip threads about ports which not be initialized */
         if(ret[i] != 0) 
             continue;
 
