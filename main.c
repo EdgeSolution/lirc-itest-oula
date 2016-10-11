@@ -53,7 +53,7 @@ int g_board_num = 2;
 int g_baudrate = 115200;
 
 /* SIM: start flag, set by hsm_test */
-uint8_t g_sim_starting = FALSE;
+uint8_t g_sim_starting = 0;
 
 /* HSM: test loop */
 uint64_t g_hsm_test_loop = 100;
@@ -62,7 +62,7 @@ uint64_t g_hsm_test_loop = 100;
 int g_speed = 1000;
 
 /* NIM: port test flag, set by user input */
-uint8_t g_nim_test_eth[TESC_NUM] = FALSE;
+uint8_t g_nim_test_eth[TESC_NUM] = {0};
 
 /* Full path of the directory where the log/error/report files put */
 char g_log_dir[PATH_MAX];
