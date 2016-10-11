@@ -468,6 +468,52 @@ int get_parameter(void)
                 return -1;
                 break;
         }
+        
+        /* Get the SIM board number and the baudrate of serial */
+        if (g_test_sim == 1) {
+            printf("\tInput Board Number(1/2): ");
+            memset(buf, 0, sizeof(buf));
+            if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+                printf("input error\n");
+                return -1;
+            }
+            g_board_num = atoi(buf);
+            if ((g_board_num != 1) && (g_board_num != 2)) {
+                printf("input error\n");
+                return -1;
+            }
+
+            printf("\tInput Serial Baudrate: ");
+            memset(buf, 0, sizeof(buf));
+            if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+                printf("input error\n");
+                return -1;
+            }
+            g_baudrate = atoi(buf);
+            switch (g_baudrate) {
+                case 300:
+                case 1200:
+                case 2400:
+                case 4800:
+                case 9600:
+                case 19200:
+                case 38400:
+                case 57600:
+                case 115200:
+                case 230400:
+#ifndef __APPLE__
+                case 460800:
+                case 576000:
+                case 921600:
+#endif 
+                    break;
+                
+                default:
+                    printf("input error\n");
+                    return -1;
+                    break;
+            } 
+        }
 
         printf("Test NIM? (Y/N) ");
         memset(buf, 0, sizeof(buf));
