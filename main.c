@@ -40,6 +40,18 @@ int g_duration = 60;
 int g_runned_minute = 0;
 int g_runned_second = 0;
 
+/* Test mode(1 means all mode, 0 means selectable mode) */
+int g_test_mode = 1;
+
+/* Separate modules settings for running or not */
+int g_test_cpu = 1;
+int g_test_sim = 1;
+int g_test_nim = 1;
+int g_test_hsm = 1;
+int g_test_msm = 1;
+int g_test_led = 1;
+int g_test_mem = 1;
+
 /* Machine A or B */
 char g_machine = 'A';
 
@@ -297,6 +309,8 @@ int get_parameter(void)
 {
     char buf[MAX_STR_LENGTH];
     char *p;
+    char opt;
+    int i;
 
     /* Get the information of tester */
     printf("Please input the Tester:\n");
@@ -339,6 +353,36 @@ int get_parameter(void)
         return -1;
     }
 
+    /* Get the system test mode. */
+    printf("Test all modules? (Y/N) ");
+    memset(buf, 0, sizeof(buf));
+    if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+        printf("input error\n");
+        return -1;
+    }
+    p = left_trim(right_trim(buf));
+    if (strlen(p) != 1) {
+        printf("input error\n");
+        return -1;
+    }
+    opt = toupper(p[0]);
+    switch (opt) {
+        case 'y':
+        case 'Y':
+            g_test_mode = 1;
+            break;
+
+        case 'n':
+        case 'N':
+            g_test_mode = 0;
+            break;
+
+        default:
+            printf("input error\n");
+            return -1;
+            break;
+    }
+ 
     /* Get the machine A or B */
     printf("Please input A or B for this machine:\n");
     memset(buf, 0, sizeof(buf));
@@ -353,16 +397,256 @@ int get_parameter(void)
     }
     g_machine = toupper(p[0]);
     switch (g_machine) {
-    case 'a':
-    case 'A':
-    case 'b':
-    case 'B':
-        break;
+        case 'a':
+        case 'A':
+        case 'b':
+        case 'B':
+            break;
 
-    default:
-        printf("input error\n");
-        return -1;
-        break;
+        default:
+            printf("input error\n");
+            return -1;
+            break;
+    }
+    
+    /* Get separate modules setting for running. */
+    if (g_test_mode == 0) {
+        printf("Test CPU? (Y/N) ");
+        memset(buf, 0, sizeof(buf));
+        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+            printf("input error\n");
+            return -1;
+        }
+        p = left_trim(right_trim(buf));
+        if (strlen(p) != 1) {
+            printf("input error\n");
+            return -1;
+        }
+        opt = toupper(p[0]);
+        switch (opt) {
+            case 'y':
+            case 'Y':
+                g_test_cpu = 1;
+                break;
+
+            case 'n':
+            case 'N':
+                g_test_cpu = 0;
+                break;
+
+            default:
+                printf("input error\n");
+                return -1;
+                break;
+        }
+
+        printf("Test SIM? (Y/N) ");
+        memset(buf, 0, sizeof(buf));
+        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+            printf("input error\n");
+            return -1;
+        }
+        p = left_trim(right_trim(buf));
+        if (strlen(p) != 1) {
+            printf("input error\n");
+            return -1;
+        }
+        opt = toupper(p[0]);
+        switch (opt) {
+            case 'y':
+            case 'Y':
+                g_test_sim = 1;
+                break;
+
+            case 'n':
+            case 'N':
+                g_test_sim = 0;
+                break;
+
+            default:
+                printf("input error\n");
+                return -1;
+                break;
+        }
+
+        printf("Test NIM? (Y/N) ");
+        memset(buf, 0, sizeof(buf));
+        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+            printf("input error\n");
+            return -1;
+        }
+        p = left_trim(right_trim(buf));
+        if (strlen(p) != 1) {
+            printf("input error\n");
+            return -1;
+        }
+        opt = toupper(p[0]);
+        switch (opt) {
+            case 'y':
+            case 'Y':
+                g_test_nim = 1;
+                break;
+
+            case 'n':
+            case 'N':
+                g_test_nim = 0;
+                break;
+
+            default:
+                printf("input error\n");
+                return -1;
+                break;
+        }
+            
+        /* Get NIM modules setting for which ports should be tested */
+        if (g_test_nim == 1) {
+            for (i = 0; i < 4; i++) {
+                printf("\tTest eth%d? (Y/N) ", i);
+                memset(buf, 0, sizeof(buf));
+                if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+                    printf("input error\n");
+                    return -1;
+                }
+                p = left_trim(right_trim(buf));
+                if (strlen(p) != 1) {
+                    printf("input error\n");
+                    return -1;
+                }
+                opt = toupper(p[0]);
+                switch (opt) {
+                    case 'y':
+                    case 'Y':
+                        g_nim_test_eth[i] = 1;
+                    break;
+
+                    case 'n':
+                    case 'N':
+                        g_nim_test_eth[i] = 0;
+                    break;
+
+                    default:
+                        printf("input error\n");
+                        return -1;
+                        break;
+                }       
+            }
+        }
+            
+        printf("Test HSM? (Y/N) ");
+        memset(buf, 0, sizeof(buf));
+        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+            printf("input error\n");
+            return -1;
+        }
+        p = left_trim(right_trim(buf));
+        if (strlen(p) != 1) {
+            printf("input error\n");
+            return -1;
+        }
+        opt = toupper(p[0]);
+        switch (opt) {
+            case 'y':
+            case 'Y':
+                g_test_hsm = 1;
+                break;
+
+            case 'n':
+            case 'N':
+                g_test_hsm = 0;
+                break;
+
+            default:
+                printf("input error\n");
+                return -1;
+                break;
+        }
+        
+        printf("Test MSM? (Y/N) ");
+        memset(buf, 0, sizeof(buf));
+        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+            printf("input error\n");
+            return -1;
+        }
+        p = left_trim(right_trim(buf));
+        if (strlen(p) != 1) {
+            printf("input error\n");
+            return -1;
+        }
+        opt = toupper(p[0]);
+        switch (opt) {
+            case 'y':
+            case 'Y':
+                g_test_msm = 1;
+                break;
+
+            case 'n':
+            case 'N':
+                g_test_msm = 0;
+                break;
+
+            default:
+                printf("input error\n");
+                return -1;
+                break;
+        }
+        
+        printf("Test LED? (Y/N) ");
+        memset(buf, 0, sizeof(buf));
+        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+            printf("input error\n");
+            return -1;
+        }
+        p = left_trim(right_trim(buf));
+        if (strlen(p) != 1) {
+            printf("input error\n");
+            return -1;
+        }
+        opt = toupper(p[0]);
+        switch (opt) {
+            case 'y':
+            case 'Y':
+                g_test_led = 1;
+                break;
+
+            case 'n':
+            case 'N':
+                g_test_led = 0;
+                break;
+
+            default:
+                printf("input error\n");
+                return -1;
+                break;
+        }
+
+        printf("Test MEM? (Y/N) ");
+        memset(buf, 0, sizeof(buf));
+        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+            printf("input error\n");
+            return -1;
+        }
+        p = left_trim(right_trim(buf));
+        if (strlen(p) != 1) {
+            printf("input error\n");
+            return -1;
+        }
+        opt = toupper(p[0]);
+        switch (opt) {
+            case 'y':
+            case 'Y':
+                g_test_mem = 1;
+                break;
+
+            case 'n':
+            case 'N':
+                g_test_mem = 0;
+                break;
+
+            default:
+                printf("input error\n");
+                return -1;
+                break;
+        }
     }
 
     DBG_PRINT("Tester: %s, Product SN: %s, Test time: %d\n",
