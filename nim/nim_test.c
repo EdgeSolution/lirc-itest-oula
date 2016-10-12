@@ -114,7 +114,7 @@ void nim_print_result(int fd)
 void *nim_test(void *args)
 {
     int i = 0;
-    int ret[4] = {0};
+    int ret[4] = {-1};
     log_fd = test_mod_nim.log_fd;
 
     pthread_t ptid_r[4];
