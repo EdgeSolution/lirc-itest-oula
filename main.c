@@ -184,6 +184,44 @@ int main(int argc, char **argv)
 
 /******************************************************************************
  * NAME:
+ *      is_board_num_valid
+ *
+ * DESCRIPTION:
+ *      Check if the board number is valid or not.
+ *      On hardware,
+ *      if the one serial module, the serial device should be "ttyS2-ttyS9";
+ *      if another serial module, the serial dvice should be "ttyS10-ttyS17"
+ *
+ * PARAMETERS:
+ *      board_num - The board number to be verified.
+ *
+ * RETURN:
+ *      1 - OK(Valid)
+ *      0 - Not valid
+ ******************************************************************************/
+int is_board_num_valid(int board_num)
+{
+    char *ser_prefix = "/dev/ttyS";
+    char ser_dev[10];
+    int i;
+    int valid = 0;
+
+    for (i = 2; i <= (8 * board_num + 1); i++) {
+        sprintf(ser_dev, "%s%d", ser_prefix, i);
+        
+        if(access(ser_dev, F_OK) == 0) {
+            valid++;
+        }
+    }
+
+    if (valid >= (8 * board_num))
+        return 0;
+    
+    return 1;    
+}
+
+/******************************************************************************
+ * NAME:
  *      is_product_sn_valid
  *
  * DESCRIPTION:
@@ -482,6 +520,10 @@ int get_parameter(void)
                 printf("input error\n");
                 return -1;
             }
+            if (is_board_num_valid(g_board_num) == 0) {
+                printf("input error\n");
+                return -1;
+            }
 
             printf("\tInput Serial Baudrate: ");
             memset(buf, 0, sizeof(buf));
@@ -501,11 +543,9 @@ int get_parameter(void)
                 case 57600:
                 case 115200:
                 case 230400:
-#ifndef __APPLE__
                 case 460800:
                 case 576000:
                 case 921600:
-#endif 
                     break;
                 
                 default:
