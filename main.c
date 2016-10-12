@@ -206,10 +206,6 @@ int is_product_sn_valid(char *psn)
 {
     int n;
 
-    if (strcasecmp(psn, "CASCO") == 0) {
-        return 1;
-    }
-
     if (strlen(psn) != 18) {
         return 0;
     }
@@ -339,6 +335,10 @@ int get_parameter(void)
         return -1;
     }
     strncpy(g_product_sn, p, sizeof(g_product_sn));
+    if(is_product_sn_valid(g_product_sn) == 0) {
+        printf("Illegal Product SN\n");
+        return -1;
+    }
 
     /* Get the test time */
     printf("Please input the Test time(minutes):\n");
