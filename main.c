@@ -34,6 +34,11 @@ char g_tester[MAX_STR_LENGTH];
 
 /* Product Serial Number */
 char g_product_sn[MAX_STR_LENGTH];
+char g_ccm_sn[MAX_STR_LENGTH];
+char g_sim_sn[MAX_STR_LENGTH];
+char g_nim_sn[MAX_STR_LENGTH];
+char g_msm_sn[MAX_STR_LENGTH];
+char g_hsm_sn[MAX_STR_LENGTH];
 
 /* Test duration(minutes) */
 int g_duration = 60;
@@ -351,7 +356,7 @@ int get_parameter(void)
     int i;
 
     /* Get the information of tester */
-    printf("Please input the Tester:\n");
+    printf("Please input the Tester:\t\t");
     memset(buf, 0, sizeof(buf));
     if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
         printf("input error\n");
@@ -364,26 +369,8 @@ int get_parameter(void)
     }
     strncpy(g_tester, p, sizeof(g_tester));
 
-    /* Get the product SN */
-    printf("Please input the Product SN:\n");
-    memset(buf, 0, sizeof(buf));
-    if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
-        printf("input error\n");
-        return -1;
-    }
-    p = left_trim(right_trim(buf));
-    if (strlen(p) == 0) {
-        printf("input error\n");
-        return -1;
-    }
-    strncpy(g_product_sn, p, sizeof(g_product_sn));
-    if(is_product_sn_valid(g_product_sn) == 0) {
-        printf("Illegal Product SN\n");
-        return -1;
-    }
-
     /* Get the test time */
-    printf("Please input the Test time(minutes):\n");
+    printf("Please input the Test time(minutes):\t\t");
     memset(buf, 0, sizeof(buf));
     if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
         printf("input error\n");
@@ -395,8 +382,34 @@ int get_parameter(void)
         return -1;
     }
 
+    /* Get the machine A or B */
+    printf("Please input A or B for this machine:\t\t");
+    memset(buf, 0, sizeof(buf));
+    if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+        printf("input error\n");
+        return -1;
+    }
+    p = left_trim(right_trim(buf));
+    if (strlen(p) != 1) {
+        printf("input error\n");
+        return -1;
+    }
+    g_machine = toupper(p[0]);
+    switch (g_machine) {
+        case 'a':
+        case 'A':
+        case 'b':
+        case 'B':
+            break;
+
+        default:
+            printf("input error\n");
+            return -1;
+            break;
+    }
+
     /* Get the system test mode. */
-    printf("Test all modules? (Y/N) ");
+    printf("Test all modules? (Y/N)\t\t");
     memset(buf, 0, sizeof(buf));
     if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
         printf("input error\n");
@@ -425,35 +438,44 @@ int get_parameter(void)
             break;
     }
  
-    /* Get the machine A or B */
-    printf("Please input A or B for this machine:\n");
-    memset(buf, 0, sizeof(buf));
-    if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
-        printf("input error\n");
-        return -1;
-    }
-    p = left_trim(right_trim(buf));
-    if (strlen(p) != 1) {
-        printf("input error\n");
-        return -1;
-    }
-    g_machine = toupper(p[0]);
-    switch (g_machine) {
-        case 'a':
-        case 'A':
-        case 'b':
-        case 'B':
-            break;
-
-        default:
+    /* Run all modules or serval modules. */ 
+    if (g_test_mode == 1) {
+        /* Get the product SN */
+        printf("Please input the Product SN:\t\t");
+        memset(buf, 0, sizeof(buf));
+        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
             printf("input error\n");
             return -1;
-            break;
-    }
-    
-    /* Get separate modules setting for running. */
-    if (g_test_mode == 0) {
-        printf("Test CPU? (Y/N) ");
+        }
+        p = left_trim(right_trim(buf));
+        if (strlen(p) == 0) {
+            printf("input error\n");
+            return -1;
+        }
+        strncpy(g_product_sn, p, sizeof(g_product_sn));
+        if(is_product_sn_valid(g_product_sn) == 0) {
+            printf("Illegal Product SN\n");
+            return -1;
+        }
+    } else if (g_test_mode == 0) {  /* Get separate modules setting for running. */
+        printf("Please input the CCM SN:\t\t");
+        memset(buf, 0, sizeof(buf));
+        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+            printf("input error\n");
+            return -1;
+        }
+        p = left_trim(right_trim(buf));
+        if (strlen(p) == 0) {
+            printf("input error\n");
+            return -1;
+        }
+        strncpy(g_ccm_sn, p, sizeof(g_ccm_sn));
+        if(is_board_sn_valid(g_ccm_sn) == 0) {
+            printf("Illegal CCM SN\n");
+            return -1;
+        }
+        
+        printf("Test CPU? (Y/N)\t\t");
         memset(buf, 0, sizeof(buf));
         if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
             printf("input error\n");
@@ -482,7 +504,65 @@ int get_parameter(void)
                 break;
         }
 
-        printf("Test SIM? (Y/N) ");
+        printf("Test LED? (Y/N)\t\t");
+        memset(buf, 0, sizeof(buf));
+        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+            printf("input error\n");
+            return -1;
+        }
+        p = left_trim(right_trim(buf));
+        if (strlen(p) != 1) {
+            printf("input error\n");
+            return -1;
+        }
+        opt = toupper(p[0]);
+        switch (opt) {
+            case 'y':
+            case 'Y':
+                g_test_led = 1;
+                break;
+
+            case 'n':
+            case 'N':
+                g_test_led = 0;
+                break;
+
+            default:
+                printf("input error\n");
+                return -1;
+                break;
+        }
+
+        printf("Test MEM? (Y/N)\t\t");
+        memset(buf, 0, sizeof(buf));
+        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+            printf("input error\n");
+            return -1;
+        }
+        p = left_trim(right_trim(buf));
+        if (strlen(p) != 1) {
+            printf("input error\n");
+            return -1;
+        }
+        opt = toupper(p[0]);
+        switch (opt) {
+            case 'y':
+            case 'Y':
+                g_test_mem = 1;
+                break;
+
+            case 'n':
+            case 'N':
+                g_test_mem = 0;
+                break;
+
+            default:
+                printf("input error\n");
+                return -1;
+                break;
+        }
+
+        printf("Test SIM? (Y/N)\t\t");
         memset(buf, 0, sizeof(buf));
         if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
             printf("input error\n");
@@ -513,7 +593,24 @@ int get_parameter(void)
         
         /* Get the SIM board number and the baudrate of serial */
         if (g_test_sim == 1) {
-            printf("\tInput Board Number(1/2): ");
+            printf("\tPlease input the SIM SN:\t\t");
+            memset(buf, 0, sizeof(buf));
+            if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+                printf("input error\n");
+                return -1;
+            }
+            p = left_trim(right_trim(buf));
+            if (strlen(p) == 0) {
+                printf("input error\n");
+                return -1;
+            }
+            strncpy(g_sim_sn, p, sizeof(g_sim_sn));
+            if(is_board_sn_valid(g_sim_sn) == 0) {
+                printf("Illegal SIM SN\n");
+                return -1;
+            }
+        
+            printf("\tInput Board Number(1/2):\t\t");
             memset(buf, 0, sizeof(buf));
             if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
                 printf("input error\n");
@@ -559,7 +656,7 @@ int get_parameter(void)
             } 
         }
 
-        printf("Test NIM? (Y/N) ");
+        printf("Test NIM? (Y/N)\t\t");
         memset(buf, 0, sizeof(buf));
         if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
             printf("input error\n");
@@ -590,8 +687,25 @@ int get_parameter(void)
             
         /* Get NIM modules setting for which ports should be tested */
         if (g_test_nim == 1) {
+            printf("\tPlease input the NIM SN:\t\t");
+            memset(buf, 0, sizeof(buf));
+            if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+                printf("input error\n");
+                return -1;
+            }
+            p = left_trim(right_trim(buf));
+            if (strlen(p) == 0) {
+                printf("input error\n");
+                return -1;
+            }
+            strncpy(g_nim_sn, p, sizeof(g_nim_sn));
+            if(is_board_sn_valid(g_nim_sn) == 0) {
+                printf("Illegal NIM SN\n");
+                return -1;
+            }
+        
             for (i = 0; i < 4; i++) {
-                printf("\tTest eth%d? (Y/N) ", i);
+                printf("\tTest eth%d? (Y/N)\t\t", i);
                 memset(buf, 0, sizeof(buf));
                 if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
                     printf("input error\n");
@@ -622,7 +736,7 @@ int get_parameter(void)
             }
         }
             
-        printf("Test HSM? (Y/N) ");
+        printf("Test HSM? (Y/N)\t\t");
         memset(buf, 0, sizeof(buf));
         if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
             printf("input error\n");
@@ -650,8 +764,27 @@ int get_parameter(void)
                 return -1;
                 break;
         }
+
+        if(g_test_hsm == 1) {
+            printf("\tPlease input the HSM SN:\t\t");
+            memset(buf, 0, sizeof(buf));
+            if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+                printf("input error\n");
+                return -1;
+            }
+            p = left_trim(right_trim(buf));
+            if (strlen(p) == 0) {
+                printf("input error\n");
+                return -1;
+            }
+            strncpy(g_hsm_sn, p, sizeof(g_hsm_sn));
+            if(is_board_sn_valid(g_hsm_sn) == 0) {
+                printf("Illegal HSM SN\n");
+                return -1;
+            }
+        }
         
-        printf("Test MSM? (Y/N) ");
+        printf("Test MSM? (Y/N)\t\t");
         memset(buf, 0, sizeof(buf));
         if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
             printf("input error\n");
@@ -680,67 +813,29 @@ int get_parameter(void)
                 break;
         }
         
-        printf("Test LED? (Y/N) ");
-        memset(buf, 0, sizeof(buf));
-        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
-            printf("input error\n");
-            return -1;
-        }
-        p = left_trim(right_trim(buf));
-        if (strlen(p) != 1) {
-            printf("input error\n");
-            return -1;
-        }
-        opt = toupper(p[0]);
-        switch (opt) {
-            case 'y':
-            case 'Y':
-                g_test_led = 1;
-                break;
-
-            case 'n':
-            case 'N':
-                g_test_led = 0;
-                break;
-
-            default:
+        if(g_test_msm == 1) {
+            printf("\tPlease input the MSM SN:\t\t");
+            memset(buf, 0, sizeof(buf));
+            if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
                 printf("input error\n");
                 return -1;
-                break;
-        }
-
-        printf("Test MEM? (Y/N) ");
-        memset(buf, 0, sizeof(buf));
-        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
-            printf("input error\n");
-            return -1;
-        }
-        p = left_trim(right_trim(buf));
-        if (strlen(p) != 1) {
-            printf("input error\n");
-            return -1;
-        }
-        opt = toupper(p[0]);
-        switch (opt) {
-            case 'y':
-            case 'Y':
-                g_test_mem = 1;
-                break;
-
-            case 'n':
-            case 'N':
-                g_test_mem = 0;
-                break;
-
-            default:
+            }
+            p = left_trim(right_trim(buf));
+            if (strlen(p) == 0) {
                 printf("input error\n");
                 return -1;
-                break;
+            }
+            strncpy(g_msm_sn, p, sizeof(g_msm_sn));
+            if(is_board_sn_valid(g_msm_sn) == 0) {
+                printf("Illegal MSM SN\n");
+                return -1;
+            }
         }
     }
 
     DBG_PRINT("Tester: %s, Product SN: %s, Test time: %d\n",
         g_tester, g_product_sn, g_duration);
+    
     return 0;
 }
 
