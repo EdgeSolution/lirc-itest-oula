@@ -116,7 +116,7 @@ int main(int argc, char **argv)
     init_path();
 
     /* Load parameters of test module from config file. */
-    load_config(g_config_file);
+    /* load_config(g_config_file); */
 
     printf("Wait the other side to be ready...\n");
     if (!wait_other_side_ready()) {
@@ -937,7 +937,9 @@ int move_log_to_error(char *log_file)
  ******************************************************************************/
 int start_test_module(test_mod_t *pmod)
 {
+    /*
     char value[MAX_LINE_LENGTH];
+    */
 
     if (mod_index >= MAX_MOD_COUNT) {
         printf("The number of modules is more than the max counter\n");
@@ -947,13 +949,32 @@ int start_test_module(test_mod_t *pmod)
     /* Init data structure of test module */
     g_test_module[mod_index++] = pmod;
 
-    /* Does this test module need to be run or not? */
+    
+    /* Does this test module need to be run or not?
     if (ini_get_key_value(g_config_file, pmod->name, "run", value) == 0) {
         if (strcasecmp(value, "Y") == 0) {
             pmod->run = 1;
         } else {
             pmod->run = 0;
         }
+    }
+    */
+    
+    /* Does this test module need to be run or not? */
+    if (strcmp(pmod->name, "cpu") == 0) {
+        pmod->run = g_test_cpu;
+    } else if (strcmp(pmod->name, "sim") == 0) {
+        pmod->run = g_test_sim;
+    } else if (strcmp(pmod->name, "nim") == 0) {
+        pmod->run = g_test_nim;
+    } else if (strcmp(pmod->name, "hsm") == 0) {
+        pmod->run = g_test_hsm;
+    } else if (strcmp(pmod->name, "msm") == 0) {
+        pmod->run = g_test_msm;
+    } else if (strcmp(pmod->name, "led") == 0) {
+        pmod->run = g_test_led;
+    } else if (strcmp(pmod->name, "mem") == 0) {
+        pmod->run = g_test_mem;
     }
 
     if (pmod->run) {
