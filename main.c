@@ -917,7 +917,7 @@ int move_log_to_error(char *log_file)
     char new_file[PATH_MAX];
 
     snprintf(new_file, sizeof(new_file), "%s/error_%s", g_error_dir, basename(log_file));
-    rename(log_file, new_file);
+    symlink(log_file, new_file);
     return 0;
 }
 
