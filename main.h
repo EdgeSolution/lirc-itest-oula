@@ -29,6 +29,9 @@
 /* Max counter of test modules */
 #define MAX_MOD_COUNT       10
 
+/* Max counter of sim modules */
+#define MAX_SIM_COUNT       2
+
 /* Function Prototype */
 int is_product_sn_valid(char *psn);
 int is_board_sn_valid(char *bsn);

@@ -35,7 +35,7 @@ char g_tester[MAX_STR_LENGTH];
 /* Product Serial Number */
 char g_product_sn[MAX_STR_LENGTH];
 char g_ccm_sn[MAX_STR_LENGTH];
-char g_sim_sn[MAX_STR_LENGTH];
+char g_sim_sn[MAX_SIM_COUNT][MAX_STR_LENGTH];
 char g_nim_sn[MAX_STR_LENGTH];
 char g_msm_sn[MAX_STR_LENGTH];
 char g_hsm_sn[MAX_STR_LENGTH];
@@ -593,23 +593,6 @@ int get_parameter(void)
         
         /* Get the SIM board number and the baudrate of serial */
         if (g_test_sim == 1) {
-            printf("\tPlease input the SIM SN:\t\t");
-            memset(buf, 0, sizeof(buf));
-            if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
-                printf("input error\n");
-                return -1;
-            }
-            p = left_trim(right_trim(buf));
-            if (strlen(p) == 0) {
-                printf("input error\n");
-                return -1;
-            }
-            strncpy(g_sim_sn, p, sizeof(g_sim_sn));
-            if(is_board_sn_valid(g_sim_sn) == 0) {
-                printf("Illegal SIM SN\n");
-                return -1;
-            }
-        
             printf("\tInput Board Number(1/2):\t\t");
             memset(buf, 0, sizeof(buf));
             if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
@@ -624,6 +607,25 @@ int get_parameter(void)
             if (is_board_num_valid(g_board_num) == 0) {
                 printf("input error\n");
                 return -1;
+            }
+            
+            for (i = 0; i < g_board_num; i++) {
+                printf("\tPlease input the SIM%d SN:\t\t", (i + 1));
+                memset(buf, 0, sizeof(buf));
+                if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+                    printf("input error\n");
+                    return -1;
+                }
+                p = left_trim(right_trim(buf));
+                if (strlen(p) == 0) {
+                    printf("input error\n");
+                    return -1;
+                }
+                strncpy(g_sim_sn[i], p, sizeof(g_sim_sn[i]));
+                if(is_board_sn_valid(g_sim_sn[i]) == 0) {
+                    printf("Illegal SIM SN\n");
+                    return -1;
+                }
             }
 
             printf("\tInput Serial Baudrate: ");
