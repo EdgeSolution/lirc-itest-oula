@@ -352,8 +352,8 @@ int get_parameter(void)
 {
     char buf[MAX_STR_LENGTH];
     char *p;
-    char opt;
     int i;
+    int ret = -1;
 
     /* Get the information of tester */
     printf("Please input the Tester:\t\t");
@@ -410,32 +410,12 @@ int get_parameter(void)
 
     /* Get the system test mode. */
     printf("Test all modules? (Y/N)\t\t");
-    memset(buf, 0, sizeof(buf));
-    if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+    ret = get_opt_yes_no();
+    if ((ret == 1) || (ret == 0)) {
+        g_test_mode = ret;
+    } else {
         printf("input error\n");
         return -1;
-    }
-    p = left_trim(right_trim(buf));
-    if (strlen(p) != 1) {
-        printf("input error\n");
-        return -1;
-    }
-    opt = toupper(p[0]);
-    switch (opt) {
-        case 'y':
-        case 'Y':
-            g_test_mode = 1;
-            break;
-
-        case 'n':
-        case 'N':
-            g_test_mode = 0;
-            break;
-
-        default:
-            printf("input error\n");
-            return -1;
-            break;
     }
  
     /* Run all modules or serval modules. */ 
@@ -476,121 +456,41 @@ int get_parameter(void)
         }
         
         printf("Test CPU? (Y/N)\t\t");
-        memset(buf, 0, sizeof(buf));
-        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+        ret = get_opt_yes_no();
+        if ((ret == 1) || (ret == 0)) {
+            g_test_cpu = ret;
+        } else {
             printf("input error\n");
             return -1;
-        }
-        p = left_trim(right_trim(buf));
-        if (strlen(p) != 1) {
-            printf("input error\n");
-            return -1;
-        }
-        opt = toupper(p[0]);
-        switch (opt) {
-            case 'y':
-            case 'Y':
-                g_test_cpu = 1;
-                break;
-
-            case 'n':
-            case 'N':
-                g_test_cpu = 0;
-                break;
-
-            default:
-                printf("input error\n");
-                return -1;
-                break;
         }
 
         printf("Test LED? (Y/N)\t\t");
-        memset(buf, 0, sizeof(buf));
-        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+        ret = get_opt_yes_no();
+        if ((ret == 1) || (ret == 0)) {
+            g_test_led = ret;
+        } else {
             printf("input error\n");
             return -1;
-        }
-        p = left_trim(right_trim(buf));
-        if (strlen(p) != 1) {
-            printf("input error\n");
-            return -1;
-        }
-        opt = toupper(p[0]);
-        switch (opt) {
-            case 'y':
-            case 'Y':
-                g_test_led = 1;
-                break;
-
-            case 'n':
-            case 'N':
-                g_test_led = 0;
-                break;
-
-            default:
-                printf("input error\n");
-                return -1;
-                break;
         }
 
         printf("Test MEM? (Y/N)\t\t");
-        memset(buf, 0, sizeof(buf));
-        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+        ret = get_opt_yes_no();
+        if ((ret == 1) || (ret == 0)) {
+            g_test_mem = ret;
+        } else {
             printf("input error\n");
             return -1;
-        }
-        p = left_trim(right_trim(buf));
-        if (strlen(p) != 1) {
-            printf("input error\n");
-            return -1;
-        }
-        opt = toupper(p[0]);
-        switch (opt) {
-            case 'y':
-            case 'Y':
-                g_test_mem = 1;
-                break;
-
-            case 'n':
-            case 'N':
-                g_test_mem = 0;
-                break;
-
-            default:
-                printf("input error\n");
-                return -1;
-                break;
         }
 
         printf("Test SIM? (Y/N)\t\t");
-        memset(buf, 0, sizeof(buf));
-        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+        ret = get_opt_yes_no();
+        if ((ret == 1) || (ret == 0)) {
+            g_test_sim = ret;
+        } else {
             printf("input error\n");
             return -1;
         }
-        p = left_trim(right_trim(buf));
-        if (strlen(p) != 1) {
-            printf("input error\n");
-            return -1;
-        }
-        opt = toupper(p[0]);
-        switch (opt) {
-            case 'y':
-            case 'Y':
-                g_test_sim = 1;
-                break;
 
-            case 'n':
-            case 'N':
-                g_test_sim = 0;
-                break;
-
-            default:
-                printf("input error\n");
-                return -1;
-                break;
-        }
-        
         /* Get the SIM board number and the baudrate of serial */
         if (g_test_sim == 1) {
             printf("\tInput Board Number(1/2):\t\t");
@@ -659,34 +559,14 @@ int get_parameter(void)
         }
 
         printf("Test NIM? (Y/N)\t\t");
-        memset(buf, 0, sizeof(buf));
-        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+        ret = get_opt_yes_no();
+        if ((ret == 1) || (ret == 0)) {
+            g_test_nim = ret;
+        } else {
             printf("input error\n");
             return -1;
         }
-        p = left_trim(right_trim(buf));
-        if (strlen(p) != 1) {
-            printf("input error\n");
-            return -1;
-        }
-        opt = toupper(p[0]);
-        switch (opt) {
-            case 'y':
-            case 'Y':
-                g_test_nim = 1;
-                break;
 
-            case 'n':
-            case 'N':
-                g_test_nim = 0;
-                break;
-
-            default:
-                printf("input error\n");
-                return -1;
-                break;
-        }
-            
         /* Get NIM modules setting for which ports should be tested */
         if (g_test_nim == 1) {
             printf("\tPlease input the NIM SN:\t\t");
@@ -708,63 +588,23 @@ int get_parameter(void)
         
             for (i = 0; i < 4; i++) {
                 printf("\tTest eth%d? (Y/N)\t\t", i);
-                memset(buf, 0, sizeof(buf));
-                if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+                ret = get_opt_yes_no();
+                if ((ret == 1) || (ret == 0)) {
+                    g_nim_test_eth[i] = ret;
+                } else {
                     printf("input error\n");
                     return -1;
                 }
-                p = left_trim(right_trim(buf));
-                if (strlen(p) != 1) {
-                    printf("input error\n");
-                    return -1;
-                }
-                opt = toupper(p[0]);
-                switch (opt) {
-                    case 'y':
-                    case 'Y':
-                        g_nim_test_eth[i] = 1;
-                    break;
-
-                    case 'n':
-                    case 'N':
-                        g_nim_test_eth[i] = 0;
-                    break;
-
-                    default:
-                        printf("input error\n");
-                        return -1;
-                        break;
-                }       
             }
         }
             
         printf("Test HSM? (Y/N)\t\t");
-        memset(buf, 0, sizeof(buf));
-        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+        ret = get_opt_yes_no();
+        if ((ret == 1) || (ret == 0)) {
+            g_test_hsm = ret;
+        } else {
             printf("input error\n");
             return -1;
-        }
-        p = left_trim(right_trim(buf));
-        if (strlen(p) != 1) {
-            printf("input error\n");
-            return -1;
-        }
-        opt = toupper(p[0]);
-        switch (opt) {
-            case 'y':
-            case 'Y':
-                g_test_hsm = 1;
-                break;
-
-            case 'n':
-            case 'N':
-                g_test_hsm = 0;
-                break;
-
-            default:
-                printf("input error\n");
-                return -1;
-                break;
         }
 
         if(g_test_hsm == 1) {
@@ -787,34 +627,14 @@ int get_parameter(void)
         }
         
         printf("Test MSM? (Y/N)\t\t");
-        memset(buf, 0, sizeof(buf));
-        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+        ret = get_opt_yes_no();
+        if ((ret == 1) || (ret == 0)) {
+            g_test_msm = ret;
+        } else {
             printf("input error\n");
             return -1;
         }
-        p = left_trim(right_trim(buf));
-        if (strlen(p) != 1) {
-            printf("input error\n");
-            return -1;
-        }
-        opt = toupper(p[0]);
-        switch (opt) {
-            case 'y':
-            case 'Y':
-                g_test_msm = 1;
-                break;
-
-            case 'n':
-            case 'N':
-                g_test_msm = 0;
-                break;
-
-            default:
-                printf("input error\n");
-                return -1;
-                break;
-        }
-        
+ 
         if(g_test_msm == 1) {
             printf("\tPlease input the MSM SN:\t\t");
             memset(buf, 0, sizeof(buf));
@@ -841,6 +661,52 @@ int get_parameter(void)
     return 0;
 }
 
+/******************************************************************************
+ * NAME:
+ *      get_opt_yes_no
+ *
+ * DESCRIPTION:
+ *      Get options yes or no from user's input.
+ *
+ * PARAMETERS:
+ *      N/A
+ *
+ * RETURN:
+ *      1 - Yes
+ *      0 - No
+ *     -1 - Illegal 
+ ******************************************************************************/
+int get_opt_yes_no()
+{
+    char buf[MAX_STR_LENGTH];
+    char *p;
+    char opt;
+    
+    memset(buf, 0, sizeof(buf));
+    if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+        return -1;
+    }
+    p = left_trim(right_trim(buf));
+    if (strlen(p) != 1) {
+        return -1;
+    }
+    opt = toupper(p[0]);
+    switch (opt) {
+        case 'y':
+        case 'Y':
+            return 1;
+            break;
+
+        case 'n':
+        case 'N':
+            return 0;
+            break;
+
+        default:
+            return -1;
+            break;
+    }
+}
 
 /******************************************************************************
  * NAME:

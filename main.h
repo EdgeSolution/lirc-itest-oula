@@ -35,7 +35,9 @@
 /* Function Prototype */
 int is_product_sn_valid(char *psn);
 int is_board_sn_valid(char *bsn);
+int is_board_num_valid(int board_num);
 int get_parameter(void);
+int get_opt_yes_no();
 int load_config(char *config_file);
 int install_sig_handler(void);
 size_t get_exe_path(char *path_buf, size_t len);
