@@ -85,11 +85,15 @@ typedef struct _test_mod {
 #define DATA_SYNC_A         0xFA
 #define DATA_SYNC_B         0xFB
 
+#define EXIT_SYNC_A         0xEA
+#define EXIT_SYNC_B         0xEB
+
 void kill_process(char *name);
 int wait_other_side_ready(void);
 int sleep_ms(unsigned int ms);
 int is_exe_exist(char *exe);
 int ser_open(char *dev);
-
+void send_exit_sync(void);
+void receive_exit_sync(void);
 
 #endif /* _COMMON_H_ */
