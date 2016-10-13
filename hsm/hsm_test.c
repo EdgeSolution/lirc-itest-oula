@@ -326,7 +326,7 @@ void *hsm_test(void *args)
         hsm_send(fd, log_fd);
     }
 
-    sleep(2);
+    sleep_ms(500);
 
     //Starting SIM test
     g_sim_starting = TRUE;
