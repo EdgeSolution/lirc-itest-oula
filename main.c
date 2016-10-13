@@ -220,9 +220,9 @@ int is_board_num_valid(int board_num)
     }
 
     if (valid >= (8 * board_num))
-        return 0;
+        return 1;
     
-    return 1;    
+    return 0;    
 }
 
 /******************************************************************************
