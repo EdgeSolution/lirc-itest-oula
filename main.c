@@ -353,7 +353,7 @@ int get_parameter(void)
     char buf[MAX_STR_LENGTH];
     char *p;
     int i;
-    int ret = -1;
+    int dont = 0;
 
     /* Get the information of tester */
     printf("Please input the Tester:\t\t");
@@ -409,14 +409,9 @@ int get_parameter(void)
     }
 
     /* Get the system test mode. */
-    printf("Test all modules? (Y/N)\t\t");
-    ret = get_opt_yes_no();
-    if ((ret == 1) || (ret == 0)) {
-        g_test_mode = ret;
-    } else {
-        printf("input error\n");
-        return -1;
-    }
+    printf("Test all modules? [%s] ", dont ? "y/N" : "Y/n");
+    fflush(stdin);
+    g_test_mode = user_ack(!dont);
  
     /* Run all modules or serval modules. */ 
     if (g_test_mode == 1) {
@@ -455,41 +450,24 @@ int get_parameter(void)
             return -1;
         }
         
-        printf("Test CPU? (Y/N)\t\t");
-        ret = get_opt_yes_no();
-        if ((ret == 1) || (ret == 0)) {
-            g_test_cpu = ret;
-        } else {
-            printf("input error\n");
-            return -1;
-        }
+        printf("Test CPU? [%s] ", dont ? "y/N" : "Y/n");
+        fflush(stdin);
+        g_test_cpu = user_ack(!dont);
+        
 
-        printf("Test LED? (Y/N)\t\t");
-        ret = get_opt_yes_no();
-        if ((ret == 1) || (ret == 0)) {
-            g_test_led = ret;
-        } else {
-            printf("input error\n");
-            return -1;
-        }
+        printf("Test LED? [%s] ", dont ? "y/N" : "Y/n");
+        fflush(stdin);
+        g_test_led = user_ack(!dont);
+        
 
-        printf("Test MEM? (Y/N)\t\t");
-        ret = get_opt_yes_no();
-        if ((ret == 1) || (ret == 0)) {
-            g_test_mem = ret;
-        } else {
-            printf("input error\n");
-            return -1;
-        }
+        printf("Test MEM? [%s] ", dont ? "y/N" : "Y/n");
+        fflush(stdin);
+        g_test_mem = user_ack(!dont);
 
-        printf("Test SIM? (Y/N)\t\t");
-        ret = get_opt_yes_no();
-        if ((ret == 1) || (ret == 0)) {
-            g_test_sim = ret;
-        } else {
-            printf("input error\n");
-            return -1;
-        }
+
+        printf("Test SIM? [%s] ", dont ? "y/N" : "Y/n");
+        fflush(stdin);
+        g_test_sim = user_ack(!dont);
 
         /* Get the SIM board number and the baudrate of serial */
         if (g_test_sim == 1) {
@@ -558,14 +536,9 @@ int get_parameter(void)
             } 
         }
 
-        printf("Test NIM? (Y/N)\t\t");
-        ret = get_opt_yes_no();
-        if ((ret == 1) || (ret == 0)) {
-            g_test_nim = ret;
-        } else {
-            printf("input error\n");
-            return -1;
-        }
+        printf("Test NIM? [%s] ", dont ? "y/N" : "Y/n");
+        fflush(stdin);
+        g_test_nim = user_ack(!dont);
 
         /* Get NIM modules setting for which ports should be tested */
         if (g_test_nim == 1) {
@@ -587,26 +560,17 @@ int get_parameter(void)
             }
         
             for (i = 0; i < 4; i++) {
-                printf("\tTest eth%d? (Y/N)\t\t", i);
-                ret = get_opt_yes_no();
-                if ((ret == 1) || (ret == 0)) {
-                    g_nim_test_eth[i] = ret;
-                } else {
-                    printf("input error\n");
-                    return -1;
-                }
+                printf("Test eth%d? [%s] ", i, dont ? "y/N" : "Y/n");
+                fflush(stdin);
+                g_nim_test_eth[i] = user_ack(!dont);
             }
         }
-            
-        printf("Test HSM? (Y/N)\t\t");
-        ret = get_opt_yes_no();
-        if ((ret == 1) || (ret == 0)) {
-            g_test_hsm = ret;
-        } else {
-            printf("input error\n");
-            return -1;
-        }
+           
 
+        printf("Test HSM? [%s] ", dont ? "y/N" : "Y/n");
+        fflush(stdin);
+        g_test_hsm = user_ack(!dont);
+ 
         if(g_test_hsm == 1) {
             printf("\tPlease input the HSM SN:\t\t");
             memset(buf, 0, sizeof(buf));
@@ -625,15 +589,11 @@ int get_parameter(void)
                 return -1;
             }
         }
-        
-        printf("Test MSM? (Y/N)\t\t");
-        ret = get_opt_yes_no();
-        if ((ret == 1) || (ret == 0)) {
-            g_test_msm = ret;
-        } else {
-            printf("input error\n");
-            return -1;
-        }
+       
+        printf("Test MSM? [%s] ", dont ? "y/N" : "Y/n");
+        fflush(stdin);
+        g_test_msm = user_ack(!dont);
+ 
  
         if(g_test_msm == 1) {
             printf("\tPlease input the MSM SN:\t\t");
@@ -663,50 +623,52 @@ int get_parameter(void)
 
 /******************************************************************************
  * NAME:
- *      get_opt_yes_no
+ *      user_ack
  *
  * DESCRIPTION:
- *      Get options yes or no from user's input.
+ *      Get user's ack.
  *
  * PARAMETERS:
- *      N/A
+ *      default option for user's ack.
  *
  * RETURN:
  *      1 - Yes
  *      0 - No
- *     -1 - Illegal 
  ******************************************************************************/
-int get_opt_yes_no()
+int user_ack(int def)
 {
-    char buf[MAX_STR_LENGTH];
-    char *p;
-    char opt;
-    
-    memset(buf, 0, sizeof(buf));
-    if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
-        return -1;
-    }
-    p = left_trim(right_trim(buf));
-    if (strlen(p) != 1) {
-        return -1;
-    }
-    opt = toupper(p[0]);
-    switch (opt) {
-        case 'y':
-        case 'Y':
-            return 1;
-            break;
+	char s[2];
+	int ret;
 
-        case 'n':
-        case 'N':
-            return 0;
-            break;
+	if (!fgets(s, 2, stdin))
+		return 0; /* Nack by default */
 
-        default:
-            return -1;
-            break;
-    }
+	switch (s[0]) {
+	case 'y':
+	case 'Y':
+		ret = 1;
+		break;
+	case 'n':
+	case 'N':
+		ret = 0;
+		break;
+	default:
+		ret = def;
+	}
+
+	/* Flush extra characters */
+	while (s[0] != '\n') {
+		int c = fgetc(stdin);
+		if (c == EOF) {
+			ret = 0;
+			break;
+		}
+		s[0] = c;
+	}
+
+	return ret;
 }
+
 
 /******************************************************************************
  * NAME:
