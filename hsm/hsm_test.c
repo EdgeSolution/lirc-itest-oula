@@ -117,8 +117,14 @@ static void hsm_test_switch(fd, log_fd)
     //Get original CTS status
     old_cts = tc_get_cts_casco(fd);
 
+    //NOTE: cts: 1 means A is host, cts: 0 means B is host
+    //We need to set rts signal according the current cts status.
     if (g_machine == 'A') {
-        cur_rts = TRUE;
+        if (old_cts) {
+            cur_rts = FALSE;
+        } else {
+            cur_rts = TRUE;
+        }
         tc_set_rts_casco(fd, cur_rts);
 
         while (g_running && test_loop > 0) {
@@ -169,7 +175,11 @@ static void hsm_test_switch(fd, log_fd)
             tc_set_rts_casco(fd, cur_rts);
         }
     } else {
-        cur_rts = FALSE;
+        if (old_cts) {
+            cur_rts = TRUE;
+        } else {
+            cur_rts = FALSE;
+        }
         tc_set_rts_casco(fd, cur_rts);
 
         while (g_running && test_loop > 0) {
