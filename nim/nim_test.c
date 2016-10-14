@@ -480,10 +480,6 @@ void udp_recv_test(ether_port_para *net_port_para)
                                 Or have received packages from other machines. \n"); */
                     }
                 }
-
-                /* judge if pass or fail */
-                if ((float)tesc_lost_no[ethid] > (float)tesc_test_no[ethid] * FRAME_LOSS_RATE)
-                    test_mod_nim.pass = 0;
             }
             udp_cnt_recv[ethid]++;
        
