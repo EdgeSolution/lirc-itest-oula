@@ -15,6 +15,7 @@
 #define _MAIN_H_
 
 #include "common.h"
+#include "term.h"
 #include "led_test.h"
 #include "hsm_test.h"
 #include "msm_test.h"

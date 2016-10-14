@@ -353,7 +353,6 @@ int get_parameter(void)
     char buf[MAX_STR_LENGTH];
     char *p;
     int i;
-    int dont = 0;
 
     /* Get the information of tester */
     printf("Please input the Tester:\t\t");
@@ -409,9 +408,9 @@ int get_parameter(void)
     }
 
     /* Get the system test mode. */
-    printf("Test all modules? [%s] ", dont ? "y/N" : "Y/n");
+    printf("Test all modules? [Y/n] ");
     fflush(stdin);
-    g_test_mode = user_ack(!dont);
+    g_test_mode = user_ack(TRUE);
  
     /* Run all modules or serval modules. */ 
     if (g_test_mode == 1) {
@@ -450,24 +449,24 @@ int get_parameter(void)
             return -1;
         }
         
-        printf("Test CPU? [%s] ", dont ? "y/N" : "Y/n");
+        printf("Test CPU? [Y/n] ");
         fflush(stdin);
-        g_test_cpu = user_ack(!dont);
+        g_test_cpu = user_ack(TRUE);
         
 
-        printf("Test LED? [%s] ", dont ? "y/N" : "Y/n");
+        printf("Test LED? [Y/n] ");
         fflush(stdin);
-        g_test_led = user_ack(!dont);
+        g_test_led = user_ack(TRUE);
         
 
-        printf("Test MEM? [%s] ", dont ? "y/N" : "Y/n");
+        printf("Test MEM? [Y/n] ");
         fflush(stdin);
-        g_test_mem = user_ack(!dont);
+        g_test_mem = user_ack(TRUE);
 
 
-        printf("Test SIM? [%s] ", dont ? "y/N" : "Y/n");
+        printf("Test SIM? [Y/n] ");
         fflush(stdin);
-        g_test_sim = user_ack(!dont);
+        g_test_sim = user_ack(TRUE);
 
         /* Get the SIM board number and the baudrate of serial */
         if (g_test_sim == 1) {
@@ -536,9 +535,9 @@ int get_parameter(void)
             } 
         }
 
-        printf("Test NIM? [%s] ", dont ? "y/N" : "Y/n");
+        printf("Test NIM? [Y/n] ");
         fflush(stdin);
-        g_test_nim = user_ack(!dont);
+        g_test_nim = user_ack(TRUE);
 
         /* Get NIM modules setting for which ports should be tested */
         if (g_test_nim == 1) {
@@ -560,16 +559,16 @@ int get_parameter(void)
             }
         
             for (i = 0; i < 4; i++) {
-                printf("Test eth%d? [%s] ", i, dont ? "y/N" : "Y/n");
+                printf("Test eth%d? [Y/n] ", i);
                 fflush(stdin);
-                g_nim_test_eth[i] = user_ack(!dont);
+                g_nim_test_eth[i] = user_ack(TRUE);
             }
         }
            
 
-        printf("Test HSM? [%s] ", dont ? "y/N" : "Y/n");
+        printf("Test HSM? [Y/n] ");
         fflush(stdin);
-        g_test_hsm = user_ack(!dont);
+        g_test_hsm = user_ack(TRUE);
  
         if(g_test_hsm == 1) {
             printf("\tPlease input the HSM SN:\t\t");
@@ -590,9 +589,9 @@ int get_parameter(void)
             }
         }
        
-        printf("Test MSM? [%s] ", dont ? "y/N" : "Y/n");
+        printf("Test MSM? [Y/n] ");
         fflush(stdin);
-        g_test_msm = user_ack(!dont);
+        g_test_msm = user_ack(TRUE);
  
  
         if(g_test_msm == 1) {
@@ -637,36 +636,36 @@ int get_parameter(void)
  ******************************************************************************/
 int user_ack(int def)
 {
-	char s[2];
-	int ret;
+    char s[2];
+    int ret;
 
-	if (!fgets(s, 2, stdin))
-		return 0; /* Nack by default */
+    if (!fgets(s, 2, stdin))
+        return 0; /* Nack by default */
 
-	switch (s[0]) {
-	case 'y':
-	case 'Y':
-		ret = 1;
-		break;
-	case 'n':
-	case 'N':
-		ret = 0;
-		break;
-	default:
-		ret = def;
-	}
+    switch (s[0]) {
+    case 'y':
+    case 'Y':
+        ret = 1;
+        break;
+    case 'n':
+    case 'N':
+        ret = 0;
+        break;
+    default:
+        ret = def;
+    }
 
-	/* Flush extra characters */
-	while (s[0] != '\n') {
-		int c = fgetc(stdin);
-		if (c == EOF) {
-			ret = 0;
-			break;
-		}
-		s[0] = c;
-	}
+    /* Flush extra characters */
+    while (s[0] != '\n') {
+        int c = fgetc(stdin);
+        if (c == EOF) {
+            ret = 0;
+            break;
+        }
+        s[0] = c;
+    }
 
-	return ret;
+    return ret;
 }
 
 
