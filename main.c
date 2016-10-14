@@ -355,7 +355,7 @@ int get_parameter(void)
     int i;
 
     /* Get the information of tester */
-    printf("Please input the Tester:\t\t");
+    printf("Please input the Tester: ");
     memset(buf, 0, sizeof(buf));
     if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
         printf("input error\n");
@@ -369,7 +369,7 @@ int get_parameter(void)
     strncpy(g_tester, p, sizeof(g_tester));
 
     /* Get the test time */
-    printf("Please input the Test time(minutes):\t\t");
+    printf("Please input the Test time(minutes): ");
     memset(buf, 0, sizeof(buf));
     if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
         printf("input error\n");
@@ -382,7 +382,7 @@ int get_parameter(void)
     }
 
     /* Get the machine A or B */
-    printf("Please input A or B for this machine:\t\t");
+    printf("Please input A or B for this machine: ");
     memset(buf, 0, sizeof(buf));
     if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
         printf("input error\n");
@@ -415,7 +415,7 @@ int get_parameter(void)
     /* Run all modules or serval modules. */ 
     if (g_test_mode == 1) {
         /* Get the product SN */
-        printf("Please input the Product SN:\t\t");
+        printf("Please input the Product SN: ");
         memset(buf, 0, sizeof(buf));
         if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
             printf("input error\n");
@@ -431,8 +431,25 @@ int get_parameter(void)
             printf("Illegal Product SN\n");
             return -1;
         }
+
+        /* Get the number of SIM board && check it */
+        printf("\tInput SIM Board Number(1/2): ");
+        memset(buf, 0, sizeof(buf));
+        if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
+            printf("input error\n");
+            return -1;
+        }
+        g_board_num = atoi(buf);
+        if ((g_board_num != 1) && (g_board_num != 2)) {
+            printf("input error\n");
+            return -1;
+        }
+        if (is_board_num_valid(g_board_num) == 0) {
+            printf("SIM issue, check it\n");
+            return -1;
+        }
     } else if (g_test_mode == 0) {  /* Get separate modules setting for running. */
-        printf("Please input the CCM SN:\t\t");
+        printf("Please input the CCM SN: ");
         memset(buf, 0, sizeof(buf));
         if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
             printf("input error\n");
@@ -470,7 +487,7 @@ int get_parameter(void)
 
         /* Get the SIM board number and the baudrate of serial */
         if (g_test_sim == 1) {
-            printf("\tInput Board Number(1/2):\t\t");
+            printf("\tInput Board Number(1/2): ");
             memset(buf, 0, sizeof(buf));
             if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
                 printf("input error\n");
@@ -482,12 +499,12 @@ int get_parameter(void)
                 return -1;
             }
             if (is_board_num_valid(g_board_num) == 0) {
-                printf("input error\n");
+                printf("SIM issue, check it\n");
                 return -1;
             }
             
             for (i = 0; i < g_board_num; i++) {
-                printf("\tPlease input the SIM%d SN:\t\t", (i + 1));
+                printf("\tPlease input the SIM%d SN: ", (i + 1));
                 memset(buf, 0, sizeof(buf));
                 if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
                     printf("input error\n");
@@ -541,7 +558,7 @@ int get_parameter(void)
 
         /* Get NIM modules setting for which ports should be tested */
         if (g_test_nim == 1) {
-            printf("\tPlease input the NIM SN:\t\t");
+            printf("\tPlease input the NIM SN: ");
             memset(buf, 0, sizeof(buf));
             if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
                 printf("input error\n");
@@ -571,7 +588,7 @@ int get_parameter(void)
         g_test_hsm = user_ack(TRUE);
  
         if(g_test_hsm == 1) {
-            printf("\tPlease input the HSM SN:\t\t");
+            printf("\tPlease input the HSM SN: ");
             memset(buf, 0, sizeof(buf));
             if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
                 printf("input error\n");
@@ -595,7 +612,7 @@ int get_parameter(void)
  
  
         if(g_test_msm == 1) {
-            printf("\tPlease input the MSM SN:\t\t");
+            printf("\tPlease input the MSM SN: ");
             memset(buf, 0, sizeof(buf));
             if (fgets(buf, sizeof(buf)-1, stdin) <= 0) {
                 printf("input error\n");
