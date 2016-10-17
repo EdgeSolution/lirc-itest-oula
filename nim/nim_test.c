@@ -114,13 +114,15 @@ void nim_print_result(int fd)
 void *nim_test(void *args)
 {
     int i = 0;
-    int ret[4] = {-1};
+    int ret[4];
     log_fd = test_mod_nim.log_fd;
 
     pthread_t ptid_r[4];
     pthread_t ptid_s[4];
 
     log_print(log_fd, "Begin test!\n\n");
+
+    memset(ret, -1, sizeof(ret));    
 
     /* test init & ethernet port init*/
     if(g_nim_test_eth[0] == 1) {

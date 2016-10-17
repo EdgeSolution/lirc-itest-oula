@@ -79,7 +79,7 @@ uint64_t g_hsm_test_loop = 100;
 int g_speed = 1000;
 
 /* NIM: port test flag, set by user input */
-uint8_t g_nim_test_eth[TESC_NUM] = {0};
+uint8_t g_nim_test_eth[TESC_NUM];
 
 /* Full path of the directory where the log/error/report files put */
 char g_log_dir[PATH_MAX];
@@ -574,7 +574,8 @@ int get_parameter(void)
                 printf("Illegal NIM SN\n");
                 return -1;
             }
-        
+            
+            memset(g_nim_test_eth, 0, sizeof(g_nim_test_eth)); 
             for (i = 0; i < 4; i++) {
                 printf("Test eth%d? [Y/n] ", i);
                 fflush(stdin);
