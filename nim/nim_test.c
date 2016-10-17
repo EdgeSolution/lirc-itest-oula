@@ -326,13 +326,20 @@ int udp_test_init(uint32_t ethid, uint16_t portid)
 int socket_init(int *sockfd, char *ipaddr, uint16_t portid)
 {
     struct sockaddr_in hostaddr;
+    int reuse;
     
     *sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP /*0*/);
     if(*sockfd == -1) {
         log_print(log_fd, "create socket failed! errno=%d, %s\n", errno, strerror(errno));
         return -1;
     }
-    
+   
+    reuse = 1;
+    if(setsockopt(*sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
+        log_print(log_fd, "setsockopt error: %s\n", strerror(errno));
+        return -1;
+    }
+ 
     memset(&hostaddr, 0, sizeof(struct sockaddr_in));
 
     hostaddr.sin_family = AF_INET;

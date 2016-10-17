@@ -456,6 +456,7 @@ int get_parameter(void)
         g_test_hsm = 1;
         g_test_msm = 1;
         g_test_led = 1;
+        g_test_mem = 1;
         
         /* Config all ethernet ports to 'Y' */
         for (i = 0; i < TESC_NUM; i++) {
