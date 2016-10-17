@@ -448,6 +448,19 @@ int get_parameter(void)
             printf("SIM issue, check it\n");
             return -1;
         }
+        
+        /* Config all modules to 'Y' */
+        g_test_cpu = 1;
+        g_test_sim = 1;
+        g_test_nim = 1;
+        g_test_hsm = 1;
+        g_test_msm = 1;
+        g_test_led = 1;
+        
+        /* Config all ethernet ports to 'Y' */
+        for (i = 0; i < TESC_NUM; i++) {
+            g_nim_test_eth[i] = 1;
+        } 
     } else if (g_test_mode == 0) {  /* Get separate modules setting for running. */
         printf("Please input the CCM SN: ");
         memset(buf, 0, sizeof(buf));
@@ -576,7 +589,7 @@ int get_parameter(void)
             }
             
             memset(g_nim_test_eth, 0, sizeof(g_nim_test_eth)); 
-            for (i = 0; i < 4; i++) {
+            for (i = 0; i < TESC_NUM; i++) {
                 printf("Test eth%d? [Y/n] ", i);
                 fflush(stdin);
                 g_nim_test_eth[i] = user_ack(TRUE);
