@@ -267,3 +267,72 @@ int is_exe_exist(char *exe)
         return 0;
     }
 }
+
+static void *send_exit_data(void *args)
+{
+    char snt_char;
+    int i;
+
+    if (g_machine == 'A') {
+        snt_char = EXIT_SYNC_A;
+    } else {
+        snt_char = EXIT_SYNC_B;
+    }
+
+    int fd = ser_open(CCM_SERIAL_PORT);
+    if (fd < 0) {
+        pthread_exit(NULL);
+    }
+
+    //Send exit data 3 times
+    for(i=0; i < 3; i++) {
+        write(fd, &snt_char, 1);
+        sleep_ms(500);
+    }
+
+    close(fd);
+
+    pthread_exit(NULL);
+}
+
+static void *receive_exit_data(void *args)
+{
+    char buf[64];
+
+    /* Open serial port */
+    int fd = ser_open(CCM_SERIAL_PORT);
+    if (fd < 0) {
+        pthread_exit(NULL);
+    }
+
+    while (g_running) {
+        memset(buf, 0, sizeof(buf));
+        int size = read(fd, buf, sizeof(buf)-1);
+        if (size > 0) {
+            if (strchr(buf, EXIT_SYNC_A) || strchr(buf, EXIT_SYNC_B)) {
+                g_running = 0;
+                break;
+            }
+        }
+
+        sleep_ms(200);
+    }
+
+    close(fd);
+
+    pthread_exit(NULL);
+}
+
+void send_exit_sync(void)
+{
+    pthread_t pid;
+
+    pthread_create(&pid, NULL, send_exit_data, NULL);
+}
+
+void receive_exit_sync(void)
+{
+    pthread_t pid;
+
+    pthread_create(&pid, NULL, receive_exit_data, NULL);
+}

@@ -145,9 +145,15 @@ int main(int argc, char **argv)
     /* Set test duration. */
     set_timeout(g_duration*60);
 
+    //IF msm test wasn't enabled, start quit sync in main thread
+    if (!g_test_msm) {
+        receive_exit_sync();
+    }
+
     /* Print the status of test module */
     while (g_running) {
         sleep(3);
+
         for (i = 0; i < mod_index; i++) {
             if (g_test_module[i] && g_test_module[i]->run) {
                 g_test_module[i]->print_status();
@@ -749,6 +755,7 @@ int load_config(char *config_file)
 void sig_handler(int signo)
 {
     g_running = 0;
+    send_exit_sync();
 }
 
 int install_sig_handler(void)

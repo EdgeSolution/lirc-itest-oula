@@ -8,7 +8,7 @@
 *
 * REVISION(MM/DD/YYYY):
 *     07/29/2016  Shengkui Leng (shengkui.leng@advantech.com.cn)
-*     - Initial version 
+*     - Initial version
 *
 ******************************************************************************/
 #include <stdio.h>
@@ -451,7 +451,7 @@ static void log_result(int log_fd)
  * NAME:
  *      get_data_pattern
  *
- * DESCRIPTION: 
+ * DESCRIPTION:
  *      Read data from serail port and search the char 0x55 or 0xAA
  *
  * PARAMETERS:
@@ -472,6 +472,12 @@ static unsigned char get_data_pattern(int fd)
                 return 0x55;
             } else if (strchr(buf, 0xAA)) {
                 return 0xAA;
+            } else if (strchr(buf, EXIT_SYNC_A)) {
+                g_running = 0;
+                return EXIT_SYNC_A;
+            } else if (strchr(buf, EXIT_SYNC_B)) {
+                g_running = 0;
+                return EXIT_SYNC_B;
             }
         }
     }
@@ -484,7 +490,7 @@ static unsigned char get_data_pattern(int fd)
  * NAME:
  *      send_data_pattern
  *
- * DESCRIPTION: 
+ * DESCRIPTION:
  *      Send a char from the serial port.
  *
  * PARAMETERS:
@@ -513,7 +519,7 @@ static int send_data_pattern(int fd, unsigned char pattern)
  * NAME:
  *      dump_data
  *
- * DESCRIPTION: 
+ * DESCRIPTION:
  *      Dump buffer in HEX mode to log
  *
  * PARAMETERS:
