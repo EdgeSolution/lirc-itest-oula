@@ -8,7 +8,9 @@
 *
 * REVISION(MM/DD/YYYY):
 *     07/29/2016  Shengkui Leng (shengkui.leng@advantech.com.cn)
-*     - Initial version 
+*     - Initial version
+*     10/12/2016  Jia Sui (jia.sui@advantech.com.cn)
+*     - Implement new requirement
 *
 ******************************************************************************/
 #include <stdio.h>
@@ -26,10 +28,13 @@
 
 void hsm_print_status();
 void hsm_print_result(int fd);
+static void hsm_test_switch(int fd, int log_fd);
+static void hsm_test_hold(int fd, int log_fd);
 void *hsm_test(void *args);
 static void tc_set_rts_casco(int fd, char enabled);
 static int tc_get_cts_casco(int fd);
 static int send_packet(int fd);
+static void hsm_send(int fd, int log_fd);
 
 
 test_mod_t test_mod_hsm = {
@@ -42,39 +47,265 @@ test_mod_t test_mod_hsm = {
     .print_result = hsm_print_result
 };
 
-int reverse = 0;
-
-
 /* The size of packet to send */
 #define PACKET_SIZE     4
 
+#define SWITCH_INTERVAL     10
+
 /* The packet to send */
-char g_packet[PACKET_SIZE];
+static char g_packet[PACKET_SIZE];
 
+/* Test Counters */
+static uint64_t test_counter = 0;
+static uint64_t switch_fail_cntr = 0;
+static uint64_t hold_fail_cntr = 0;
 
+static uint8_t cur_cts;
+static uint8_t cur_rts;
 
 void hsm_print_status()
 {
-    printf("%-*s %s\n", COL_FIX_WIDTH, "HSM", STR_MOD_OK);
+    printf("%-*s %s\n", COL_FIX_WIDTH, "HSM",
+            (test_mod_hsm.pass == 1)?STR_MOD_OK:STR_MOD_ERROR);
+
+    if (g_machine == 'A') {
+        printf("RTS: %d CTS: %d A is %s\n", cur_rts, cur_cts, cur_cts?"HOST":"SLAVE");
+    } else {
+        printf("RTS: %d CTS: %d B is %s\n", cur_rts, cur_cts, cur_cts?"SLAVE":"HOST");
+    }
 }
 
 void hsm_print_result(int fd)
 {
     if (test_mod_hsm.pass) {
-        write_file(fd, "HSM: PASS\n");
+        write_file(fd, "HSM: PASS, test=%lu\n", test_counter);
     } else {
-        write_file(fd, "HSM: FAIL\n");
+        write_file(fd, "HSM: FAIL, test=%lu, switch fail=%lu, hold fail=%lu\n",
+                test_counter, switch_fail_cntr, hold_fail_cntr);
     }
 }
 
+/*
+ * hsm_test_switch()
+ * In this test host will switch between A and B
+ *
+ * State Machine:
+ * H means Host, S means Slave, (E) means error
+ * RTS  |   CTS  |  A    |  B
+ * -----+--------+-------+-------
+ *  1   |   1    |  H    |  S(E)
+ *  1   |   0    |  S(E) |  H
+ *  0   |   1    |  H(E) |  S
+ *  0   |   0    |  S    |  H(E)
+ */
+static void hsm_test_switch(fd, log_fd)
+{
+    uint64_t test_loop = g_hsm_test_loop;
+    time_t old_time = 0, cur_time;
+    int old_cts;
+
+    if (!g_running) {
+        return;
+    }
+
+    log_print(log_fd, "Start HSM switch test: will last %lu loop\n", g_hsm_test_loop);
+    log_print(log_fd, "In this test HOST will switch between A and B\n");
+
+    //Get old_time and will use it later
+    old_time = time(NULL);
+
+    //Get original CTS status
+    old_cts = tc_get_cts_casco(fd);
+
+    //NOTE: cts: 1 means A is host, cts: 0 means B is host
+    //We need to set rts signal according the current cts status.
+    if (g_machine == 'A') {
+        if (old_cts) {
+            cur_rts = FALSE;
+        } else {
+            cur_rts = TRUE;
+        }
+        tc_set_rts_casco(fd, cur_rts);
+
+        while (g_running && test_loop > 0) {
+            hsm_send(fd, log_fd);
+            sleep_ms(100);
+
+            //Check if CTS changed
+            cur_cts = tc_get_cts_casco(fd);
+            if (cur_cts != old_cts) {
+                old_cts = cur_cts;
+                test_counter++;
+
+                if (cur_rts && cur_cts) { //rts=1 cts=1
+                    log_print(log_fd, "RTS=%d, CTS=%d, A is HOST. OK\n",
+                            cur_rts, cur_cts);
+                } else if (cur_rts && !cur_cts) { //rts=1 cts=0
+                    log_print(log_fd, "RTS=%d, CTS=%d, A is SLAVE. ERROR\n",
+                            cur_rts, cur_cts);
+                    test_mod_hsm.pass = 0;
+                    switch_fail_cntr++;
+                } else if (!cur_rts && cur_cts) { //rts=0 cts=1
+                    log_print(log_fd, "RTS=%d, CTS=%d, A is HOST. ERROR\n",
+                            cur_rts, cur_cts);
+                    test_mod_hsm.pass = 0;
+                    switch_fail_cntr++;
+                } else if (!cur_rts && !cur_cts) { //rts=0 cts=0
+                    log_print(log_fd, "RTS=%d, CTS=%d, A is SLAVE. OK\n",
+                            cur_rts, cur_cts);
+                } else {
+                    log_print(log_fd, "Shouldn't be here....\n");
+                    test_mod_hsm.pass = 0;
+                }
+            }
+
+            cur_time = time(NULL);
+            if (cur_time < (old_time + SWITCH_INTERVAL)) {
+                continue;
+            }
+
+            log_print(log_fd, "Switch loop %lu:\n",
+                    (g_hsm_test_loop - test_loop) + 1);
+            test_loop--;
+
+            old_time = cur_time;
+
+            //Reverse rts flag and signal
+            cur_rts = !cur_rts;
+            tc_set_rts_casco(fd, cur_rts);
+        }
+    } else {
+        if (old_cts) {
+            cur_rts = TRUE;
+        } else {
+            cur_rts = FALSE;
+        }
+        tc_set_rts_casco(fd, cur_rts);
+
+        while (g_running && test_loop > 0) {
+            hsm_send(fd, log_fd);
+            sleep_ms(100);
+
+            cur_cts = tc_get_cts_casco(fd);
+            if (cur_cts != old_cts) {
+                old_cts = cur_cts;
+                test_counter++;
+
+                if (cur_rts && cur_cts) { //rts=1 cts=1
+                    log_print(log_fd, "RTS=%d, CTS=%d, B is SLAVE. ERROR\n",
+                            cur_rts, cur_cts);
+                    test_mod_hsm.pass = 0;
+                    switch_fail_cntr++;
+                } else if (cur_rts && !cur_cts) { //rts=1 cts=0
+                    log_print(log_fd, "RTS=%d, CTS=%d, B is HOST. OK\n",
+                            cur_rts, cur_cts);
+                } else if (!cur_rts && cur_cts) { //rts=0 cts=1
+                    log_print(log_fd, "RTS=%d, CTS=%d, B is SLAVE. OK\n",
+                            cur_rts, cur_cts);
+                } else if (!cur_rts && !cur_cts) { //rts=0 cts=0
+                    log_print(log_fd, "RTS=%d, CTS=%d, B is HOST. ERROR\n",
+                            cur_rts, cur_cts);
+                    test_mod_hsm.pass = 0;
+                    switch_fail_cntr++;
+                } else {
+                    log_print(log_fd, "Shouldn't be here....\n");
+                    test_mod_hsm.pass = 0;
+                }
+            }
+
+            cur_time = time(NULL);
+            if (cur_time < (old_time + SWITCH_INTERVAL)) {
+                continue;
+            }
+
+            log_print(log_fd, "Switch loop %lu:\n",
+                    (g_hsm_test_loop - test_loop) + 1);
+            test_loop--;
+
+            old_time = cur_time;
+
+            //Reverse rts flag and signal
+            cur_rts = !cur_rts;
+            tc_set_rts_casco(fd, cur_rts);
+        }
+    }
+
+    log_print(log_fd, "End HSM switch test\n\n");
+}
+
+//In this test host will hold at B
+static void hsm_test_hold(int fd, int log_fd)
+{
+    time_t old_time = 0, cur_time;
+    int old_cts, cur_cts;
+
+    if (!g_running) {
+        log_print(log_fd, "Exit flag detected, return\n");
+        return;
+    }
+
+    log_print(log_fd, "Start HSM hold test\n");
+    log_print(log_fd, "In this test HOST will hold at B\n");
+
+    //Get original CTS status
+    old_cts = tc_get_cts_casco(fd);
+
+    tc_set_rts_casco(fd, cur_rts);
+
+    if (g_machine == 'A') {
+        while (g_running) {
+            hsm_send(fd, log_fd);
+
+            cur_cts = tc_get_cts_casco(fd);
+            if (cur_cts != old_cts) {
+                hold_fail_cntr++;
+                old_cts = cur_cts;
+                test_mod_hsm.pass = 0;
+            }
+
+            cur_time = time(NULL);
+            if (cur_time > (old_time + 1)) {
+                cur_cts = tc_get_cts_casco(fd);
+                log_print(log_fd, "RTS=%d, CTS=%d, A is %s, switch count: %lu\n",
+                        cur_rts, cur_cts, cur_cts?"HOST":"SLAVE", hold_fail_cntr);
+
+                old_time = cur_time;
+            }
+
+            sleep_ms(100);
+        }
+    } else {
+        while (g_running) {
+            hsm_send(fd, log_fd);
+
+            cur_cts = tc_get_cts_casco(fd);
+            if (cur_cts != old_cts) {
+                hold_fail_cntr++;
+                old_cts = cur_cts;
+                test_mod_hsm.pass = 0;
+            }
+
+            cur_time = time(NULL);
+            if (cur_time > (old_time + 1)) {
+                cur_cts = tc_get_cts_casco(fd);
+                log_print(log_fd, "RTS=%d, CTS=%d, B is %s, switch count: %lu\n",
+                        cur_rts, cur_cts, cur_cts?"SLAVE":"HOST", hold_fail_cntr);
+
+                old_time = cur_time;
+            }
+
+            sleep_ms(100);
+        }
+    }
+
+    log_print(log_fd, "Hold fail counter: %lu\n", hold_fail_cntr);
+    log_print(log_fd, "End HSM hold test: %s\n\n", (hold_fail_cntr == 0)?"PASS":"FAIL");
+}
 
 void *hsm_test(void *args)
 {
     int log_fd = test_mod_hsm.log_fd;
     int fd;
-    time_t old_time = 0, cur_time;
-    int switch_count = 0;
-    int old_cts, cur_cts;
 
     log_print(log_fd, "Begin test!\n\n");
 
@@ -92,80 +323,25 @@ void *hsm_test(void *args)
     } else {
         log_print(log_fd, "open mac %c at %s is Successful!\n", g_machine, CCM_SERIAL_PORT);
     }
+
     sleep(2);
 
-    //Get original CTS status
-    old_cts = tc_get_cts_casco(fd);
+    hsm_test_switch(fd, log_fd);
 
-    if (!reverse) {
-        tc_set_rts_casco(fd, TRUE);
-    } else {
-        tc_set_rts_casco(fd, FALSE);
+    cur_rts = TRUE;
+
+    //Switch host to B.
+    if (g_machine == 'B') {
+        tc_set_rts_casco(fd, cur_rts);
+        hsm_send(fd, log_fd);
     }
 
-    if (g_machine == 'A') {
-        while (g_running) {
-            if (send_packet(fd) < 0) {
-                log_print(log_fd, "Send packet error\n");
-                test_mod_hsm.pass = 0;
-            }
+    sleep_ms(500);
 
-            cur_cts = tc_get_cts_casco(fd);
-            if (cur_cts != old_cts) {
-                switch_count++;
-                old_cts = cur_cts;
-            }
+    //Starting SIM test
+    g_sim_starting = TRUE;
 
-            cur_time = time(NULL);
-            if (cur_time > (old_time + 1)) {
-                log_print(log_fd, "COMA-RTS -> 1     OK!\n");
-
-                cur_cts = tc_get_cts_casco(fd);
-                if (!cur_cts) {
-                    log_print(log_fd, "CTS=%d, A is HOST\n", !cur_cts);
-                } else {
-                    log_print(log_fd, "CTS=%d, A is SLAVE\n", !cur_cts);
-                }
-
-                log_print(log_fd, "Switch count: %d\n", switch_count);
-
-                old_time = cur_time;
-            }
-
-            sleep_ms(100);
-        }
-    } else {
-        while (g_running) {
-            if (send_packet(fd) < 0) {
-                log_print(log_fd, "Send packet error\n");
-                test_mod_hsm.pass = 0;
-            }
-
-            cur_cts = tc_get_cts_casco(fd);
-            if (cur_cts != old_cts) {
-                switch_count++;
-                old_cts = cur_cts;
-            }
-
-            cur_time = time(NULL);
-            if (cur_time > (old_time + 1)) {
-                log_print(log_fd, "COMB-RTS -> 1     OK!\n");
-
-                cur_cts = tc_get_cts_casco(fd);
-                if (!cur_cts) {
-                    log_print(log_fd, "CTS=%d, B is SLAVE\n", !cur_cts);
-                } else {
-                    log_print(log_fd, "CTS=%d, B is HOST\n", !cur_cts);
-                }
-
-                log_print(log_fd, "Switch count: %d\n", switch_count);
-
-                old_time = cur_time;
-            }
-
-            sleep_ms(100);
-        }
-    }
+    hsm_test_hold(fd, log_fd);
 
     tc_deinit(fd);
 
@@ -203,9 +379,8 @@ static int tc_get_cts_casco(int fd)
         return -2;
     }
 
-    return (reg_val & 0x10) ? 1 : 0;
+    return (reg_val & 0x10) ? 0 : 1;
 }
-
 
 /* Send data */
 static int send_packet(int fd)
@@ -228,4 +403,12 @@ static int send_packet(int fd)
     }
 
     return rc;
+}
+
+static void hsm_send(int fd, int log_fd)
+{
+    if (send_packet(fd) < 0) {
+        log_print(log_fd, "Send packet error\n");
+        test_mod_hsm.pass = 0;
+    }
 }
