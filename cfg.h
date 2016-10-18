@@ -8,18 +8,27 @@
  *
  * REVISION(MM/DD/YYYY):
  *     07/25/2016  Shengkui Leng (shengkui.leng@advantech.com.cn)
- *     - Initial version 
+ *     - Initial version
  *
  ******************************************************************************/
 #ifndef _CFG_H_
 #define _CFG_H_
 
-#define MAX_LINE_LENGTH     260
+#ifndef TRUE
+#define TRUE        1
+#endif
+#ifndef FALSE
+#define FALSE       0
+#endif
 
-int ini_get_key_value(const char *ini_file, const char *sect,
-    const char *item_key, char *item_val);
+#define MAX_STR_LENGTH      100
 
-char *right_trim(char *str);
-char *left_trim(const char *str);
+/* Max counter of sim modules */
+#define MAX_SIM_COUNT       2
+
+#define TESC_NUM 4
+
+
+int get_parameter(void);
 
 #endif /* _CFG_H_ */

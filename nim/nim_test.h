@@ -27,8 +27,6 @@ typedef struct _ether_port_para {
     uint32_t ethid;
 } __attribute__((packed)) ether_port_para;
 
-#define TESC_NUM 4
-
 #define IP_UNIT_0_A "192.100.1.2"
 #define IP_UNIT_1_A "192.100.2.2"
 #define IP_UNIT_2_A "192.100.3.2"

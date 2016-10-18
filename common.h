@@ -23,18 +23,36 @@
 
 /* Global variables **/
 extern char g_tester[];
+
+/* Product Serial Number */
 extern char g_product_sn[];
-extern int g_duration;
+extern char g_ccm_sn[];
+extern char g_nim_sn[];
+extern char g_msm_sn[];
+extern char g_hsm_sn[];
+
 extern char g_machine;
+
+extern uint64_t g_duration;
 extern int g_running;
-extern int g_board_num;
+extern uint8_t g_board_num;
 extern int g_baudrate;
-extern int g_speed;
 extern char g_progam_path[];
 
 extern uint8_t g_sim_starting;
 extern uint64_t g_hsm_test_loop;
 uint8_t g_nim_test_eth[4];
+
+extern int g_test_mode;
+
+/* Separate modules settings for running or not */
+extern int g_test_cpu;
+extern int g_test_sim;
+extern int g_test_nim;
+extern int g_test_hsm;
+extern int g_test_msm;
+extern int g_test_led;
+extern int g_test_mem;
 
 /* Sturcture for each test module */
 typedef struct _test_mod {
