@@ -141,12 +141,12 @@ static char *strncpy0(char *dest, const char *src, size_t size)
 static int is_board_num_valid(int board_num)
 {
     char *ser_prefix = "/dev/ttyS";
-    char ser_dev[10];
+    char ser_dev[MAX_STR_LENGTH];
     int i;
     int valid = 0;
 
     for (i = 2; i <= (8 * board_num + 1); i++) {
-        sprintf(ser_dev, "%s%d", ser_prefix, i);
+        snprintf(ser_dev, sizeof(ser_dev), "%s%d", ser_prefix, i);
 
         if(access(ser_dev, F_OK) == 0) {
             valid++;
