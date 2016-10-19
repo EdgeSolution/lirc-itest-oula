@@ -336,3 +336,28 @@ void receive_exit_sync(void)
 
     pthread_create(&pid, NULL, receive_exit_data, NULL);
 }
+
+/* Send data */
+int send_packet(int fd, char *buf, uint8_t len)
+{
+    int rc = 0;
+    int bytes_left = len;
+    int bytes_sent = 0;
+
+    if (!buf) {
+        return -1;
+    }
+
+    while (bytes_left > 0) {
+        int size = write(fd, &buf[bytes_sent], bytes_left);
+        if (size >= 0) {
+            bytes_left -= size;
+            bytes_sent += size;
+        } else {
+            rc = -1;
+            break;
+        }
+    }
+
+    return rc;
+}

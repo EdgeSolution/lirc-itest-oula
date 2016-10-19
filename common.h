@@ -114,5 +114,6 @@ int is_exe_exist(char *exe);
 int ser_open(char *dev);
 void send_exit_sync(void);
 void receive_exit_sync(void);
+int send_packet(int fd, char *buf, uint8_t len);
 
 #endif /* _COMMON_H_ */

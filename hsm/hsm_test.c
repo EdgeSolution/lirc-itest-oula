@@ -33,7 +33,6 @@ static void hsm_test_hold(int fd, int log_fd);
 void *hsm_test(void *args);
 static void tc_set_rts_casco(int fd, char enabled);
 static int tc_get_cts_casco(int fd);
-static int send_packet(int fd);
 static void hsm_send(int fd, int log_fd);
 
 
@@ -382,32 +381,9 @@ static int tc_get_cts_casco(int fd)
     return (reg_val & 0x10) ? 0 : 1;
 }
 
-/* Send data */
-static int send_packet(int fd)
-{
-    int rc = 0;
-    char *buf = g_packet;
-    int bytes_left = PACKET_SIZE;
-    int bytes_sent = 0;
-
-    while (bytes_left > 0) {
-        int size = write(fd, &buf[bytes_sent], bytes_left);
-        if (size >= 0) {
-            bytes_left -= size;
-            bytes_sent += size;
-        } else {
-            //perror("write error");
-            rc = -1;
-            break;
-        }
-    }
-
-    return rc;
-}
-
 static void hsm_send(int fd, int log_fd)
 {
-    if (send_packet(fd) < 0) {
+    if (send_packet(fd, g_packet, sizeof(g_packet)) < 0) {
         log_print(log_fd, "Send packet error\n");
         test_mod_hsm.pass = 0;
     }

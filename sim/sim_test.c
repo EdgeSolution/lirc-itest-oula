@@ -612,6 +612,37 @@ void *port_send_event(void *args)
 
 }
 
+void hsm_switch2b(int log_fd)
+{
+    char *buf = "0123456789ABCDEF";
+
+    int fd = ser_open(CCM_SERIAL_PORT);
+    if (fd < 0) {
+        log_print(log_fd, "open mac %c at %s is Failed!\n", g_machine, CCM_SERIAL_PORT);
+        test_mod_sim.pass = 0;
+        pthread_exit(NULL);
+    } else {
+        log_print(log_fd, "open mac %c at %s is Successful!\n", g_machine, CCM_SERIAL_PORT);
+    }
+
+    //Switch host to B.
+    if (g_machine == 'A') {
+        tc_set_rts(fd, FALSE);
+    } else {
+        tc_set_rts(fd, TRUE);
+
+        if (send_packet(fd, buf, sizeof(buf)) < 0) {
+            log_print(log_fd, "Switch HOST to B FAIL\n");
+            test_mod_sim.pass = 0;
+            pthread_exit(NULL);
+        } else {
+            log_print(log_fd, "Switch HOST to B SUCCESS\n");
+        }
+    }
+
+    close(fd);
+}
+
 /*
  * Name:
  *      sim_test
@@ -644,9 +675,16 @@ void *sim_test(void *args)
         sleep(2);
     }
 
+    if (!g_test_hsm) {
+        hsm_switch2b(log_fd);
+    }
+
     if (!g_running) {
         pthread_exit(NULL);
     }
+
+    //Sleep 2 seconds before start testing
+    sleep(2);
 
     memset(_uart_array, 0, sizeof(struct uart_count_list));/*init global _uart_array*/
     //memset(_rate, 0, 16 * sizeof(float));
