@@ -396,7 +396,32 @@ void generate_report(void)
     int fd = log_init(report_file, "report", g_report_dir);
     write_file(fd, "================== Test Report ==================\n");
     write_file(fd, "Tester: %s\n", g_tester);
-    write_file(fd, "Product SN: %s\n", g_product_sn);
+
+    if (g_test_mode) {
+        write_file(fd, "Product SN: %s\n", g_product_sn);
+    } else {
+        write_file(fd, "CCM SN: %s\n", g_ccm_sn);
+
+        if (g_test_hsm) {
+            write_file(fd, "HSM SN: %s\n", g_hsm_sn);
+        }
+
+        if (g_test_msm) {
+            write_file(fd, "MSM SN: %s\n", g_msm_sn);
+        }
+
+        if (g_test_nim) {
+            write_file(fd, "NIM SN: %s\n", g_nim_sn);
+        }
+
+        if (g_test_sim) {
+            write_file(fd, "SIM1 SN: %s\n", g_sim_sn[0]);
+            if (g_board_num == 2) {
+                write_file(fd, "SIM2 SN: %s\n", g_sim_sn[1]);
+            }
+        }
+    }
+
     write_file(fd, "Test time(plan): %d min\n", g_duration);
     write_file(fd, "Test time(real): %d min %d sec\n", g_runned_minute, g_runned_second);
     write_file(fd, "\n");

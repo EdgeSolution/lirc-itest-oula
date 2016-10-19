@@ -30,6 +30,7 @@ extern char g_ccm_sn[];
 extern char g_nim_sn[];
 extern char g_msm_sn[];
 extern char g_hsm_sn[];
+extern char g_sim_sn[][MAX_STR_LENGTH];
 
 extern char g_machine;
 
