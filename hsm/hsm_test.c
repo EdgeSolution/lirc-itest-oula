@@ -59,8 +59,8 @@ static uint64_t test_counter = 0;
 static uint64_t switch_fail_cntr = 0;
 static uint64_t hold_fail_cntr = 0;
 
-static uint8_t cur_cts;
-static uint8_t cur_rts;
+static uint8_t g_cur_cts;
+static uint8_t g_cur_rts;
 
 void hsm_print_status()
 {
@@ -68,9 +68,9 @@ void hsm_print_status()
             (test_mod_hsm.pass == 1)?STR_MOD_OK:STR_MOD_ERROR);
 
     if (g_machine == 'A') {
-        printf("RTS: %d CTS: %d A is %s\n", cur_rts, cur_cts, cur_cts?"HOST":"SLAVE");
+        printf("RTS: %d CTS: %d A is %s\n", g_cur_rts, g_cur_cts, g_cur_cts?"HOST":"SLAVE");
     } else {
-        printf("RTS: %d CTS: %d B is %s\n", cur_rts, cur_cts, cur_cts?"SLAVE":"HOST");
+        printf("RTS: %d CTS: %d B is %s\n", g_cur_rts, g_cur_cts, g_cur_cts?"SLAVE":"HOST");
     }
 }
 
@@ -101,7 +101,6 @@ static void hsm_test_switch(fd, log_fd)
 {
     uint64_t test_loop = g_hsm_test_loop;
     time_t old_time = 0, cur_time;
-    int old_cts;
 
     if (!g_running) {
         return;
@@ -114,104 +113,75 @@ static void hsm_test_switch(fd, log_fd)
     old_time = time(NULL);
 
     //Get original CTS status
-    old_cts = tc_get_cts_casco(fd);
+    g_cur_cts = tc_get_cts_casco(fd);
 
     //NOTE: cts: 1 means A is host, cts: 0 means B is host
     //We need to set rts signal according the current cts status.
     if (g_machine == 'A') {
-        if (old_cts) {
-            cur_rts = FALSE;
+        if (g_cur_cts) {
+            g_cur_rts = FALSE;
         } else {
-            cur_rts = TRUE;
+            g_cur_rts = TRUE;
         }
-        tc_set_rts_casco(fd, cur_rts);
+        tc_set_rts_casco(fd, g_cur_rts);
 
         while (g_running && test_loop > 0) {
             hsm_send(fd, log_fd);
             sleep_ms(100);
+
+            cur_time = time(NULL);
+            if (cur_time < (old_time + SWITCH_INTERVAL)) {
+                continue;
+            }
+
+            log_print(log_fd, "Switch loop %lu:\n",
+                    (g_hsm_test_loop - test_loop) + 1);
 
             //Check if CTS changed
-            cur_cts = tc_get_cts_casco(fd);
-            if (cur_cts != old_cts) {
-                old_cts = cur_cts;
-                test_counter++;
+            g_cur_cts = tc_get_cts_casco(fd);
 
-                if (cur_rts && cur_cts) { //rts=1 cts=1
-                    log_print(log_fd, "RTS=%d, CTS=%d, A is HOST. OK\n",
-                            cur_rts, cur_cts);
-                } else if (cur_rts && !cur_cts) { //rts=1 cts=0
-                    log_print(log_fd, "RTS=%d, CTS=%d, A is SLAVE. ERROR\n",
-                            cur_rts, cur_cts);
-                    test_mod_hsm.pass = 0;
-                    switch_fail_cntr++;
-                } else if (!cur_rts && cur_cts) { //rts=0 cts=1
-                    log_print(log_fd, "RTS=%d, CTS=%d, A is HOST. ERROR\n",
-                            cur_rts, cur_cts);
-                    test_mod_hsm.pass = 0;
-                    switch_fail_cntr++;
-                } else if (!cur_rts && !cur_cts) { //rts=0 cts=0
-                    log_print(log_fd, "RTS=%d, CTS=%d, A is SLAVE. OK\n",
-                            cur_rts, cur_cts);
-                } else {
-                    log_print(log_fd, "Shouldn't be here....\n");
-                    test_mod_hsm.pass = 0;
-                }
+            if (g_cur_rts && g_cur_cts) { //rts=1 cts=1
+                log_print(log_fd, "RTS=%d, CTS=%d, A is HOST. OK\n",
+                        g_cur_rts, g_cur_cts);
+            } else if (g_cur_rts && !g_cur_cts) { //rts=1 cts=0
+                log_print(log_fd, "RTS=%d, CTS=%d, A is SLAVE. ERROR\n",
+                        g_cur_rts, g_cur_cts);
+                test_mod_hsm.pass = 0;
+                switch_fail_cntr++;
+            } else if (!g_cur_rts && g_cur_cts) { //rts=0 cts=1
+                log_print(log_fd, "RTS=%d, CTS=%d, A is HOST. ERROR\n",
+                        g_cur_rts, g_cur_cts);
+                test_mod_hsm.pass = 0;
+                switch_fail_cntr++;
+            } else if (!g_cur_rts && !g_cur_cts) { //rts=0 cts=0
+                log_print(log_fd, "RTS=%d, CTS=%d, A is SLAVE. OK\n",
+                        g_cur_rts, g_cur_cts);
+            } else {
+                log_print(log_fd, "Shouldn't be here....\n");
+                test_mod_hsm.pass = 0;
             }
 
-            cur_time = time(NULL);
-            if (cur_time < (old_time + SWITCH_INTERVAL)) {
-                continue;
-            }
-
-            log_print(log_fd, "Switch loop %lu:\n",
-                    (g_hsm_test_loop - test_loop) + 1);
             test_loop--;
+            test_counter++;
 
             old_time = cur_time;
 
             //Reverse rts flag and signal
-            cur_rts = !cur_rts;
-            tc_set_rts_casco(fd, cur_rts);
+            g_cur_rts = !g_cur_rts;
+            tc_set_rts_casco(fd, g_cur_rts);
         }
     } else {
-        if (old_cts) {
-            cur_rts = TRUE;
+        if (g_cur_cts) {
+            g_cur_rts = TRUE;
         } else {
-            cur_rts = FALSE;
+            g_cur_rts = FALSE;
         }
-        tc_set_rts_casco(fd, cur_rts);
+        tc_set_rts_casco(fd, g_cur_rts);
 
         while (g_running && test_loop > 0) {
             hsm_send(fd, log_fd);
             sleep_ms(100);
 
-            cur_cts = tc_get_cts_casco(fd);
-            if (cur_cts != old_cts) {
-                old_cts = cur_cts;
-                test_counter++;
-
-                if (cur_rts && cur_cts) { //rts=1 cts=1
-                    log_print(log_fd, "RTS=%d, CTS=%d, B is SLAVE. ERROR\n",
-                            cur_rts, cur_cts);
-                    test_mod_hsm.pass = 0;
-                    switch_fail_cntr++;
-                } else if (cur_rts && !cur_cts) { //rts=1 cts=0
-                    log_print(log_fd, "RTS=%d, CTS=%d, B is HOST. OK\n",
-                            cur_rts, cur_cts);
-                } else if (!cur_rts && cur_cts) { //rts=0 cts=1
-                    log_print(log_fd, "RTS=%d, CTS=%d, B is SLAVE. OK\n",
-                            cur_rts, cur_cts);
-                } else if (!cur_rts && !cur_cts) { //rts=0 cts=0
-                    log_print(log_fd, "RTS=%d, CTS=%d, B is HOST. ERROR\n",
-                            cur_rts, cur_cts);
-                    test_mod_hsm.pass = 0;
-                    switch_fail_cntr++;
-                } else {
-                    log_print(log_fd, "Shouldn't be here....\n");
-                    test_mod_hsm.pass = 0;
-                }
-            }
-
             cur_time = time(NULL);
             if (cur_time < (old_time + SWITCH_INTERVAL)) {
                 continue;
@@ -219,13 +189,38 @@ static void hsm_test_switch(fd, log_fd)
 
             log_print(log_fd, "Switch loop %lu:\n",
                     (g_hsm_test_loop - test_loop) + 1);
+
+            g_cur_cts = tc_get_cts_casco(fd);
+
+            if (g_cur_rts && g_cur_cts) { //rts=1 cts=1
+                log_print(log_fd, "RTS=%d, CTS=%d, B is SLAVE. ERROR\n",
+                        g_cur_rts, g_cur_cts);
+                test_mod_hsm.pass = 0;
+                switch_fail_cntr++;
+            } else if (g_cur_rts && !g_cur_cts) { //rts=1 cts=0
+                log_print(log_fd, "RTS=%d, CTS=%d, B is HOST. OK\n",
+                        g_cur_rts, g_cur_cts);
+            } else if (!g_cur_rts && g_cur_cts) { //rts=0 cts=1
+                log_print(log_fd, "RTS=%d, CTS=%d, B is SLAVE. OK\n",
+                        g_cur_rts, g_cur_cts);
+            } else if (!g_cur_rts && !g_cur_cts) { //rts=0 cts=0
+                log_print(log_fd, "RTS=%d, CTS=%d, B is HOST. ERROR\n",
+                        g_cur_rts, g_cur_cts);
+                test_mod_hsm.pass = 0;
+                switch_fail_cntr++;
+            } else {
+                log_print(log_fd, "Shouldn't be here....\n");
+                test_mod_hsm.pass = 0;
+            }
+
             test_loop--;
+            test_counter++;
 
             old_time = cur_time;
 
             //Reverse rts flag and signal
-            cur_rts = !cur_rts;
-            tc_set_rts_casco(fd, cur_rts);
+            g_cur_rts = !g_cur_rts;
+            tc_set_rts_casco(fd, g_cur_rts);
         }
     }
 
@@ -236,7 +231,7 @@ static void hsm_test_switch(fd, log_fd)
 static void hsm_test_hold(int fd, int log_fd)
 {
     time_t old_time = 0, cur_time;
-    int old_cts, cur_cts;
+    int old_cts;
 
     if (!g_running) {
         log_print(log_fd, "Exit flag detected, return\n");
@@ -249,24 +244,24 @@ static void hsm_test_hold(int fd, int log_fd)
     //Get original CTS status
     old_cts = tc_get_cts_casco(fd);
 
-    tc_set_rts_casco(fd, cur_rts);
+    tc_set_rts_casco(fd, g_cur_rts);
 
     if (g_machine == 'A') {
         while (g_running) {
             hsm_send(fd, log_fd);
 
-            cur_cts = tc_get_cts_casco(fd);
-            if (cur_cts != old_cts) {
+            g_cur_cts = tc_get_cts_casco(fd);
+            if (g_cur_cts != old_cts) {
                 hold_fail_cntr++;
-                old_cts = cur_cts;
+                old_cts = g_cur_cts;
                 test_mod_hsm.pass = 0;
             }
 
             cur_time = time(NULL);
             if (cur_time > (old_time + 1)) {
-                cur_cts = tc_get_cts_casco(fd);
+                g_cur_cts = tc_get_cts_casco(fd);
                 log_print(log_fd, "RTS=%d, CTS=%d, A is %s, switch count: %lu\n",
-                        cur_rts, cur_cts, cur_cts?"HOST":"SLAVE", hold_fail_cntr);
+                        g_cur_rts, g_cur_cts, g_cur_cts?"HOST":"SLAVE", hold_fail_cntr);
 
                 old_time = cur_time;
             }
@@ -277,18 +272,18 @@ static void hsm_test_hold(int fd, int log_fd)
         while (g_running) {
             hsm_send(fd, log_fd);
 
-            cur_cts = tc_get_cts_casco(fd);
-            if (cur_cts != old_cts) {
+            g_cur_cts = tc_get_cts_casco(fd);
+            if (g_cur_cts != old_cts) {
                 hold_fail_cntr++;
-                old_cts = cur_cts;
+                old_cts = g_cur_cts;
                 test_mod_hsm.pass = 0;
             }
 
             cur_time = time(NULL);
             if (cur_time > (old_time + 1)) {
-                cur_cts = tc_get_cts_casco(fd);
+                g_cur_cts = tc_get_cts_casco(fd);
                 log_print(log_fd, "RTS=%d, CTS=%d, B is %s, switch count: %lu\n",
-                        cur_rts, cur_cts, cur_cts?"SLAVE":"HOST", hold_fail_cntr);
+                        g_cur_rts, g_cur_cts, g_cur_cts?"SLAVE":"HOST", hold_fail_cntr);
 
                 old_time = cur_time;
             }
@@ -327,11 +322,11 @@ void *hsm_test(void *args)
 
     hsm_test_switch(fd, log_fd);
 
-    cur_rts = TRUE;
+    g_cur_rts = TRUE;
 
     //Switch host to B.
     if (g_machine == 'B') {
-        tc_set_rts_casco(fd, cur_rts);
+        tc_set_rts_casco(fd, g_cur_rts);
         hsm_send(fd, log_fd);
     }
 
