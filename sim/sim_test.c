@@ -412,8 +412,8 @@ int analysis_packet(uint8_t *buff, int list_id)
                     write_file(log_fd, "    ");
                 }
             }
-            write_file(log_fd, "\n    received pack_num = %u\n", (uint32_t)recv_packet->pack_num);
-            write_file(log_fd, "    received crc = %u\n", (uint32_t)recv_packet->crc_err);
+            write_file(log_fd, "\n    Received pack_num = %u\n", (uint32_t)recv_packet->pack_num);
+            write_file(log_fd, "    Received crc = %08X\n", (uint32_t)recv_packet->crc_err);
             write_file(log_fd, "    Calculated crc = %08X\n", (uint32_t)crc_check);
 
 
