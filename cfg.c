@@ -75,6 +75,7 @@ static char *left_trim(const char *str);
 static int is_board_num_valid(int board_num);
 static int is_product_sn_valid(char *psn);
 static int is_board_sn_valid(char *bsn);
+static int decode_time(unsigned char *value, int vlen);
 static int input_str(const char *hint, char *str, uint8_t len);
 static int input_num(const char *hint, uint64_t *num);
 static int input_machine(char *machine);
@@ -182,6 +183,7 @@ static int is_board_num_valid(int board_num)
 static int is_product_sn_valid(char *psn)
 {
     int n;
+    unsigned char buf[5];
 
     if (strcasecmp(psn, "CASCO") == 0) {
         return 1;
@@ -210,6 +212,16 @@ static int is_product_sn_valid(char *psn)
         if (!isdigit(psn[n])) {
             return 0;
         }
+    }
+
+    /* Check YYMM */
+    memset(buf, 0, sizeof(buf));
+    for (n = 0; n < 4; n++) {
+        buf[n] = psn[n+9];
+    }
+    buf[n] = '\0';
+    if (1 != decode_time(buf, 4)) {
+        return 0;
     }
 
     return 1;
@@ -265,6 +277,60 @@ static int is_board_sn_valid(char *bsn)
     }
 
     return 1;
+}
+
+/******************************************************************************
+ * NAME:
+ *      decode_time
+ *
+ * DESCRIPTION:
+ *      Decode the time and Check if the time is valid (1970-2049) or not.
+ *      The format of time:
+ *          YYMM
+ *      YY: year
+ *      MM: month
+ *      
+ * PARAMETERS:
+ *      value - The string of "time"
+ *
+ * RETURN:
+ *      1 - OK(Valid)
+ *      0 - Not valid
+ ******************************************************************************/
+static int decode_time(unsigned char *value, int vlen)
+{
+    const unsigned char *p = value;
+    unsigned year = 0, mon = 0;
+
+#define dec2bin(X) ({ unsigned char x = (X) - '0'; if (x > 9) goto invalid_time; x; })
+#define DD2bin(P) ({ unsigned x = dec2bin(P[0]) * 10 + dec2bin(P[1]); P += 2; x; })
+
+    if (vlen != 4)
+        goto unsupported_time;
+
+    year = DD2bin(p);
+    if (year >= 50)
+        year += 1900;
+    else
+        year += 2000;
+
+    mon = DD2bin(p);
+
+    if (year < 1970 ||
+        mon < 1 || mon > 12)
+        goto invalid_time;
+
+    DBG_PRINT("year=%d, month=%d\n", year, mon);
+
+    return 1;
+
+unsupported_time:
+    DBG_PRINT("unspported time: %d, %s\n", vlen, value);
+    return 0;
+
+invalid_time:
+    DBG_PRINT("invalid time: %s, year=%d, month=%d\n", value, year, mon);
+    return 0;
 }
 
 static int input_str(const char *hint, char *str, uint8_t len)
