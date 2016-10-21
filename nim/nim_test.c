@@ -122,8 +122,13 @@ void *nim_test(void *args)
 
     log_print(log_fd, "Begin test!\n\n");
 
+    /* Initial global variable for statistics */
+    memset(tesc_test_no, 0, TESC_NUM * sizeof(uint32_t));
+    memset(tesc_err_no, 0, TESC_NUM * sizeof(uint32_t));
+    memset(tesc_lost_no, 0, TESC_NUM * sizeof(uint32_t));
+    
     memset(ret, -1, sizeof(ret));    
-
+    
     /* test init & ethernet port init*/
     if(g_nim_test_eth[0] == 1) {
         ret[0] = udp_test_init(0, TESC0_PORT);
@@ -314,10 +319,6 @@ int udp_test_init(uint32_t ethid, uint16_t portid)
         return -1;
     }
     
-    memset(tesc_test_no, 0, TESC_NUM * sizeof(uint32_t));
-    memset(tesc_err_no, 0, TESC_NUM * sizeof(uint32_t));
-    memset(tesc_lost_no, 0, TESC_NUM * sizeof(uint32_t));
-
     log_print(log_fd, "Ethernet port %d test init done !\n", ethid);
 
     return 0;
