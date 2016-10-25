@@ -92,7 +92,7 @@ void nim_print_status()
             COL_FIX_WIDTH-5, tesc_lost_no[i], COL_FIX_WIDTH-4, tesc_err_no[i]);
     }
 }
-    
+
 void nim_print_result(int fd)
 {
     int i;
@@ -101,8 +101,10 @@ void nim_print_result(int fd)
     for(i = 0; i < 4; i++) {
         if ((float)tesc_lost_no[i] > (float)tesc_test_no[i] * FRAME_LOSS_RATE)
             test_mod_nim.pass = 0;
+        else
+            test_mod_nim.pass = 1;
     }
-    
+
     if (test_mod_nim.pass) {
         write_file(fd, "NIM: PASS\n");
     } else {
@@ -490,6 +492,12 @@ void udp_recv_test(ether_port_para *net_port_para)
                                 Or have received packages from other machines. \n"); */
                     }
                 }
+
+                /* judge if pass or fail */
+                if ((float)tesc_lost_no[ethid] > (float)tesc_test_no[ethid] * FRAME_LOSS_RATE)
+                    test_mod_nim.pass = 0;
+                else
+                    test_mod_nim.pass = 1;
             }
             udp_cnt_recv[ethid]++;
        
