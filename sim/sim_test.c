@@ -495,6 +495,7 @@ void *port_recv_event(void *args)
         if (n != BUFF_SIZE) {
             if (n == -1) { /*received stop signal*/
                 g_running = 0;
+                close(fd);
                 pthread_exit((void *)0);
             } else if (n == 0) {
                 continue; //Fix unexpect error count increase
@@ -518,6 +519,7 @@ void *port_recv_event(void *args)
         }
     } /*end while(g_running)*/
 
+    close(fd);
     pthread_exit((void *)0);
 }
 
@@ -560,7 +562,7 @@ void *port_send_event(void *args)
     list_id = uart_param->list_id;
     uart_id = uart_id_list[list_id];
 
-    sleep(1);/* waiting received thread ready */
+    sleep(3);/* waiting received thread ready */
 
     _uart_array[list_id].send_pack_count = 0;
 
@@ -608,6 +610,7 @@ void *port_send_event(void *args)
         }
     }
 
+    close(fd);
     pthread_exit((void *)0);
 
 }
