@@ -174,11 +174,7 @@ void creat_uart_pack(struct uart_package *uart_pack, uint32_t pack_num, uint8_t 
     /*
      * calculated CRC
      */
-    crc = crc32(0, uart_pack->pack_head, 5);
-    crc = crc32(crc, &uart_pack->uart_id, 1);
-    crc = crc32(crc, uart_pack->pack_data, 250);
-    crc = crc32(crc, &uart_pack->pack_tail, 1);
-    crc = crc32(crc, (uint8_t *)&uart_pack->pack_num, 4);
+    crc = crc32(0, (uint8_t *)uart_pack, 261);
     uart_pack->crc_err = crc;
 }
 
@@ -393,11 +389,7 @@ int analysis_packet(uint8_t *buff, int list_id)
     /*
      * check crc and printf which data is error
      */
-    crc_check = crc32(0, recv_packet->pack_head, 5);
-    crc_check = crc32(crc_check, &recv_packet->uart_id, 1);
-    crc_check = crc32(crc_check, recv_packet->pack_data, 250);
-    crc_check = crc32(crc_check, &recv_packet->pack_tail, 1);
-    crc_check = crc32(crc_check, (uint8_t *)&recv_packet->pack_num, 4);
+    crc_check = crc32(0, (uint8_t *)recv_packet, 261);
     if ((uint32_t)crc_check != (uint32_t)recv_packet->crc_err) {
 
         if (g_running) {
