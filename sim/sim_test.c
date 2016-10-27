@@ -495,7 +495,6 @@ void *port_recv_event(void *args)
         if (n != BUFF_SIZE) {
             if (n == -1) { /*received stop signal*/
                 g_running = 0;
-                close(fd);
                 pthread_exit((void *)0);
             } else if (n == 0) {
                 continue; //Fix unexpect error count increase
@@ -519,7 +518,6 @@ void *port_recv_event(void *args)
         }
     } /*end while(g_running)*/
 
-    close(fd);
     pthread_exit((void *)0);
 }
 
@@ -610,7 +608,6 @@ void *port_send_event(void *args)
         }
     }
 
-    close(fd);
     pthread_exit((void *)0);
 
 }
@@ -740,6 +737,10 @@ void *sim_test(void *args)
     }
 
     sleep(1);/*waiting read end, not use pthread_join, because it will be blocking and not exits successfully */
+
+    for (i = 0; i < port_num; i++) {
+        tc_deinit(uart_param[i].uart_fd);
+    }
 
     log_print(log_fd, "Test end\n\n");
     pthread_exit(NULL);
