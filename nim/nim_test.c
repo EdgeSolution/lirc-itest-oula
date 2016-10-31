@@ -8,7 +8,7 @@
 *
 * REVISION(MM/DD/YYYY):
 *     09/12/2016  Lin Du (lin.du@advantech.com.cn)
-*     - Initial version 
+*     - Initial version
 *
 ******************************************************************************/
 #include <stdio.h>
@@ -29,6 +29,7 @@
 
 #include "nim_test.h"
 
+#define LOG_INTERVAL_TIME  10000
 
 /* Global Variables */
 static int net_sockid[TESC_NUM];
@@ -71,22 +72,11 @@ test_mod_t test_mod_nim = {
 void nim_print_status()
 {
     int i = 0;
-    
+
     printf("%-*s %s\n",
         COL_FIX_WIDTH, "NIM", (test_mod_nim.pass) ? STR_MOD_OK : STR_MOD_ERROR);
 
     for (i = 0; i < 4; i++) {
-        /*
-        DBG_PRINT("Port %d:udp_cnt_recv = %u, tesc_test_no =%u, test_lst_no = %u, test_err_no = %u\n", \
-            i, udp_cnt_recv[i], tesc_test_no[i],  tesc_lost_no[i], tesc_err_no[i]);
-        DBG_PRINT("Port %d:udp_cnt_send = %u\n", i, udp_cnt_send[i]);
-        */
-
-        /*
-        printf("Ethernet Port %d, Test number: %u, Lost packages: %u, CRC err packages: %u.\n", \
-            i, tesc_test_no[i], tesc_lost_no[i], tesc_err_no[i]);
-        */
-
         printf("eth%-*u TEST:%-*u LOST:%-*u ERR:%-*u\n",
             COL_FIX_WIDTH-3, i, COL_FIX_WIDTH-5, tesc_test_no[i],
             COL_FIX_WIDTH-5, tesc_lost_no[i], COL_FIX_WIDTH-4, tesc_err_no[i]);
@@ -128,61 +118,61 @@ void *nim_test(void *args)
     memset(tesc_test_no, 0, TESC_NUM * sizeof(uint32_t));
     memset(tesc_err_no, 0, TESC_NUM * sizeof(uint32_t));
     memset(tesc_lost_no, 0, TESC_NUM * sizeof(uint32_t));
-    
-    memset(ret, -1, sizeof(ret));    
-    
+
+    memset(ret, -1, sizeof(ret));
+
     /* test init & ethernet port init*/
     if(g_nim_test_eth[0] == 1) {
         ret[0] = udp_test_init(0, TESC0_PORT);
         if(ret[0] == 0) {
             ether_port_init(0, TESC0_PORT);
         }else {
-            log_print(log_fd, "Ethernet port 0 init error!\n");
+            log_print(log_fd, "NIC0 init error!\n");
             test_mod_nim.pass = 0;
         }
     }
-     
+
     if(g_nim_test_eth[1] == 1) {
         ret[1] = udp_test_init(1, TESC1_PORT);
         if(ret[1] == 0) {
             ether_port_init(1, TESC1_PORT);
         }else {
-            log_print(log_fd, "Ethernet port 1 init error!\n");
+            log_print(log_fd, "NIC1 init error!\n");
             test_mod_nim.pass = 0;
         }
     }
-    
+
     if(g_nim_test_eth[2] == 1) {
         ret[2] = udp_test_init(2, TESC2_PORT);
         if(ret[2] == 0) {
             ether_port_init(2, TESC2_PORT);
         }else {
-            log_print(log_fd, "Ethernet port 2 init error!\n");
+            log_print(log_fd, "NIC2 init error!\n");
             test_mod_nim.pass = 0;
         }
     }
-   
+
     if(g_nim_test_eth[3] == 1) {
         ret[3] = udp_test_init(3, TESC3_PORT);
         if(ret[3] == 0) {
             ether_port_init(3, TESC3_PORT);
         }else {
-            log_print(log_fd, "Ethernet port 3 init error!\n");
+            log_print(log_fd, "NIC3 init error!\n");
             test_mod_nim.pass = 0;
         }
     }
 
     for(i = 0; i < 4; i++) {
-        /* Skip ports which not be initialized */ 
+        /* Skip ports which not be initialized */
         if(ret[i] != 0)
             continue;
-        
+
         udp_recv_task_id[i] = pthread_create(&ptid_r[i], NULL, (void *)udp_recv_test, &net_port_para_recv[i]);
         if(udp_recv_task_id[i] != 0) {
             log_print(log_fd, "Port %d recv spawn failed!\n", i);
             test_mod_nim.pass = 0;
         }
-        
+
         udp_send_task_id[i] = pthread_create(&ptid_s[i], NULL, (void *)udp_send_test, &net_port_para_send[i]);
         if(udp_send_task_id[i] != 0) {
             log_print(log_fd, "Port %d send spawn failed!\n", i);
@@ -193,13 +183,13 @@ void *nim_test(void *args)
     /* Wait all udp send packet thread and all udp receive packet thread to endup */
     for(i = 0; i < 4; i++) {
         /* Skip threads about ports which not be initialized */
-        if(ret[i] != 0) 
+        if(ret[i] != 0)
             continue;
 
         pthread_join(ptid_r[i], NULL);
         pthread_join(ptid_s[i], NULL);
     }
-     
+
     log_print(log_fd, "Test end\n\n");
     pthread_exit(NULL);
 }
@@ -243,21 +233,21 @@ void ether_port_init(uint32_t ethid, uint16_t portid)
                 break;
         }
     }
-    
+
     net_port_para_recv[ethid].sockfd = net_sockid[ethid];
     net_port_para_recv[ethid].port = portid;
     net_port_para_recv[ethid].ethid = ethid;
 
     net_port_para_send[ethid].sockfd = net_sockid[ethid];
     net_port_para_send[ethid].port = portid;
-    net_port_para_send[ethid].ethid = ethid; 
+    net_port_para_send[ethid].ethid = ethid;
     net_port_para_send[ethid].ip = target_ip[ethid];
-} 
+}
 
 int udp_test_init(uint32_t ethid, uint16_t portid)
 {
     char local_ip[20];
-    
+
     memset(local_ip, 0, 20);
 
     if(g_machine == 'A') {
@@ -320,8 +310,8 @@ int udp_test_init(uint32_t ethid, uint16_t portid)
         log_print(log_fd, "socket init failed!\n");
         return -1;
     }
-    
-    log_print(log_fd, "Ethernet port %d test init done !\n", ethid);
+
+    log_print(log_fd, "NIC%d test init done !\n", ethid);
 
     return 0;
 }
@@ -330,19 +320,19 @@ int socket_init(int *sockfd, char *ipaddr, uint16_t portid)
 {
     struct sockaddr_in hostaddr;
     int reuse;
-    
+
     *sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP /*0*/);
     if(*sockfd == -1) {
         log_print(log_fd, "create socket failed! errno=%d, %s\n", errno, strerror(errno));
         return -1;
     }
-   
+
     reuse = 1;
     if(setsockopt(*sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
         log_print(log_fd, "setsockopt error: %s\n", strerror(errno));
         return -1;
     }
- 
+
     memset(&hostaddr, 0, sizeof(struct sockaddr_in));
 
     hostaddr.sin_family = AF_INET;
@@ -353,21 +343,21 @@ int socket_init(int *sockfd, char *ipaddr, uint16_t portid)
         log_print(log_fd, "ip bind error: %s errno=%d, %s\n", ipaddr, errno, strerror(errno));
         return -1;
     }
-    
-    log_print(log_fd, "socket %d init done !\n", *sockfd);    
-    
+
+    log_print(log_fd, "socket %d init done !\n", *sockfd);
+
     return 0;
 }
 
 void udp_send_test(ether_port_para *net_port_para)
-{   
+{
     int sockfd;
     uint32_t ethid;
     uint16_t portid;
     char tgt_ip[255];
 
     int i, j = 0, send_num;
-    uint8_t send_buf[NET_MAX_NUM];    
+    uint8_t send_buf[NET_MAX_NUM];
 
     uint32_t calculated_crc;
 
@@ -381,9 +371,9 @@ void udp_send_test(ether_port_para *net_port_para)
     for(i = 0; i < NET_MAX_NUM - 8; i++) {
         send_buf[i] = i;
     }
-   
+
     /* Wait receive thread to ready */
-    usleep(500000); 
+    usleep(500000);
 
     while(g_running) {
         /* Send packages count */
@@ -398,21 +388,21 @@ void udp_send_test(ether_port_para *net_port_para)
         send_buf[NET_MAX_NUM - 2] = (uint8_t)(calculated_crc >> 8 & 0xff);
         send_buf[NET_MAX_NUM - 3] = (uint8_t)(calculated_crc >> 16 & 0xff);
         send_buf[NET_MAX_NUM - 4] = (uint8_t)(calculated_crc >> 24 & 0xff);
-    
+
         send_num = udp_send(sockfd, (char *)tgt_ip, portid, send_buf, NET_MAX_NUM, ethid);
         if(send_num != NET_MAX_NUM) {
             log_print(log_fd, "udp send failed!\n");
         } else {
             udp_cnt_send[ethid]++;
-            
+
             j++;
-            /* print log per 1000 time */
-            if(j >= 1000) {
-                log_print(log_fd, "ethernet port %d: send udp packets count %u.\n", ethid, udp_cnt_send[ethid]);
+            /* print log after given times */
+            if(j >= LOG_INTERVAL_TIME) {
+                log_print(log_fd, "NIC%d: send udp packets count %u.\n", ethid, udp_cnt_send[ethid]);
                 j = 0;
             }
         }
-      
+
         usleep(1000);
     }
 
@@ -421,7 +411,7 @@ void udp_send_test(ether_port_para *net_port_para)
         for(i = 0; i < 4; i++) {
             send_buf[i] = 0x55;
         }
-        
+
         send_num = udp_send(sockfd, (char *)tgt_ip, portid, send_buf, NET_MAX_NUM, ethid);
         if(send_num != NET_MAX_NUM) {
             log_print(log_fd, "udp send failed!\n");
@@ -444,34 +434,34 @@ void udp_recv_test(ether_port_para *net_port_para)
     uint32_t udp_cnt_read;
 
     int i = 0, j = 0;
-    
+
     sockfd = net_port_para->sockfd;
     ethid = net_port_para->ethid;
     portid = net_port_para->port;
-    
+
     memset(recv_buf, 0, NET_MAX_NUM);
 
     while(g_running) {
         recv_num = udp_recv(sockfd, portid, recv_buf, NET_MAX_NUM, ethid);
-    
+
         if(recv_num == NET_MAX_NUM) {
             /* sync for stopping */
             if(((recv_buf[i] & 0xaa) || (recv_buf[i + 1] & 0xaa) || (recv_buf[i + 2] & 0xaa) || (recv_buf[i + 3] & 0xaa)) == 0) {
                 g_running = 0;
-                break;            
+                break;
             }
 
             /* reset flag for timeout */
-            timeout_rst_cnt[ethid] = 0;        
-     
+            timeout_rst_cnt[ethid] = 0;
+
             calculated_crc = crc32(0, recv_buf, NET_MAX_NUM - 4);
-            
+
             stored_crc = (uint32_t)((recv_buf[NET_MAX_NUM - 1]) | (recv_buf[NET_MAX_NUM - 2] << 8)  \
                  | (recv_buf[NET_MAX_NUM -3] << 16) | (recv_buf[NET_MAX_NUM - 4] << 24));
 
             if(calculated_crc != stored_crc) {
                 tesc_err_no[ethid]++;
-                log_print(log_fd, "ethernet port %d: CRC error, number %u.\n", ethid, tesc_err_no[ethid]);
+                log_print(log_fd, "NIC%d: CRC error, number %u.\n", ethid, tesc_err_no[ethid]);
             } else {  /* crc is good */
                 udp_cnt_read = (uint32_t)((recv_buf[NET_MAX_NUM - 5]) | (recv_buf[NET_MAX_NUM - 6] << 8)    \
                     | (recv_buf[NET_MAX_NUM - 7] << 16) | (recv_buf[NET_MAX_NUM - 8] << 24));
@@ -479,8 +469,8 @@ void udp_recv_test(ether_port_para *net_port_para)
                 if(udp_test_flag[ethid] == 0) {
                     udp_fst_cnt[ethid] = udp_cnt_read;
                     udp_cnt_recv[ethid] = udp_cnt_read;
-                    tesc_lost_no[ethid] = udp_cnt_read;   
-                    udp_test_flag[ethid] = 1; 
+                    tesc_lost_no[ethid] = udp_cnt_read;
+                    udp_test_flag[ethid] = 1;
                 } else {
                     tesc_test_no[ethid] = udp_cnt_read - udp_fst_cnt[ethid];
                     /* Lost some packages */
@@ -500,20 +490,20 @@ void udp_recv_test(ether_port_para *net_port_para)
                     test_mod_nim.pass = 1;
             }
             udp_cnt_recv[ethid]++;
-       
+
             j++;
-            /* print log per 1000 time */
-            if(j >= 1000) {
-                log_print(log_fd, "ethernet port %d: recv udp count = %u, test no = %u, lost no = %u, err no = %u\n", \
+            /* print log after given times */
+            if(j >= LOG_INTERVAL_TIME) {
+                log_print(log_fd, "NIC%d: recv udp count = %u, test no = %u, lost no = %u, err no = %u\n", \
                     ethid, udp_cnt_recv[ethid], tesc_test_no[ethid],  tesc_lost_no[ethid], tesc_err_no[ethid]);
                 j = 0;
              }
 
         } else if ((recv_num > 0) && (recv_num < NET_MAX_NUM)) {
-            log_print(log_fd, "ethernet port %d: receive packet of %d bytes, lost %d bytes!\n", \
-                    ethid, recv_num, NET_MAX_NUM - recv_num); 
+            log_print(log_fd, "NIC%d: receive packet of %d bytes, lost %d bytes!\n", \
+                    ethid, recv_num, NET_MAX_NUM - recv_num);
         } else {
-            log_print(log_fd, "ethernet port %d: receive error = %d\n", ethid, recv_num);
+            log_print(log_fd, "NIC%d: receive error = %d\n", ethid, recv_num);
         }
     }
 }
@@ -522,32 +512,32 @@ int32_t udp_send(int sockfd, char *target_ip, uint16_t port, uint8_t *buff, int3
 {
     struct sockaddr_in targetaddr;
     int32_t send_num = 0;
-    
+
     if((buff == NULL) || (target_ip == NULL)) {
         DBG_PRINT("udp_send error: NULL pointer!\n");
     }
-    
+
     memset(&targetaddr, 0, sizeof(struct sockaddr_in));
-    
+
     targetaddr.sin_family = AF_INET;
     targetaddr.sin_port = htons(port);
     targetaddr.sin_addr.s_addr = inet_addr(target_ip);
-    
+
     if(is_udp_write_ready(sockfd) == 0) {
         send_num = sendto(sockfd, buff, length, 0, (struct sockaddr *)(&targetaddr), sizeof(struct sockaddr_in));
         if(send_num == -1) {
-            log_print(log_fd, "sendto: port %d send to %s failed!\n", ethid, target_ip);
+            log_print(log_fd, "sendto: NIC%d send to %s failed!\n", ethid, target_ip);
             return -1;
         }
     } else {
-        log_print(log_fd, "udp_send failed: now Ethernet Port %d busy!\n", ethid);
+        log_print(log_fd, "udp_send failed: now NIC%d busy!\n", ethid);
         return -1;
     }
 
     return send_num;
 }
 
-int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int32_t ethid) 
+int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int32_t ethid)
 {
     struct sockaddr_in recv_from_addr;
     int32_t recv_num = 0;
@@ -560,27 +550,26 @@ int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int
     tv = is_udp_read_ready(sockfd);
     if(tv == 0) {
         recv_num = recvfrom(sockfd, buff, length, 0, (struct sockaddr *)&recv_from_addr, &addrlen);
-        
+
         if(recv_num == -1) {
             log_print(log_fd, "udp_recv error: %d!\n", ethid);
-        } 
+        }
     } else if(tv == 1) {    /* select timeout */
         timeout_cnt[ethid]++;
-        timeout_rst_cnt[ethid]++; 
-        //log_print(log_fd, "is_udp_read_ready not ready!\n");
-    }   
-   
+        timeout_rst_cnt[ethid]++;
+    }
+
     if(timeout_rst_cnt[ethid] >= 5)
         test_mod_nim.pass = 0;
- 
-    return recv_num; 
+
+    return recv_num;
 }
 
 int is_udp_write_ready(int sockfd)
 {
     fd_set wfds;
     int retval = 0, ret = -1;
-    
+
     FD_ZERO(&wfds);
     FD_SET(sockfd, &wfds);
 
@@ -590,12 +579,12 @@ int is_udp_write_ready(int sockfd)
 
     retval = select(sockfd + 1, NULL, &wfds, NULL, NULL/* or no-blocking: &tv */);
     if(retval > 0) {
-        if(FD_ISSET(sockfd, &wfds)) 
+        if(FD_ISSET(sockfd, &wfds))
             ret = 0;
     } else {
         ret = -1;
     }
-     
+
     return ret;
 }
 
@@ -626,7 +615,7 @@ int is_udp_read_ready(int sockfd)
     return ret;
 }
 
-int set_ipaddr(char *ifname, char *ipaddr, char *netmask) 
+int set_ipaddr(char *ifname, char *ipaddr, char *netmask)
 {
     int sockfd = -1;
     struct ifreq ifr;
@@ -648,7 +637,7 @@ int set_ipaddr(char *ifname, char *ipaddr, char *netmask)
     sin = (struct sockaddr_in *)&ifr.ifr_addr;
 
     sin->sin_family = AF_INET;
-    
+
     /* config ip address */
     sin->sin_addr.s_addr = inet_addr(ipaddr);
     if(ioctl(sockfd, SIOCSIFADDR, &ifr) < 0) {
@@ -665,7 +654,7 @@ int set_ipaddr(char *ifname, char *ipaddr, char *netmask)
         return -1;
     }
 
-    close(sockfd); 
-    
+    close(sockfd);
+
     return 0;
 }
