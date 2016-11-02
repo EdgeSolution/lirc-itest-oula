@@ -6,6 +6,21 @@ LAST UPDATE 2016-09-20
 Versions in brackets () are not official releases, but testing versions.
 
 VERSION  DATE        CHANGES / DESCRIPTION
+0.06     2016-11-02  - Fix HSM module not report fail issue
+                     - Fix SIM not stable issue
+                     - Fix SN illegal character checking issue
+                     - Fix NIM packet losing rate caculation issue
+
+(0.05)   2016-10-20  - Add illegal character check on product SN and board SN
+                     - Implement new UI
+                     - [HSM] Implement new requirment of HSM module
+                     - [NIM] Implement new requirment of NIM module
+                     - [SIM] Add dump function and optimize code
+                     - Start sync will check the wrong machine input
+                     - [NIM] Remove timeout display
+                     - Ctrl-C not stop the remote side
+                     - [NIM] packet losing rate caculation
+
 0.04     2016-09-30  - [sim]Fix unexpect error count increase
                      - [sim]Fix #26 increase select timeout from 200ms to 1s
                      - [sim]Reset retry count if needed
