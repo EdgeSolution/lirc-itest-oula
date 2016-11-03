@@ -57,6 +57,7 @@ int log_fd;
 /* Function Defination */
 void nim_print_status();
 void nim_print_result(int fd);
+static void nim_check_pass(void);
 void *nim_test(void *args);
 
 test_mod_t test_mod_nim = {
@@ -73,6 +74,8 @@ void nim_print_status()
 {
     int i = 0;
 
+    nim_check_pass();
+
     printf("%-*s %s\n",
         COL_FIX_WIDTH, "NIM", (test_mod_nim.pass) ? STR_MOD_OK : STR_MOD_ERROR);
 
@@ -85,15 +88,7 @@ void nim_print_status()
 
 void nim_print_result(int fd)
 {
-    int i;
-
-    /* check if package lost */
-    for(i = 0; i < 4; i++) {
-        if ((float)tesc_lost_no[i] > (float)tesc_test_no[i] * FRAME_LOSS_RATE)
-            test_mod_nim.pass = 0;
-        else
-            test_mod_nim.pass = 1;
-    }
+    nim_check_pass();
 
     if (test_mod_nim.pass) {
         write_file(fd, "NIM: PASS\n");
@@ -102,6 +97,19 @@ void nim_print_result(int fd)
     }
 }
 
+static void nim_check_pass(void)
+{
+    int i = 0;
+    uint8_t flag = 1;
+
+    /* check if package lost */
+    for(i = 0; i < 4; i++) {
+        if ((float)tesc_lost_no[i] > (float)tesc_test_no[i] / FRAME_LOSS_RATE)
+            flag = 0;
+    }
+
+    test_mod_nim.pass = flag;
+}
 
 void *nim_test(void *args)
 {
@@ -482,12 +490,6 @@ void udp_recv_test(ether_port_para *net_port_para)
                                 Or have received packages from other machines. \n"); */
                     }
                 }
-
-                /* judge if pass or fail */
-                if ((float)tesc_lost_no[ethid] > (float)tesc_test_no[ethid] * FRAME_LOSS_RATE)
-                    test_mod_nim.pass = 0;
-                else
-                    test_mod_nim.pass = 1;
             }
             udp_cnt_recv[ethid]++;
 
