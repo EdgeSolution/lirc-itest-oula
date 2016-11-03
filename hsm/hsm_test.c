@@ -138,7 +138,6 @@ static void hsm_test_switch(fd, log_fd)
             log_print(log_fd, "Switch loop %lu:\n",
                     (g_hsm_test_loop - test_loop) + 1);
 
-            //Check if CTS changed
             g_cur_cts = tc_get_cts_casco(fd);
 
             if (g_cur_rts && g_cur_cts) { //rts=1 cts=1
@@ -225,7 +224,8 @@ static void hsm_test_switch(fd, log_fd)
         }
     }
 
-    log_print(log_fd, "End HSM switch test\n\n");
+    log_print(log_fd, "Switch fail counter: %lu\n", switch_fail_cntr);
+    log_print(log_fd, "End HSM switch test: %s\n\n", (switch_fail_cntr==0)?"PASS":"FAIL");
 }
 
 //In this test host will hold at B
