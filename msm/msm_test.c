@@ -41,6 +41,9 @@ test_mod_t test_mod_msm = {
 /* Data size is 64KB(Half size of nvSRAM) */
 #define PACKET_SIZE     HALF_SIZE
 
+#define DATA_STEP       64
+#define WAIT_TIME_IN_MS 1
+
 /* Data pattern to write. */
 char data_55[PACKET_SIZE];
 char data_aa[PACKET_SIZE];
@@ -301,14 +304,14 @@ static int read_data_a(int fd, char *buf)
     int ret = 0;
     int len = PACKET_SIZE;
     int bytes = 0;
-    int step = 1024;
+    int step = DATA_STEP;
 
     memset(buf, 0, len);
 
     while (g_running && (bytes < len)) {
         while (g_running) {
             ret = advspi_read_a(fd, buf+bytes, step, bytes);
-            sleep_ms(100);
+            sleep_ms(WAIT_TIME_IN_MS);
             if (ret == step) {
                 bytes += step;
                 break;
@@ -339,14 +342,14 @@ static int read_data_b(int fd, char *buf)
     int ret = 0;
     int len = PACKET_SIZE;
     int bytes = 0;
-    int step = 1024;
+    int step = DATA_STEP;
 
     memset(buf, 0, len);
 
     while (g_running && (bytes < len)) {
         while (g_running) {
             ret = advspi_read_b(fd, buf+bytes, step, bytes);
-            sleep_ms(100);
+            sleep_ms(WAIT_TIME_IN_MS);
             if (ret == step) {
                 bytes += step;
                 break;
@@ -377,12 +380,12 @@ int write_data_a(int fd, char *buf, size_t len)
 {
     int bytes = 0;
     int ret = 0;
-    int step = 1024;
+    int step = DATA_STEP;
 
     while (g_running && (bytes < len)) {
         while (g_running) {
             ret = advspi_write_a(fd, buf+bytes, step, bytes);
-            sleep_ms(100);
+            sleep_ms(WAIT_TIME_IN_MS);
             if (ret == step) {
                 bytes += step;
                 break;
@@ -413,12 +416,12 @@ int write_data_b(int fd, char *buf, size_t len)
 {
     int bytes = 0;
     int ret = 0;
-    int step = 1024;
+    int step = DATA_STEP;
 
     while (g_running && (bytes < len)) {
         while (g_running) {
             ret = advspi_write_b(fd, buf+bytes, step, bytes);
-            sleep_ms(100);
+            sleep_ms(WAIT_TIME_IN_MS);
             if (ret == step) {
                 bytes += step;
                 break;
