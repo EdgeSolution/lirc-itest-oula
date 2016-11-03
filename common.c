@@ -35,7 +35,7 @@ void kill_process(char *name)
  * NAME:
  *      ser_open
  *
- * DESCRIPTION: 
+ * DESCRIPTION:
  *      Open a serial port, and return the fd of it.
  *
  * PARAMETERS:
@@ -268,6 +268,7 @@ int is_exe_exist(char *exe)
     }
 }
 
+/* Send sync data on exit */
 static void *send_exit_data(void *args)
 {
     char snt_char;
@@ -295,6 +296,7 @@ static void *send_exit_data(void *args)
     pthread_exit(NULL);
 }
 
+/* Receive sync data on exit */
 static void *receive_exit_data(void *args)
 {
     char buf[64];
@@ -323,6 +325,14 @@ static void *receive_exit_data(void *args)
     pthread_exit(NULL);
 }
 
+/******************************************************************************
+ * NAME:
+ *      send_exit_sync
+ *
+ * DESCRIPTION:
+ *      Create thread to send exit sync data
+ *
+ ******************************************************************************/
 void send_exit_sync(void)
 {
     pthread_t pid;
@@ -330,6 +340,13 @@ void send_exit_sync(void)
     pthread_create(&pid, NULL, send_exit_data, NULL);
 }
 
+/******************************************************************************
+ * NAME:
+ *      receive_exit_sync
+ *
+ * DESCRIPTION:
+ *      Create thread to receive exit sync data
+ ******************************************************************************/
 void receive_exit_sync(void)
 {
     pthread_t pid;
@@ -337,7 +354,22 @@ void receive_exit_sync(void)
     pthread_create(&pid, NULL, receive_exit_data, NULL);
 }
 
-/* Send data */
+/******************************************************************************
+ * NAME:
+ *      send_packet
+ *
+ * DESCRIPTION:
+ *      Send serial data, used by hsm and sim module
+ *
+ * PARAMETERS:
+ *      fd  - The fd of serial port
+ *      buf - memory buffer
+ *      len - buffer length
+ *
+ * RETURN:
+ *      0   - success
+ *      -1  - on error
+ ******************************************************************************/
 int send_packet(int fd, char *buf, uint8_t len)
 {
     int rc = 0;
