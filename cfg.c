@@ -335,7 +335,7 @@ invalid_time:
 
 static int input_str(const char *hint, char *str, uint8_t len)
 {
-    char buf[MAX_STR_LENGTH+1];
+    char buf[MAX_STR_LENGTH];
     char *p = NULL;
 
     if (!str) {
@@ -364,7 +364,7 @@ static int input_str(const char *hint, char *str, uint8_t len)
 
 static int input_num(const char *hint, uint64_t *num)
 {
-    char buf[MAX_STR_LENGTH+1];
+    char buf[MAX_STR_LENGTH];
     int tmp = 0;
 
     if (!num) {
@@ -441,7 +441,7 @@ static int input_sim_board_num(uint8_t *num)
 
 static int input_product_sn(char *sn, uint8_t len)
 {
-    char tmp[MAX_STR_LENGTH+1];
+    char tmp[MAX_STR_LENGTH];
 
     if (!sn) {
         return -1;
@@ -462,8 +462,8 @@ static int input_product_sn(char *sn, uint8_t len)
 
 static int input_board_sn(const char *board, char *sn, uint8_t len)
 {
-    char buf[MAX_STR_LENGTH+1];
-    char tmp[MAX_STR_LENGTH+1];
+    char buf[MAX_STR_LENGTH];
+    char tmp[MAX_STR_LENGTH];
 
     if (!board || !sn) {
         return -1;
