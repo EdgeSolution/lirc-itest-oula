@@ -72,7 +72,7 @@ test_mod_t test_mod_nim = {
 
 void nim_print_status()
 {
-    int i = 0;
+    uint8_t i = 0;
 
     nim_check_pass();
 
@@ -381,7 +381,7 @@ void udp_send_test(ether_port_para *net_port_para)
     }
 
     /* Wait receive thread to ready */
-    usleep(500000);
+    sleep_ms(500);
 
     while(g_running) {
         /* Send packages count */
@@ -411,7 +411,7 @@ void udp_send_test(ether_port_para *net_port_para)
             }
         }
 
-        usleep(1000);
+        sleep_ms(1);
     }
 
     /* sync for stopping*/

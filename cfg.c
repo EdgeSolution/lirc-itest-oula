@@ -320,7 +320,7 @@ static int decode_time(unsigned char *value, int vlen)
         mon < 1 || mon > 12)
         goto invalid_time;
 
-    DBG_PRINT("year=%d, month=%d\n", year, mon);
+    DBG_PRINT("year=%u, month=%u\n", year, mon);
 
     return 1;
 
@@ -329,7 +329,7 @@ unsupported_time:
     return 0;
 
 invalid_time:
-    DBG_PRINT("invalid time: %s, year=%d, month=%d\n", value, year, mon);
+    DBG_PRINT("invalid time: %s, year=%u, month=%u\n", value, year, mon);
     return 0;
 }
 

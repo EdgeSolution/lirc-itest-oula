@@ -114,7 +114,7 @@ struct uart_count_list {
 
 static struct uart_count_list _uart_array[16];//init uart_count
 //static float _rate[16];
-static int _loss_pack_count[16];
+static uint32_t _loss_pack_count[16];
 
 int read_pack_head_1_byte(int fd, uint8_t *buff);
 
@@ -377,7 +377,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
  */
 int analysis_packet(uint8_t *buff, int list_id)
 {
-    uint32_t crc_check = 0xFFFFFFFF;
+    uint32_t crc_check;
     int i;
     int log_fd;
     int tmp;
