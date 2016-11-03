@@ -50,14 +50,15 @@ test_mod_t test_mod_hsm = {
 #define PACKET_SIZE     4
 
 #define SWITCH_INTERVAL     10
+#define WAIT_TIME_IN_MS     200
 
 /* The packet to send */
 static char g_packet[PACKET_SIZE];
 
 /* Test Counters */
-static uint64_t test_counter = 0;
-static uint64_t switch_fail_cntr = 0;
-static uint64_t hold_fail_cntr = 0;
+static uint32_t test_counter = 0;
+static uint32_t switch_fail_cntr = 0;
+static uint32_t hold_fail_cntr = 0;
 
 static uint8_t g_cur_cts;
 static uint8_t g_cur_rts;
@@ -127,7 +128,7 @@ static void hsm_test_switch(fd, log_fd)
 
         while (g_running && test_loop > 0) {
             hsm_send(fd, log_fd);
-            sleep_ms(100);
+            sleep_ms(WAIT_TIME_IN_MS);
 
             cur_time = time(NULL);
             if (cur_time < (old_time + SWITCH_INTERVAL)) {
@@ -180,7 +181,7 @@ static void hsm_test_switch(fd, log_fd)
 
         while (g_running && test_loop > 0) {
             hsm_send(fd, log_fd);
-            sleep_ms(100);
+            sleep_ms(WAIT_TIME_IN_MS);
 
             cur_time = time(NULL);
             if (cur_time < (old_time + SWITCH_INTERVAL)) {
@@ -249,13 +250,7 @@ static void hsm_test_hold(int fd, int log_fd)
     if (g_machine == 'A') {
         while (g_running) {
             hsm_send(fd, log_fd);
-
-            g_cur_cts = tc_get_cts_casco(fd);
-            if (g_cur_cts != old_cts) {
-                hold_fail_cntr++;
-                old_cts = g_cur_cts;
-                test_mod_hsm.pass = 0;
-            }
+            sleep_ms(WAIT_TIME_IN_MS);
 
             cur_time = time(NULL);
             if (cur_time > (old_time + 1)) {
@@ -266,18 +261,17 @@ static void hsm_test_hold(int fd, int log_fd)
                 old_time = cur_time;
             }
 
-            sleep_ms(100);
-        }
-    } else {
-        while (g_running) {
-            hsm_send(fd, log_fd);
-
             g_cur_cts = tc_get_cts_casco(fd);
             if (g_cur_cts != old_cts) {
                 hold_fail_cntr++;
                 old_cts = g_cur_cts;
                 test_mod_hsm.pass = 0;
             }
+        }
+    } else {
+        while (g_running) {
+            hsm_send(fd, log_fd);
+            sleep_ms(WAIT_TIME_IN_MS);
 
             cur_time = time(NULL);
             if (cur_time > (old_time + 1)) {
@@ -288,7 +282,12 @@ static void hsm_test_hold(int fd, int log_fd)
                 old_time = cur_time;
             }
 
-            sleep_ms(100);
+            g_cur_cts = tc_get_cts_casco(fd);
+            if (g_cur_cts != old_cts) {
+                hold_fail_cntr++;
+                old_cts = g_cur_cts;
+                test_mod_hsm.pass = 0;
+            }
         }
     }
 
