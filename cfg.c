@@ -31,8 +31,6 @@ char g_nim_sn[MAX_STR_LENGTH];
 char g_msm_sn[MAX_STR_LENGTH];
 char g_hsm_sn[MAX_STR_LENGTH];
 
-char g_machine;
-
 /* Test duration(minutes) */
 uint64_t g_duration = 60;
 
@@ -421,7 +419,7 @@ static int input_sim_board_num(uint8_t *num)
     }
 
     /* Get the number of SIM board && check it */
-    if (0 != input_num("Please Input SIM Board Number(1/2)", &tmp))
+    if (0 != input_num("Please input SIM Board Number(1/2)", &tmp))
         return -1;
 
     if (tmp != 1 && tmp != 2) {
@@ -486,37 +484,34 @@ static int input_board_sn(const char *board, char *sn, uint8_t len)
 
 static int input_baudrate(int *baud)
 {
+    int baudrate_list[] = {
+        9600, 19200, 38400, 57600, 115200, 230400, 460800, 576000, 921600
+    };
+    const int baudrate_count = sizeof(baudrate_list)/sizeof(int);
+    char str[MAX_STR_LENGTH];
+
     uint64_t tmp;
+    int i;
 
     if (!baud) {
         return -1;
     }
 
-    if (0 != input_num("Please Input serial baudrate", &tmp))
+    printf("Baudrate list:\n");
+    for (i = 0; i < baudrate_count; i++) {
+        printf("(%d) %d\n", i+1, baudrate_list[i]);
+    }
+
+    snprintf(str, MAX_STR_LENGTH, "Please select a baudrate(1 ~ %d)", baudrate_count);
+    if (0 != input_num(str, &tmp))
         return -1;
 
-    switch (tmp) {
-        case 300:
-        case 1200:
-        case 2400:
-        case 4800:
-        case 9600:
-        case 19200:
-        case 38400:
-        case 57600:
-        case 115200:
-        case 230400:
-        case 460800:
-        case 576000:
-        case 921600:
-            *baud = tmp;
-            break;
-
-        default:
-            printf("Invalid baudrate\n");
-            return -1;
-            break;
+    if ((tmp < 1) || (tmp > baudrate_count)) {
+        printf("Invalid baudrate\n");
+        return -1;
     }
+
+    *baud = baudrate_list[tmp-1];
 
     return 0;
 }
@@ -610,10 +605,6 @@ int get_parameter(void)
         if (0 != input_product_sn(g_product_sn, sizeof(g_product_sn)))
             return -1;
 
-        /* Get the number of SIM board && check it */
-        if (0 != input_sim_board_num(&g_board_num))
-            return -1;
-
         /* Get HSM test loop */
         if (0 != input_num("Please input HSM test loop", &g_hsm_test_loop))
             return -1;
@@ -627,6 +618,16 @@ int get_parameter(void)
         g_test_led = 1;
         g_test_mem = 1;
 
+        //SIM
+        /* Get the number of SIM board && check it */
+        if (0 != input_sim_board_num(&g_board_num))
+            return -1;
+
+        //Baudrate
+        if (0 != input_baudrate(&g_baudrate))
+            return -1;
+
+        //NIM
         /* Config all ethernet ports to 'Y' */
         for (i = 0; i < TESC_NUM; i++) {
             g_nim_test_eth[i] = 1;
