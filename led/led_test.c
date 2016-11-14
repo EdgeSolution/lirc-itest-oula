@@ -21,9 +21,9 @@
 #include "adv_led.h"
 #include "led_test.h"
 
-void led_print_status();
-void led_print_result(int fd);
-void *led_test(void *args);
+static void led_print_status();
+static void led_print_result(int fd);
+static void *led_test(void *args);
 
 
 test_mod_t test_mod_led = {
@@ -37,13 +37,13 @@ test_mod_t test_mod_led = {
 };
 
 
-void led_print_status()
+static void led_print_status()
 {
     printf("%-*s %s\n", COL_FIX_WIDTH, "LED",
         test_mod_led.pass?STR_MOD_OK:STR_MOD_ERROR);
 }
 
-void led_print_result(int fd)
+static void led_print_result(int fd)
 {
     if (test_mod_led.pass) {
         write_file(fd, "LED: PASS\n");
@@ -53,7 +53,7 @@ void led_print_result(int fd)
 }
 
 
-void *led_test(void *args)
+static void *led_test(void *args)
 {
     int log_fd = test_mod_led.log_fd;
 

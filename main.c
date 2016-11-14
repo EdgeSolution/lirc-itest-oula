@@ -28,22 +28,22 @@
 /* Version of the program */
 #define PROGRAM_VERSION     "0.06"
 
-int g_runned_minute = 0;
-int g_runned_second = 0;
+static int g_runned_minute = 0;
+static int g_runned_second = 0;
 
 /* Full path of the directory where the log/error/report files put */
-char g_log_dir[PATH_MAX];
-char g_error_dir[PATH_MAX];
-char g_report_dir[PATH_MAX];
+static char g_log_dir[PATH_MAX];
+static char g_error_dir[PATH_MAX];
+static char g_report_dir[PATH_MAX];
 
 /* Full path of program */
 char g_progam_path[PATH_MAX];
 
 /* An array to manage all test modules. */
-test_mod_t *g_test_module[MAX_MOD_COUNT] = {0, };
+static test_mod_t *g_test_module[MAX_MOD_COUNT] = {0, };
 
 /* Index of modules in the array of g_test_module */
-int mod_index = 0;
+static int mod_index = 0;
 
 int main(int argc, char **argv)
 {

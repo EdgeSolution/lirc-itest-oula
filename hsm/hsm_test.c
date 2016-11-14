@@ -26,11 +26,11 @@
 #include "term.h"
 #include "hsm_test.h"
 
-void hsm_print_status();
-void hsm_print_result(int fd);
+static void hsm_print_status();
+static void hsm_print_result(int fd);
 static void hsm_test_switch(int fd, int log_fd);
 static void hsm_test_hold(int fd, int log_fd);
-void *hsm_test(void *args);
+static void *hsm_test(void *args);
 static void tc_set_rts_casco(int fd, char enabled);
 static int tc_get_cts_casco(int fd);
 static void hsm_send(int fd, int log_fd);
@@ -63,7 +63,7 @@ static uint32_t hold_fail_cntr = 0;
 static uint8_t g_cur_cts;
 static uint8_t g_cur_rts;
 
-void hsm_print_status()
+static void hsm_print_status()
 {
     printf("%-*s %s\n", COL_FIX_WIDTH, "HSM",
             (test_mod_hsm.pass == 1)?STR_MOD_OK:STR_MOD_ERROR);
@@ -75,7 +75,7 @@ void hsm_print_status()
     }
 }
 
-void hsm_print_result(int fd)
+static void hsm_print_result(int fd)
 {
     if (test_mod_hsm.pass) {
         write_file(fd, "HSM: PASS, test=%lu\n", test_counter);
@@ -282,7 +282,7 @@ static void hsm_test_hold(int fd, int log_fd)
     log_print(log_fd, "End HSM hold test: %s\n\n", (hold_fail_cntr == 0)?"PASS":"FAIL");
 }
 
-void *hsm_test(void *args)
+static void *hsm_test(void *args)
 {
     int log_fd = test_mod_hsm.log_fd;
     int fd;
