@@ -231,7 +231,6 @@ static void hsm_test_switch(fd, log_fd)
 //In this test host will hold at B
 static void hsm_test_hold(int fd, int log_fd)
 {
-    time_t old_time = 0, cur_time;
     int old_cts;
 
     if (!g_running) {
@@ -252,20 +251,14 @@ static void hsm_test_hold(int fd, int log_fd)
             hsm_send(fd, log_fd);
             sleep_ms(WAIT_TIME_IN_MS);
 
-            cur_time = time(NULL);
-            if (cur_time > (old_time + 1)) {
-                g_cur_cts = tc_get_cts_casco(fd);
-                log_print(log_fd, "RTS=%d, CTS=%d, A is %s, switch count: %lu\n",
-                        g_cur_rts, g_cur_cts, g_cur_cts?"HOST":"SLAVE", hold_fail_cntr);
-
-                old_time = cur_time;
-            }
-
             g_cur_cts = tc_get_cts_casco(fd);
             if (g_cur_cts != old_cts) {
                 hold_fail_cntr++;
                 old_cts = g_cur_cts;
                 test_mod_hsm.pass = 0;
+
+                log_print(log_fd, "RTS=%d, CTS=%d, A is %s, switch count: %lu\n",
+                        g_cur_rts, g_cur_cts, g_cur_cts?"HOST":"SLAVE", hold_fail_cntr);
             }
         }
     } else {
@@ -273,20 +266,14 @@ static void hsm_test_hold(int fd, int log_fd)
             hsm_send(fd, log_fd);
             sleep_ms(WAIT_TIME_IN_MS);
 
-            cur_time = time(NULL);
-            if (cur_time > (old_time + 1)) {
-                g_cur_cts = tc_get_cts_casco(fd);
-                log_print(log_fd, "RTS=%d, CTS=%d, B is %s, switch count: %lu\n",
-                        g_cur_rts, g_cur_cts, g_cur_cts?"SLAVE":"HOST", hold_fail_cntr);
-
-                old_time = cur_time;
-            }
-
             g_cur_cts = tc_get_cts_casco(fd);
             if (g_cur_cts != old_cts) {
                 hold_fail_cntr++;
                 old_cts = g_cur_cts;
                 test_mod_hsm.pass = 0;
+
+                log_print(log_fd, "RTS=%d, CTS=%d, B is %s, switch count: %lu\n",
+                        g_cur_rts, g_cur_cts, g_cur_cts?"SLAVE":"HOST", hold_fail_cntr);
             }
         }
     }
