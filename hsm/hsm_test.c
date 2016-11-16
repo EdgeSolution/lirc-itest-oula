@@ -52,6 +52,8 @@ test_mod_t test_mod_hsm = {
 #define SWITCH_INTERVAL     10
 #define WAIT_TIME_IN_MS     200
 
+#define SENDING_COUNT       10
+
 /* The packet to send */
 static char g_packet[PACKET_SIZE];
 
@@ -313,7 +315,9 @@ void *hsm_test(void *args)
     //Switch host to B.
     if (g_machine == 'B') {
         tc_set_rts_casco(fd, g_cur_rts);
-        hsm_send(fd, log_fd);
+        for (i = 0; i < SENDING_COUNT; i++) {
+            hsm_send(fd, log_fd);
+        }
     }
 
     sleep_ms(500);
