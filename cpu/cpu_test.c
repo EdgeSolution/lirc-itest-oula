@@ -20,9 +20,9 @@
 #include "cpu_test.h"
 #include "common.h"
 
-void cpu_print_status();
-void cpu_print_result(int fd);
-void *cpu_test(void *args);
+static void cpu_print_status();
+static void cpu_print_result(int fd);
+static void *cpu_test(void *args);
 
 
 test_mod_t test_mod_cpu = {
@@ -36,7 +36,7 @@ test_mod_t test_mod_cpu = {
 };
 
 
-void cpu_print_status()
+static void cpu_print_status()
 {
     /*printf("%-*s %s\n", COL_FIX_WIDTH, "CPU",
         test_mod_cpu.pass?STR_MOD_OK:STR_MOD_ERROR);
@@ -44,7 +44,7 @@ void cpu_print_status()
 }
 
 
-void cpu_print_result(int fd)
+static void cpu_print_result(int fd)
 {
     if (test_mod_cpu.pass) {
         write_file(fd, "CPU: PASS\n");
@@ -54,7 +54,7 @@ void cpu_print_result(int fd)
 }
 
 
-void *cpu_test(void *args)
+static void *cpu_test(void *args)
 {
     int log_fd = test_mod_cpu.log_fd;
     char *log_file = test_mod_cpu.log_file;

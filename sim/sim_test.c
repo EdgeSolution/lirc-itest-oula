@@ -116,18 +116,18 @@ static struct uart_count_list _uart_array[16];//init uart_count
 //static float _rate[16];
 static uint32_t _loss_pack_count[16];
 
-int read_pack_head_1_byte(int fd, uint8_t *buff);
+static int read_pack_head_1_byte(int fd, uint8_t *buff);
 
-void creat_uart_pack(struct uart_package *uart_pack, uint32_t pack_num, uint8_t uart_id);
-int send_uart_packet(int fd, struct uart_package * packet_ptr, int len);
-int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id);
-int analysis_packet(uint8_t *buff, int list_id);
+static void creat_uart_pack(struct uart_package *uart_pack, uint32_t pack_num, uint8_t uart_id);
+static int send_uart_packet(int fd, struct uart_package * packet_ptr, int len);
+static int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id);
+static int analysis_packet(uint8_t *buff, int list_id);
 
-void *port_recv_event(void *args);
-void *port_send_event(void *args);
-void sim_print_status(void);
-void sim_print_result(int fd);
-void *sim_test(void *args);
+static void *port_recv_event(void *args);
+static void *port_send_event(void *args);
+static void sim_print_status(void);
+static void sim_print_result(int fd);
+static void *sim_test(void *args);
 
 
 //test_mod_t no define in this test
@@ -153,7 +153,7 @@ test_mod_t test_mod_sim = {
  * Return:
  *
  */
-void creat_uart_pack(struct uart_package *uart_pack, uint32_t pack_num, uint8_t uart_id)
+static void creat_uart_pack(struct uart_package *uart_pack, uint32_t pack_num, uint8_t uart_id)
 {
     uint8_t i = 0;
     uint32_t crc = 0xFFFFFFFF;
@@ -190,7 +190,7 @@ len:data length
  * Return:
  *      send bytes
  */
-int send_uart_packet(int fd, struct uart_package * packet_ptr, int len)
+static int send_uart_packet(int fd, struct uart_package * packet_ptr, int len)
 {
     uint8_t buff[BUFF_SIZE];
     int ret = 0;
@@ -238,7 +238,7 @@ int send_uart_packet(int fd, struct uart_package * packet_ptr, int len)
  * Return:
  *       read status
  */
-int read_pack_head_1_byte(int fd, uint8_t *buff)
+static int read_pack_head_1_byte(int fd, uint8_t *buff)
 {
     int ret = 0;
     do {
@@ -269,7 +269,7 @@ int read_pack_head_1_byte(int fd, uint8_t *buff)
  * Return:
  *       received bytes
  */
-int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
+static int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
 {
     int ret = 0;
     int i = 0;
@@ -375,7 +375,7 @@ int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
  *      -1: packet error
  *
  */
-int analysis_packet(uint8_t *buff, int list_id)
+static int analysis_packet(uint8_t *buff, int list_id)
 {
     uint32_t crc_check;
     int i;
@@ -459,7 +459,7 @@ int analysis_packet(uint8_t *buff, int list_id)
  *      Exit code of thread
  *
  */
-void *port_recv_event(void *args)
+static void *port_recv_event(void *args)
 {
     struct uart_attr *uart_param;
     uint8_t buff[BUFF_SIZE];
@@ -524,7 +524,7 @@ void *port_recv_event(void *args)
  *      Exit code of thread
  *
  */
-void *port_send_event(void *args)
+static void *port_send_event(void *args)
 {
     struct uart_attr *uart_param;
 
@@ -645,7 +645,7 @@ void hsm_switch2b(int log_fd)
  * Return:
  *      NULL
  */
-void *sim_test(void *args)
+static void *sim_test(void *args)
 {
 
     struct uart_attr uart_param[16];
@@ -748,7 +748,7 @@ void *sim_test(void *args)
  * Return:
  *      NULL
  */
-void sim_print_result(int fd)
+static void sim_print_result(int fd)
 {
     if (test_mod_sim.pass) {
         write_file(fd, "SIM: PASS\n");
@@ -768,7 +768,7 @@ void sim_print_result(int fd)
  * Return:
  *      NULL
  */
-void sim_print_status(void)
+static void sim_print_status(void)
 {
     int i;
     int port_num = 8 * g_board_num;

@@ -22,9 +22,9 @@
 #include "adv_spi.h"
 #include "term.h"
 
-void msm_print_status();
-void msm_print_result(int fd);
-void *msm_test(void *args);
+static void msm_print_status();
+static void msm_print_result(int fd);
+static void *msm_test(void *args);
 
 
 test_mod_t test_mod_msm = {
@@ -45,8 +45,8 @@ test_mod_t test_mod_msm = {
 #define WAIT_TIME_IN_MS 1
 
 /* Data pattern to write. */
-char data_55[PACKET_SIZE];
-char data_aa[PACKET_SIZE];
+static char data_55[PACKET_SIZE];
+static char data_aa[PACKET_SIZE];
 
 /* Counter of test times, successful and failed test. */
 static unsigned long counter_test = 0;
@@ -56,15 +56,15 @@ static unsigned long counter_fail = 0;
 
 static int read_data_a(int fd, char *cmp_buf);
 static int read_data_b(int fd, char *cmp_buf);
-int write_data_a(int fd, char *buf, size_t len);
-int write_data_b(int fd, char *buf, size_t len);
+static int write_data_a(int fd, char *buf, size_t len);
+static int write_data_b(int fd, char *buf, size_t len);
 static void log_result(int log_fd);
 static unsigned char get_data_pattern(int fd);
 static int send_data_pattern(int fd, unsigned char pattern);
 static void dump_data(int log_fd, char *buf, int len);
 
 
-void msm_print_status()
+static void msm_print_status()
 {
     printf("%-*s %s\n"
         "TEST:%-*lu ERROR:%-*lu\n",
@@ -72,7 +72,7 @@ void msm_print_status()
         COL_FIX_WIDTH-5, counter_test, COL_FIX_WIDTH-6, counter_fail);
 }
 
-void msm_print_result(int fd)
+static void msm_print_result(int fd)
 {
     if (test_mod_msm.pass) {
         write_file(fd, "MSM: PASS. Test count:%lu\n", counter_test);
@@ -83,7 +83,7 @@ void msm_print_result(int fd)
 }
 
 
-void *msm_test(void *args)
+static void *msm_test(void *args)
 {
     int log_fd = test_mod_msm.log_fd;
 
@@ -376,7 +376,7 @@ static int read_data_b(int fd, char *buf)
  * RETURN:
  *      Number of bytes wrote
  ******************************************************************************/
-int write_data_a(int fd, char *buf, size_t len)
+static int write_data_a(int fd, char *buf, size_t len)
 {
     int bytes = 0;
     int ret = 0;
@@ -412,7 +412,7 @@ int write_data_a(int fd, char *buf, size_t len)
  * RETURN:
  *      Number of bytes wrote
  ******************************************************************************/
-int write_data_b(int fd, char *buf, size_t len)
+static int write_data_b(int fd, char *buf, size_t len)
 {
     int bytes = 0;
     int ret = 0;

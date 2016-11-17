@@ -31,6 +31,41 @@
 
 #define LOG_INTERVAL_TIME  10000
 
+typedef struct _ether_port_para {
+    int sockfd;
+    char * ip;
+    uint16_t port;
+    uint32_t ethid;
+} __attribute__((packed)) ether_port_para;
+
+#define IP_UNIT_0_A "192.100.1.2"
+#define IP_UNIT_1_A "192.100.2.2"
+#define IP_UNIT_2_A "192.100.3.2"
+#define IP_UNIT_3_A "192.100.4.2"
+
+#define IP_UNIT_0_B "192.100.1.3"
+#define IP_UNIT_1_B "192.100.2.3"
+#define IP_UNIT_2_B "192.100.3.3"
+#define IP_UNIT_3_B "192.100.4.3"
+
+#define NETMASK "255.255.255.0"
+
+#define TESC0_PORT  0x7000
+#define TESC1_PORT  0x8000
+#define TESC2_PORT  0x9000
+#define TESC3_PORT  0xa000
+
+/* Interface name */
+#define ETH0    "eth0"
+#define ETH1    "eth1"
+#define ETH2    "eth2"
+#define ETH3    "eth3"
+
+/* package size */
+#define NET_MAX_NUM 1024
+
+#define FRAME_LOSS_RATE 100000
+
 /* Global Variables */
 static int net_sockid[TESC_NUM];
 static char target_ip[TESC_NUM][20];
@@ -52,13 +87,24 @@ static int32_t udp_recv_task_id[TESC_NUM];
 static ether_port_para net_port_para_recv[TESC_NUM];
 static ether_port_para net_port_para_send[TESC_NUM];
 
-int log_fd;
+static int log_fd;
 
 /* Function Defination */
-void nim_print_status();
-void nim_print_result(int fd);
+static void ether_port_init(uint32_t ethid, uint16_t portid);
+static int udp_test_init(uint32_t ethid, uint16_t portid);
+static int socket_init(int *sockfd, char *ipaddr, uint16_t portid);
+static void udp_send_test(ether_port_para *net_port_para);
+static void udp_recv_test(ether_port_para *net_port_para);
+static int32_t udp_send(int sockfd, char *target_ip, uint16_t port, uint8_t *buff, int32_t length, int32_t ethid);
+static int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int32_t ethid);
+static int is_udp_write_ready(int sockfd);
+static int is_udp_read_ready(int sockfd);
+static int set_ipaddr(char *ifname, char *ipaddr, char *netmask);
+
+static void nim_print_status();
+static void nim_print_result(int fd);
 static void nim_check_pass(void);
-void *nim_test(void *args);
+static void *nim_test(void *args);
 
 test_mod_t test_mod_nim = {
     .run = 1,
@@ -70,7 +116,7 @@ test_mod_t test_mod_nim = {
     .print_result = nim_print_result
 };
 
-void nim_print_status()
+static void nim_print_status()
 {
     uint8_t i = 0;
 
@@ -86,7 +132,7 @@ void nim_print_status()
     }
 }
 
-void nim_print_result(int fd)
+static void nim_print_result(int fd)
 {
     nim_check_pass();
 
@@ -111,7 +157,7 @@ static void nim_check_pass(void)
     test_mod_nim.pass = flag;
 }
 
-void *nim_test(void *args)
+static void *nim_test(void *args)
 {
     int i = 0;
     int ret[4];
@@ -202,7 +248,7 @@ void *nim_test(void *args)
     pthread_exit(NULL);
 }
 
-void ether_port_init(uint32_t ethid, uint16_t portid)
+static void ether_port_init(uint32_t ethid, uint16_t portid)
 {
     memset(target_ip[ethid], 0, 20);
 
@@ -252,7 +298,7 @@ void ether_port_init(uint32_t ethid, uint16_t portid)
     net_port_para_send[ethid].ip = target_ip[ethid];
 }
 
-int udp_test_init(uint32_t ethid, uint16_t portid)
+static int udp_test_init(uint32_t ethid, uint16_t portid)
 {
     char local_ip[20];
 
@@ -324,7 +370,7 @@ int udp_test_init(uint32_t ethid, uint16_t portid)
     return 0;
 }
 
-int socket_init(int *sockfd, char *ipaddr, uint16_t portid)
+static int socket_init(int *sockfd, char *ipaddr, uint16_t portid)
 {
     struct sockaddr_in hostaddr;
     int reuse;
@@ -357,7 +403,7 @@ int socket_init(int *sockfd, char *ipaddr, uint16_t portid)
     return 0;
 }
 
-void udp_send_test(ether_port_para *net_port_para)
+static void udp_send_test(ether_port_para *net_port_para)
 {
     int sockfd;
     uint32_t ethid;
@@ -429,7 +475,7 @@ void udp_send_test(ether_port_para *net_port_para)
     }
 }
 
-void udp_recv_test(ether_port_para *net_port_para)
+static void udp_recv_test(ether_port_para *net_port_para)
 {
     int sockfd;
     uint32_t ethid;
@@ -510,7 +556,7 @@ void udp_recv_test(ether_port_para *net_port_para)
     }
 }
 
-int32_t udp_send(int sockfd, char *target_ip, uint16_t port, uint8_t *buff, int32_t length, int32_t ethid)
+static int32_t udp_send(int sockfd, char *target_ip, uint16_t port, uint8_t *buff, int32_t length, int32_t ethid)
 {
     struct sockaddr_in targetaddr;
     int32_t send_num = 0;
@@ -539,7 +585,7 @@ int32_t udp_send(int sockfd, char *target_ip, uint16_t port, uint8_t *buff, int3
     return send_num;
 }
 
-int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int32_t ethid)
+static int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int32_t ethid)
 {
     struct sockaddr_in recv_from_addr;
     int32_t recv_num = 0;
@@ -567,7 +613,7 @@ int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int
     return recv_num;
 }
 
-int is_udp_write_ready(int sockfd)
+static int is_udp_write_ready(int sockfd)
 {
     fd_set wfds;
     int retval = 0, ret = -1;
@@ -590,7 +636,7 @@ int is_udp_write_ready(int sockfd)
     return ret;
 }
 
-int is_udp_read_ready(int sockfd)
+static int is_udp_read_ready(int sockfd)
 {
     fd_set rfds;
     int retval = 0, ret = -1;
@@ -617,7 +663,7 @@ int is_udp_read_ready(int sockfd)
     return ret;
 }
 
-int set_ipaddr(char *ifname, char *ipaddr, char *netmask)
+static int set_ipaddr(char *ifname, char *ipaddr, char *netmask)
 {
     int sockfd = -1;
     struct ifreq ifr;

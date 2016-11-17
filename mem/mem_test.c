@@ -20,9 +20,9 @@
 #include "mem_test.h"
 #include "common.h"
 
-void mem_print_status();
-void mem_print_result(int fd);
-void *mem_test(void *args);
+static void mem_print_status();
+static void mem_print_result(int fd);
+static void *mem_test(void *args);
 static int find_fail_str(char *logfile);
 
 
@@ -37,7 +37,7 @@ test_mod_t test_mod_mem = {
 };
 
 
-void mem_print_status()
+static void mem_print_status()
 {
     /*printf("%-*s %s\n", COL_FIX_WIDTH, "MEM",
         test_mod_mem.pass?STR_MOD_OK:STR_MOD_ERROR);
@@ -45,7 +45,7 @@ void mem_print_status()
 }
 
 
-void mem_print_result(int fd)
+static void mem_print_result(int fd)
 {
     if (test_mod_mem.pass) {
         write_file(fd, "MEM: PASS\n");
@@ -55,7 +55,7 @@ void mem_print_result(int fd)
 }
 
 
-void *mem_test(void *args)
+static void *mem_test(void *args)
 {
     int log_fd = test_mod_mem.log_fd;
     char *log_file = test_mod_mem.log_file;
