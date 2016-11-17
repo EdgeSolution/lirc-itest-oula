@@ -8,7 +8,7 @@
 *
 * REVISION(MM/DD/YYYY):
 *     07/25/2016  Shengkui Leng (shengkui.leng@advantech.com.cn)
-*     - Initial version 
+*     - Initial version
 *
 ******************************************************************************/
 #include <stdio.h>
@@ -175,7 +175,7 @@ int install_sig_handler(void)
  * NAME:
  *      set_timeout
  *
- * DESCRIPTION: 
+ * DESCRIPTION:
  *      Set test duration(start a timer to end the test after a period time).
  *
  * PARAMETERS:
@@ -187,7 +187,7 @@ int install_sig_handler(void)
 void set_timeout(int sec)
 {
     struct itimerval itimer;
-    
+
     /* Configure the timer to expire after sec(seconds)... */
     itimer.it_value.tv_sec = sec;
     itimer.it_value.tv_usec = 0;
@@ -203,7 +203,7 @@ void set_timeout(int sec)
  * NAME:
  *      get_exe_path
  *
- * DESCRIPTION: 
+ * DESCRIPTION:
  *      Find the path containing the currently running program executable.
  *
  * PARAMETERS:
@@ -236,7 +236,6 @@ size_t get_exe_path(char *path_buf, size_t len)
         printf("No '/' found in path!\n");
         return -1;
     }
-    ++pos;
     *pos = '\0';
 
     /*
@@ -245,41 +244,74 @@ size_t get_exe_path(char *path_buf, size_t len)
     return (size_t)(pos - path_buf);
 }
 
+static int make_dir(char *path)
+{
+    struct stat s;
+
+    if (path == NULL) {
+        printf("Path is NULL\n");
+        return -1;
+    }
+
+    if (stat(path, &s) == 0) {
+        return 0;
+    }
+
+    if (0 != mkdir(path, 0755)) {
+        return -1;
+    } else {
+        return 0;
+    }
+}
 
 /******************************************************************************
  * NAME:
  *      init_path
  *
- * DESCRIPTION: 
+ * DESCRIPTION:
  *      Init file path of log/error/report and config file.
  *
  * PARAMETERS:
- *      None 
+ *      None
  *
  * RETURN:
  *      None
  ******************************************************************************/
 int init_path(void)
 {
-    struct stat s;
+    struct tm p;
+
+    char log_base[PATH_MAX];
+    char ts[PATH_MAX];
+
+    //According the requirement of customer
+    //The log path will be PROGRAM_PATH/log/YYYYMMDD_HHDDSS/
+    get_current_time(&p);
+    snprintf(ts, sizeof(ts), "%d%02d%02d_%02d%02d%02d",
+            (1900 + p.tm_year), (1 + p.tm_mon), p.tm_mday,
+            p.tm_hour, p.tm_min, p.tm_sec);
 
     if (get_exe_path(g_progam_path, sizeof(g_progam_path)-1) <= 0) {
         printf("Get path of program error\n");
         return -1;
     }
 
-    snprintf(g_log_dir, sizeof(g_log_dir), "%s/%s", g_progam_path, "log");
+    snprintf(log_base, sizeof(log_base), "%s/%s", g_progam_path, "log");
+    snprintf(g_log_dir, sizeof(g_log_dir), "%s/%s", log_base, ts);
     snprintf(g_error_dir, sizeof(g_error_dir), "%s/%s", g_log_dir, "error");
     snprintf(g_report_dir, sizeof(g_report_dir), "%s/%s", g_log_dir, "report");
 
-    if (stat(g_log_dir, &s) != 0) {
-        mkdir(g_log_dir, 0755);
+    if (make_dir(log_base) != 0) {
+        return -1;
     }
-    if (stat(g_error_dir, &s) != 0) {
-        mkdir(g_error_dir, 0755);
+    if (make_dir(g_log_dir) != 0) {
+        return -1;
     }
-    if (stat(g_report_dir, &s) != 0) {
-        mkdir(g_report_dir, 0755);
+    if (make_dir(g_error_dir) != 0) {
+        return -1;
+    }
+    if (make_dir(g_report_dir) != 0) {
+        return -1;
     }
 
     return 0;
@@ -290,11 +322,11 @@ int init_path(void)
  * NAME:
  *      move_log_to_error
  *
- * DESCRIPTION: 
+ * DESCRIPTION:
  *      Move the log file to error
  *
  * PARAMETERS:
- *      log_file - The fullpath of log file. 
+ *      log_file - The fullpath of log file.
  *
  * RETURN:
  *      None
@@ -313,7 +345,7 @@ int move_log_to_error(char *log_file)
  * NAME:
  *      start_test_module
  *
- * DESCRIPTION: 
+ * DESCRIPTION:
  *      Start a test module.
  *
  * PARAMETERS:
@@ -379,11 +411,11 @@ int start_test_module(test_mod_t *pmod)
  * NAME:
  *      generate_report
  *
- * DESCRIPTION: 
+ * DESCRIPTION:
  *      Generate a test report and print to stdout.
  *
  * PARAMETERS:
- *      None 
+ *      None
  *
  * RETURN:
  *      None
