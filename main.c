@@ -49,6 +49,8 @@ int main(int argc, char **argv)
 {
     int rc = 0;
     int i;
+    struct tm tm_start;
+    struct tm tm_end;
 
     if (argc != 1) {
         printf("LiRC-ITEST v%s\n", PROGRAM_VERSION);
@@ -62,8 +64,6 @@ int main(int argc, char **argv)
 
     install_sig_handler();
 
-    init_path();
-
     printf("Wait the other side to be ready...\n");
     if (!wait_other_side_ready()) {
         printf("The other side is not ready!\n");
@@ -72,6 +72,8 @@ int main(int argc, char **argv)
     printf("OK\n");
 
     time_t time_start = time(NULL);
+    get_current_time(&tm_start);
+    init_path(&tm_start);
 
     /* Start test modules */
     mod_index = 0;
@@ -114,6 +116,7 @@ int main(int argc, char **argv)
     }
 
     /* Compute runned time for test promgam. */
+    get_current_time(&tm_end);
     time_t time_end = time(NULL);
     time_t time_total = time_end - time_start;
     if ((time_start != -1) || (time_end != -1)) {
@@ -129,7 +132,7 @@ int main(int argc, char **argv)
     }
 
     /* Generate test report and print to stdout */
-    generate_report();
+    generate_report(&tm_start, &tm_end);
     return rc;
 }
 
@@ -277,19 +280,16 @@ static int make_dir(char *path)
  * RETURN:
  *      None
  ******************************************************************************/
-int init_path(void)
+int init_path(struct tm *p)
 {
-    struct tm p;
-
     char log_base[PATH_MAX];
     char ts[PATH_MAX];
 
     //According the requirement of customer
     //The log path will be PROGRAM_PATH/log/YYYYMMDD_HHDDSS/
-    get_current_time(&p);
     snprintf(ts, sizeof(ts), "%d%02d%02d_%02d%02d%02d",
-            (1900 + p.tm_year), (1 + p.tm_mon), p.tm_mday,
-            p.tm_hour, p.tm_min, p.tm_sec);
+            (1900 + p->tm_year), (1 + p->tm_mon), p->tm_mday,
+            p->tm_hour, p->tm_min, p->tm_sec);
 
     if (get_exe_path(g_progam_path, sizeof(g_progam_path)-1) <= 0) {
         printf("Get path of program error\n");
@@ -420,10 +420,12 @@ int start_test_module(test_mod_t *pmod)
  * RETURN:
  *      None
  ******************************************************************************/
-void generate_report(void)
+void generate_report(struct tm *tm_start, struct tm *tm_end)
 {
     int i;
     char report_file[PATH_MAX];
+    char ts_start[MAX_STR_LENGTH];
+    char ts_end[MAX_STR_LENGTH];
 
     int fd = log_init(report_file, "report", g_report_dir);
     write_file(fd, "================== Test Report ==================\n");
@@ -454,6 +456,10 @@ void generate_report(void)
         }
     }
 
+    write_file(fd, "Start time: %s\n",
+            get_timestamp_str(tm_start, ts_start, sizeof(ts_start)));
+    write_file(fd, "End   time: %s\n",
+            get_timestamp_str(tm_end, ts_end, sizeof(ts_end)));
     write_file(fd, "Test time(plan): %d min\n", g_duration);
     write_file(fd, "Test time(real): %d min %d sec\n", g_runned_minute, g_runned_second);
     write_file(fd, "\n");

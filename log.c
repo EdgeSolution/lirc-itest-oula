@@ -44,6 +44,18 @@ struct tm* get_current_time(struct tm *p)
     return p;
 }
 
+char* get_timestamp_str(struct tm *p, char *buf, size_t len)
+{
+    if (p == NULL || buf == NULL || len == 0) {
+        return NULL;
+    }
+
+    snprintf(buf, len, "%d-%02d-%02d %02d:%02d:%02d",
+        (1900 + p->tm_year), (1 + p->tm_mon), p->tm_mday,
+        p->tm_hour, p->tm_min, p->tm_sec);
+
+    return buf;
+}
 
 /******************************************************************************
  * NAME:
@@ -65,6 +77,7 @@ void log_print(int fd, char *format, ...)
     struct tm p;
     char line[MSG_BUF_SIZE];
     char dbg_msg[MSG_BUF_SIZE];
+    char tm_str[MSG_BUF_SIZE];
 
     if (fd < 0) {
         printf("Invalid log file\n");
@@ -77,11 +90,9 @@ void log_print(int fd, char *format, ...)
 
     /* print to log file */
     get_current_time(&p);
-    snprintf(line, sizeof(line), "| %d-%02d-%02d %02d:%02d:%02d | %s",
-        (1900 + p.tm_year), (1 + p.tm_mon), p.tm_mday,
-        p.tm_hour, p.tm_min, p.tm_sec,
-        dbg_msg
-        );
+    snprintf(line, sizeof(line), "| %s | %s",
+        get_timestamp_str(&p, tm_str, sizeof(tm_str)),
+        dbg_msg);
 
     int rc = write(fd, line, strlen(line));
     if (rc < 0) {
