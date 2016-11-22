@@ -299,7 +299,7 @@ int init_path(struct tm *p)
     }
 
     snprintf(log_base, sizeof(log_base), "%s/%s", g_progam_path, "log");
-    snprintf(g_log_dir, sizeof(g_log_dir), "%s/%s", log_base, ts);
+    snprintf(g_log_dir, sizeof(g_log_dir), "%s/%s_%c", log_base, ts, g_machine);
     snprintf(g_error_dir, sizeof(g_error_dir), "%s/%s", g_log_dir, "error");
     snprintf(g_report_dir, sizeof(g_report_dir), "%s/%s", g_log_dir, "report");
 
