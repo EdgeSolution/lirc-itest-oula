@@ -782,7 +782,7 @@ static void sim_print_status(void)
     printf("%-*s %s\n",
         COL_FIX_WIDTH, "SIM", (test_mod_sim.pass) ? STR_MOD_OK : STR_MOD_ERROR);
     for (i=0; i<port_num; i++) {
-        printf("%-*s SENT:%-*u LOST:%-*u ERR:%-*u\n",
+        printf("%-*s SENT(PKT):%-*u LOST(PKT):%-*u ERR(PKT):%-*u\n",
             COL_FIX_WIDTH, port_list[i],
             COL_FIX_WIDTH-5, _uart_array[i].send_pack_count,
             COL_FIX_WIDTH-5, _loss_pack_count[i],
