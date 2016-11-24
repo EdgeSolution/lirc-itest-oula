@@ -103,6 +103,8 @@ int main(int argc, char **argv)
                 sleep(1);
             }
         }
+
+        printf("\n");
     }
 
     /* Wait the thread of test module to exit */
