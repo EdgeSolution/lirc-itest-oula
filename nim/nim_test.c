@@ -143,11 +143,12 @@ static void nim_print_result(int fd)
 static void nim_check_pass(void)
 {
     int i = 0;
-    uint8_t flag = 1;
+    uint8_t flag = test_mod_nim.pass;
 
     /* check if package lost */
     for (i = 0; i < 4; i++) {
         if ((float)tesc_lost_no[i] > (float)udp_cnt_send[i] / FRAME_LOSS_RATE)
+            log_print(log_fd, "NIC%d: lost packages more than 1/100000.\n", i);
             flag = 0;
     }
 
