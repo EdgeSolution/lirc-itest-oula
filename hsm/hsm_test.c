@@ -264,6 +264,11 @@ static void hsm_test_hold(int fd, int log_fd)
                 old_time = cur_time;
             }
 
+            if (!g_running) {
+                g_cur_rts = FALSE;
+                break;
+            }
+
             g_cur_cts = tc_get_cts_casco(fd);
             if (g_cur_cts != old_cts) {
                 hold_fail_cntr++;
@@ -286,6 +291,11 @@ static void hsm_test_hold(int fd, int log_fd)
                         g_cur_rts, g_cur_cts, g_cur_cts?"SLAVE":"HOST", hold_fail_cntr);
 
                 old_time = cur_time;
+            }
+
+            if (!g_running) {
+                g_cur_rts = FALSE;
+                break;
             }
 
             g_cur_cts = tc_get_cts_casco(fd);
