@@ -51,6 +51,9 @@ int main(int argc, char **argv)
     int i;
     struct tm tm_start;
     struct tm tm_end;
+    char report_file[PATH_MAX];
+    int report_fd;
+
 
     if (argc != 1) {
         printf("LiRC-ITEST v%s\n", PROGRAM_VERSION);
@@ -74,6 +77,9 @@ int main(int argc, char **argv)
     time_t time_start = time(NULL);
     get_current_time(&tm_start);
     init_path(&tm_start);
+
+    //Generate report file
+    report_fd = log_init(report_file, "report", g_report_dir);
 
     /* Start test modules */
     mod_index = 0;
@@ -134,7 +140,7 @@ int main(int argc, char **argv)
     }
 
     /* Generate test report and print to stdout */
-    generate_report(&tm_start, &tm_end);
+    generate_report(report_fd, report_file, &tm_start, &tm_end);
     return rc;
 }
 
@@ -422,14 +428,12 @@ int start_test_module(test_mod_t *pmod)
  * RETURN:
  *      None
  ******************************************************************************/
-void generate_report(struct tm *tm_start, struct tm *tm_end)
+void generate_report(int fd, char *report_file, struct tm *tm_start, struct tm *tm_end)
 {
     int i;
-    char report_file[PATH_MAX];
     char ts_start[MAX_STR_LENGTH];
     char ts_end[MAX_STR_LENGTH];
 
-    int fd = log_init(report_file, "report", g_report_dir);
     write_file(fd, "================== Test Report ==================\n");
     write_file(fd, "Tester: %s\n", g_tester);
 
