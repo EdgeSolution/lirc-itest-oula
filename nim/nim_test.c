@@ -64,6 +64,7 @@ typedef struct _ether_port_para {
 /* package size */
 #define NET_MAX_NUM 1024
 
+#define MAX_RETRY 5
 #define FRAME_LOSS_RATE 100000
 
 /* Global Variables */
@@ -143,13 +144,20 @@ static void nim_print_result(int fd)
 static void nim_check_pass(void)
 {
     int i = 0;
-    uint8_t flag = test_mod_nim.pass;
+    uint8_t flag = 1;
 
-    /* check if package lost */
     for (i = 0; i < 4; i++) {
-        if ((float)tesc_lost_no[i] > (float)udp_cnt_send[i] / FRAME_LOSS_RATE)
-            log_print(log_fd, "NIC%d: lost packages more than 1/100000.\n", i);
+        /* Check retry count */
+        if (timeout_rst_cnt[i] >= MAX_RETRY) {
             flag = 0;
+            break;
+        }
+
+        /* Check packetloss rate */
+        if ((float)tesc_lost_no[i] > (float)udp_cnt_recv[i] / FRAME_LOSS_RATE) {
+            flag = 0;
+            break;
+        }
     }
 
     test_mod_nim.pass = flag;
@@ -523,11 +531,12 @@ static void udp_recv_test(ether_port_para *net_port_para)
                     | (recv_buf[NET_MAX_NUM - 7] << 16) | (recv_buf[NET_MAX_NUM - 8] << 24));
 
                 /* Calulate the number of lost packages, care it */
-                if (udp_cnt_read > udp_cnt_recv[ethid]) {
+                if (udp_cnt_read >= udp_cnt_recv[ethid]) {
                     tesc_lost_no[ethid] += (udp_cnt_read - udp_cnt_recv[ethid]);
                     udp_cnt_recv[ethid] = udp_cnt_read;
                 } else if (udp_cnt_read < udp_cnt_recv[ethid]) {
-                    log_print(log_fd, "NIC%d: receive notice, maybe has received packages from other machine,\
+                    /* Maybe the package is late in sequence, here skip it */
+                    //log_print(log_fd, "NIC%d: receive notice, maybe has received packages from other machine,\
                          or the package maybe late\n", ethid);
                 }                
             }
@@ -603,9 +612,6 @@ static int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t leng
         timeout_cnt[ethid]++;
         timeout_rst_cnt[ethid]++;
     }
-
-    if (timeout_rst_cnt[ethid] >= 5)
-        test_mod_nim.pass = 0;
 
     return recv_num;
 }
