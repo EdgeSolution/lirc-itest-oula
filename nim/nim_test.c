@@ -546,7 +546,7 @@ static void udp_recv_test(ether_port_para *net_port_para)
             log_print(log_fd, "NIC%d: receive packet of %d bytes, lost %d bytes!\n", \
                     ethid, recv_num, NET_MAX_NUM - recv_num);
         } else {
-            log_print(log_fd, "NIC%d: receive timeout [no.%d], no data is incoming.", ethid, timeout_rst_cnt[ethid]);
+            log_print(log_fd, "NIC%d: receive timeout [no.%d], no data is incoming.\n", ethid, timeout_rst_cnt[ethid]);
         }
     }
 }
