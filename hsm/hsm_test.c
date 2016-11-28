@@ -51,8 +51,9 @@ test_mod_t test_mod_hsm = {
 
 #define SWITCH_INTERVAL     10
 #define WAIT_TIME_IN_MS     200
+#define HOLD_INTERVAL       60
 
-#define SENDING_COUNT       10
+#define SENDING_COUNT       100
 
 /* The packet to send */
 static char g_packet[PACKET_SIZE];
@@ -233,6 +234,7 @@ static void hsm_test_switch(fd, log_fd)
 //In this test host will hold at B
 static void hsm_test_hold(int fd, int log_fd)
 {
+    time_t old_time = 0, cur_time;
     int old_cts;
 
     if (!g_running) {
@@ -253,6 +255,15 @@ static void hsm_test_hold(int fd, int log_fd)
             hsm_send(fd, log_fd);
             sleep_ms(WAIT_TIME_IN_MS);
 
+            cur_time = time(NULL);
+            if (cur_time > (old_time + HOLD_INTERVAL)) {
+                g_cur_cts = tc_get_cts_casco(fd);
+                log_print(log_fd, "RTS=%d, CTS=%d, A is %s, switch count: %lu\n",
+                        g_cur_rts, g_cur_cts, g_cur_cts?"HOST":"SLAVE", hold_fail_cntr);
+
+                old_time = cur_time;
+            }
+
             g_cur_cts = tc_get_cts_casco(fd);
             if (g_cur_cts != old_cts) {
                 hold_fail_cntr++;
@@ -267,6 +278,15 @@ static void hsm_test_hold(int fd, int log_fd)
         while (g_running) {
             hsm_send(fd, log_fd);
             sleep_ms(WAIT_TIME_IN_MS);
+
+            cur_time = time(NULL);
+            if (cur_time > (old_time + HOLD_INTERVAL)) {
+                g_cur_cts = tc_get_cts_casco(fd);
+                log_print(log_fd, "RTS=%d, CTS=%d, B is %s, switch count: %lu\n",
+                        g_cur_rts, g_cur_cts, g_cur_cts?"SLAVE":"HOST", hold_fail_cntr);
+
+                old_time = cur_time;
+            }
 
             g_cur_cts = tc_get_cts_casco(fd);
             if (g_cur_cts != old_cts) {
@@ -313,11 +333,14 @@ static void *hsm_test(void *args)
     g_cur_rts = TRUE;
 
     //Switch host to B.
-    if (g_machine == 'B') {
-        tc_set_rts_casco(fd, g_cur_rts);
-        for (i = 0; i < SENDING_COUNT; i++) {
-            hsm_send(fd, log_fd);
-        }
+    if (g_machine == 'A') {
+        tc_set_rts_casco(fd, FALSE);
+    } else {
+        tc_set_rts_casco(fd, TRUE);
+    }
+
+    for (i = 0; i < SENDING_COUNT; i++) {
+        hsm_send(fd, log_fd);
     }
 
     sleep_ms(500);
