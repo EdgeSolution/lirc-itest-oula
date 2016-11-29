@@ -556,7 +556,7 @@ static void *port_send_event(void *args)
 
     _uart_array[list_id].send_pack_count = 0;
 
-    uart_pack = (struct uart_package *)malloc(sizeof(struct uart_package));
+    uart_pack = (struct uart_package *)malloc(BUFF_SIZE);
     if (!uart_pack) {
         log_print(log_fd, "not enough memory\n");
         //free(uart_pack);
@@ -565,7 +565,7 @@ static void *port_send_event(void *args)
     }
 
     while (g_running) {
-        memset(uart_pack, 0, sizeof(struct uart_package));
+        memset(uart_pack, 0, BUFF_SIZE);
 
         _uart_array[list_id].send_pack_count++;
         creat_uart_pack(uart_pack, _uart_array[list_id].send_pack_count, uart_id);
@@ -580,9 +580,7 @@ static void *port_send_event(void *args)
                     (uint32_t)_uart_array[list_id].send_pack_count);
             }
         }
-        sleep_ms(1000/(uart_param->baudrate/10/264));
-        sleep_ms(200);/*Add sleep_ms(200), Reduce the sending speed*/
-
+        sleep_ms(1000/(uart_param->baudrate/10/BUFF_SIZE));
     }
 
     free(uart_pack);
@@ -782,7 +780,7 @@ static void sim_print_status(void)
     printf("%-*s %s\n",
         COL_FIX_WIDTH, "SIM", (test_mod_sim.pass) ? STR_MOD_OK : STR_MOD_ERROR);
     for (i=0; i<port_num; i++) {
-        printf("%-*s SENT:%-*u LOST:%-*u ERR:%-*u\n",
+        printf("%-*s SENT(PKT):%-*u LOST(PKT):%-*u ERR(PKT):%-*u\n",
             COL_FIX_WIDTH, port_list[i],
             COL_FIX_WIDTH-5, _uart_array[i].send_pack_count,
             COL_FIX_WIDTH-5, _loss_pack_count[i],

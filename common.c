@@ -74,7 +74,7 @@ int ser_open(char *dev)
  * NAME:
  *      send_sync_data
  *
- * DESCRIPTION: 
+ * DESCRIPTION:
  *      Send a DATA_SYNC char to the serial port.
  *
  * PARAMETERS:
@@ -101,7 +101,7 @@ static int send_sync_data(int fd, char snt_char)
  * NAME:
  *      recv_sync_data
  *
- * DESCRIPTION: 
+ * DESCRIPTION:
  *      Read data from serail port and search the DATA_SYNC char
  *
  * PARAMETERS:
@@ -154,11 +154,11 @@ static int recv_sync_data(int fd, char rcv_char, char snt_char)
  * NAME:
  *      wait_other_side_ready
  *
- * DESCRIPTION: 
+ * DESCRIPTION:
  *      Wait the test program on the other side(machine) to be ready.
  *
  * PARAMETERS:
- *      None 
+ *      None
  *
  * RETURN:
  *      1 - Ready.
@@ -240,7 +240,7 @@ int sleep_ms(unsigned int ms)
  * NAME:
  *      is_exe_exist
  *
- * DESCRIPTION: 
+ * DESCRIPTION:
  *      Is the EXE file exist.
  *
  * PARAMETERS:
@@ -284,6 +284,8 @@ static void *send_exit_data(void *args)
     if (fd < 0) {
         pthread_exit(NULL);
     }
+
+    tc_set_rts(fd, FALSE);
 
     //Send exit data 3 times
     for(i=0; i < 3; i++) {

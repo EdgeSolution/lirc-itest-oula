@@ -18,7 +18,8 @@
 
 #define MSG_BUF_SIZE        2048
 
-
+struct tm* get_current_time(struct tm *p);
+char* get_timestamp_str(struct tm *p, char *buf, size_t len);
 int log_init(char *log_file, char *prefix, char *dir);
 void log_print(int fd, char *format, ...);
 void log_close(int fd);
