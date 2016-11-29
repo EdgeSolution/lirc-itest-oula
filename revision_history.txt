@@ -6,6 +6,19 @@ LAST UPDATE 2016-09-20
 Versions in brackets () are not official releases, but testing versions.
 
 VERSION  DATE        CHANGES / DESCRIPTION
+(0.07)   2016-11-29  - Fix HSM status display
+                     - [ui] Change baudrate selection ui
+                     - [hsm] Change log behavior
+                     - [hsm] Fix switch to B fail issue after switch test
+                     - [log] Change log file tree structure
+                     - [log] Change report file name
+                     - [log] Add start/end time in report
+                     - [nim] Change nim test behavior
+                     - [sim] Speed-up data sending
+                     - [ui] Add space line bewteen each status display loop
+                     - [hsm] Fix unexpect error on exit
+                     - [cfg] Repeat input on error
+
 0.06     2016-11-02  - Fix HSM module not report fail issue
                      - Fix SIM not stable issue
                      - Fix SN illegal character checking issue
