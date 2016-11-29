@@ -176,6 +176,9 @@ static void *nim_test(void *args)
 
     /* Initial global variable for statistics */
     memset(udp_cnt_send, 0, TESC_NUM * sizeof(uint32_t));
+    memset(udp_cnt_recv, 0, TESC_NUM * sizeof(uint32_t));
+    memset(timeout_cnt, 0, TESC_NUM * sizeof(uint32_t));
+    memset(timeout_rst_cnt, 0, TESC_NUM * sizeof(uint32_t));
     memset(tesc_err_no, 0, TESC_NUM * sizeof(uint32_t));
     memset(tesc_lost_no, 0, TESC_NUM * sizeof(uint32_t));
 
@@ -536,8 +539,7 @@ static void udp_recv_test(ether_port_para *net_port_para)
                     udp_cnt_recv[ethid] = udp_cnt_read;
                 } else if (udp_cnt_read < udp_cnt_recv[ethid]) {
                     /* Maybe the package is late in sequence, here skip it */
-                    //log_print(log_fd, "NIC%d: receive notice, maybe has received packages from other machine,\
-                         or the package maybe late\n", ethid);
+                    //log_print(log_fd, "NIC%d: receive notice, maybe has received packages from other machine, or the package maybe late\n", ethid);
                 }                
             }
             udp_cnt_recv[ethid]++;
