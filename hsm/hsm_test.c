@@ -101,7 +101,7 @@ static void hsm_print_result(int fd)
  *  0   |   1    |  H(E) |  S
  *  0   |   0    |  S    |  H(E)
  */
-static void hsm_test_switch(fd, log_fd)
+static void hsm_test_switch(int fd, int log_fd)
 {
     uint64_t test_loop = g_hsm_test_loop;
     time_t old_time = 0, cur_time;
