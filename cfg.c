@@ -81,7 +81,10 @@ static int input_sim_board_num(uint8_t *num);
 static int input_product_sn(char *sn, uint8_t len);
 static int input_board_sn(const char *board, char *sn, uint8_t len);
 static int input_baudrate(int *baud);
-static int user_ack(int def, char *hint);
+static int user_ack(char *hint);
+static int input_tester(char *tester, uint8_t len);
+static int input_test_duration(uint64_t *duration);
+static int input_hsm_loop(uint64_t *loop);
 
 /*
  * Trim whitespace chars from the end of string.
@@ -287,7 +290,7 @@ static int is_board_sn_valid(char *bsn)
  *          YYMM
  *      YY: year
  *      MM: month
- *      
+ *
  * PARAMETERS:
  *      value - The string of "time"
  *
@@ -379,7 +382,7 @@ static int input_num(const char *hint, uint64_t *num)
 
     tmp = atoi(buf);
     if (tmp <= 0) {
-        printf("input error\n");
+        printf("Invalid number\n");
         return -1;
     }
 
@@ -391,21 +394,26 @@ static int input_num(const char *hint, uint64_t *num)
 static int input_machine(char *machine)
 {
     char buf[2];
+    int ret = 0;
 
     if (!machine) {
         return -1;
     }
 
-    if (0 != input_str("Please input A or B for this machine", buf, sizeof(g_machine))) {
-        return -1;
-    }
+    do {
+        if (0 != input_str("Please input A or B for this machine", buf, sizeof(g_machine))) {
+            ret = -1;
+            continue;
+        }
 
-    if (buf[0] == 'a' || buf[0] == 'b' || buf[0] == 'A' || buf[0] == 'B') {
-        machine[0] = toupper(buf[0]);
-        return 0;
-    } else {
-        return -1;
-    }
+        if (buf[0] == 'a' || buf[0] == 'b' || buf[0] == 'A' || buf[0] == 'B') {
+            machine[0] = toupper(buf[0]);
+            return 0;
+        } else {
+            ret = -1;
+            printf("Invalid input\n");
+        }
+    } while(ret == -1);
 
     return 0;
 }
@@ -413,24 +421,33 @@ static int input_machine(char *machine)
 static int input_sim_board_num(uint8_t *num)
 {
     uint64_t tmp;
+    int ret = 0;
 
     if (!num) {
         return -1;
     }
 
-    /* Get the number of SIM board && check it */
-    if (0 != input_num("Please input SIM Board Number(1/2)", &tmp))
-        return -1;
+    do {
+        /* Get the number of SIM board && check it */
+        if (0 != input_num("Please input SIM Board Number(1/2)", &tmp)) {
+            ret = -1;
+            continue;
+        }
 
-    if (tmp != 1 && tmp != 2) {
-        printf("input error\n");
-        return -1;
-    }
+        if (tmp != 1 && tmp != 2) {
+            ret = -1;
+            printf("Invalid Board Number\n");
+            continue;
+        }
 
-    if (is_board_num_valid(tmp) == 0) {
-        printf("SIM issue, check it\n");
-        return -1;
-    }
+        if (is_board_num_valid(tmp) == 0) {
+            ret = -1;
+            printf("Invalid Board Number\n");
+            continue;
+        }
+
+        break;
+    } while(ret == -1);
 
     *num = (uint8_t)tmp&0xff;
 
@@ -440,18 +457,26 @@ static int input_sim_board_num(uint8_t *num)
 static int input_product_sn(char *sn, uint8_t len)
 {
     char tmp[MAX_STR_LENGTH];
+    int ret = 0;
 
     if (!sn) {
         return -1;
     }
 
-    if (0 != input_str("Please input the Product SN", tmp, sizeof(tmp)))
-        return -1;
+    do {
+        if (0 != input_str("Please input the Product SN", tmp, sizeof(tmp))) {
+            ret = -1;
+            continue;
+        }
 
-    if (is_product_sn_valid(tmp) == 0) {
-        printf("Illegal Product SN\n");
-        return -1;
-    }
+        if (is_product_sn_valid(tmp) == 0) {
+            printf("Illegal Product SN\n");
+            ret = -1;
+            continue;
+        }
+
+        break;
+    } while(ret == -1);
 
     strncpy0(sn, tmp, len);
 
@@ -462,20 +487,28 @@ static int input_board_sn(const char *board, char *sn, uint8_t len)
 {
     char buf[MAX_STR_LENGTH];
     char tmp[MAX_STR_LENGTH];
+    int ret = 0;
 
     if (!board || !sn) {
         return -1;
     }
 
-    snprintf(buf, sizeof(buf), "Please input the %s SN", board);
+    do {
+        snprintf(buf, sizeof(buf), "Please input the %s SN", board);
 
-    if (0 != input_str(buf, tmp, sizeof(tmp)))
-        return -1;
+        if (0 != input_str(buf, tmp, sizeof(tmp))) {
+            ret = -1;
+            continue;
+        }
 
-    if(is_board_sn_valid(tmp) == 0) {
-        printf("Illegal CCM SN\n");
-        return -1;
-    }
+        if(is_board_sn_valid(tmp) == 0) {
+            printf("Illegal CCM SN\n");
+            ret = -1;
+            continue;
+        }
+
+        break;
+    } while(ret == -1);
 
     strncpy0(sn, tmp, len);
 
@@ -489,6 +522,7 @@ static int input_baudrate(int *baud)
     };
     const int baudrate_count = sizeof(baudrate_list)/sizeof(int);
     char str[MAX_STR_LENGTH];
+    int ret = 0;
 
     uint64_t tmp;
     int i;
@@ -497,19 +531,27 @@ static int input_baudrate(int *baud)
         return -1;
     }
 
-    printf("Baudrate list:\n");
-    for (i = 0; i < baudrate_count; i++) {
-        printf("(%d) %d\n", i+1, baudrate_list[i]);
-    }
+    do {
+        printf("Please select baudrate:\n");
+        for (i = 0; i < baudrate_count; i++) {
+            printf("(%d) %d\n", i+1, baudrate_list[i]);
+        }
 
-    snprintf(str, MAX_STR_LENGTH, "Please select a baudrate(1 ~ %d)", baudrate_count);
-    if (0 != input_num(str, &tmp))
-        return -1;
+        snprintf(str, MAX_STR_LENGTH, "Please select a baudrate(1 ~ %d)", baudrate_count);
+        if (0 != input_num(str, &tmp)) {
+            puts("");
+            ret = -1;
+            continue;
+        }
 
-    if ((tmp < 1) || (tmp > baudrate_count)) {
-        printf("Invalid baudrate\n");
-        return -1;
-    }
+        if ((tmp < 1) || (tmp > baudrate_count)) {
+            printf("Invalid baudrate\n\n");
+            ret = -1;
+            continue;
+        }
+
+        break;
+    } while (ret == -1);
 
     *baud = baudrate_list[tmp-1];
 
@@ -530,40 +572,108 @@ static int input_baudrate(int *baud)
  *      1 - Yes
  *      0 - No
  ******************************************************************************/
-static int user_ack(int def, char *hint)
+static int user_ack(char *hint)
 {
-    char s[2];
+    char buf[2];
     int ret;
 
-    printf("%s [%s] ", hint, def?"Y/n":"y/N");
+    do {
+        printf("%s [Y/N] ", hint);
 
-    if (!fgets(s, 2, stdin))
-        return 0; /* Nack by default */
-
-    switch (s[0]) {
-    case 'y':
-    case 'Y':
-        ret = 1;
-        break;
-    case 'n':
-    case 'N':
-        ret = 0;
-        break;
-    default:
-        ret = def;
-    }
-
-    /* Flush extra characters */
-    while (s[0] != '\n') {
-        int c = fgetc(stdin);
-        if (c == EOF) {
-            ret = 0;
-            break;
+        if (0 != input_str("", buf, sizeof(buf))){
+            ret = -1;
+            continue;
         }
-        s[0] = c;
-    }
+
+        switch (buf[0]) {
+            case 'y':
+            case 'Y':
+                ret = 1;
+                break;
+            case 'n':
+            case 'N':
+                ret = 0;
+                break;
+            default:
+                ret = -1;
+        }
+
+        if (ret == -1) {
+            printf("Invalid input\n");
+            continue;
+        }
+    } while(ret == -1);
 
     return ret;
+}
+
+static int input_tester(char *tester, uint8_t len)
+{
+    int ret = 0;
+    char buf[MAX_STR_LENGTH];
+
+    if (!tester) {
+        return -1;
+    }
+
+    do {
+        if (0 != input_str("Please input the Tester", buf, sizeof(buf))) {
+            ret = -1;
+            continue;
+        }
+
+        break;
+    } while (ret == -1);
+
+    strncpy0(tester, buf, len);
+
+    return 0;
+}
+
+static int input_test_duration(uint64_t *duration)
+{
+    int ret = 0;
+    uint64_t tmp;
+
+    if (!duration) {
+        return -1;
+    }
+
+    do {
+        if (0 != input_num("Please input the Test time(minutes)", &tmp)) {
+            ret = -1;
+            continue;
+        }
+
+        break;
+    } while (ret == -1);
+
+    *duration = tmp;
+
+    return 0;
+}
+
+static int input_hsm_loop(uint64_t *loop)
+{
+    int ret = 0;
+    uint64_t tmp;
+
+    if (!loop) {
+        return -1;
+    }
+
+    do {
+        if (0 != input_num("Please input HSM test loop", &tmp)) {
+            ret = -1;
+            continue;
+        }
+
+        break;
+    } while (ret == -1);
+
+    *loop = tmp;
+
+    return 0;
 }
 
 /******************************************************************************
@@ -585,11 +695,11 @@ int get_parameter(void)
     int i;
 
     /* Get the information of tester */
-    if (0 != input_str("Please input the Tester", g_tester, sizeof(g_tester)))
+    if (0 != input_tester(g_tester, sizeof(g_tester)))
         return -1;
 
     /* Get the test time */
-    if (0 != input_num("Please input the Test time(minutes)", &g_duration))
+    if (0 != input_test_duration(&g_duration))
         return -1;
 
     /* Get the machine A or B */
@@ -597,16 +707,16 @@ int get_parameter(void)
         return -1;
 
     /* Get the system test mode. */
-    g_test_mode = user_ack(TRUE, "Test all modules?");
+    g_test_mode = user_ack("Test all modules?");
 
-    /* Run all modules or serval modules. */ 
+    /* Run all modules or serval modules. */
     if (g_test_mode == 1) {
         /* Get the product SN */
         if (0 != input_product_sn(g_product_sn, sizeof(g_product_sn)))
             return -1;
 
         /* Get HSM test loop */
-        if (0 != input_num("Please input HSM test loop", &g_hsm_test_loop))
+        if (0 != input_hsm_loop(&g_hsm_test_loop))
             return -1;
 
         /* Config all modules to 'Y' */
@@ -637,12 +747,12 @@ int get_parameter(void)
         if (0 != input_board_sn("CCM", g_ccm_sn, sizeof(g_ccm_sn)))
             return -1;
 
-        g_test_cpu = user_ack(TRUE, "Test CPU?");
-        g_test_led = user_ack(TRUE, "Test LED?");
-        g_test_mem = user_ack(TRUE, "Test MEM?");
+        g_test_cpu = user_ack("Test CPU?");
+        g_test_led = user_ack("Test LED?");
+        g_test_mem = user_ack("Test MEM?");
 
         //SIM
-        g_test_sim = user_ack(TRUE, "Test SIM?");
+        g_test_sim = user_ack("Test SIM?");
         /* Get the SIM board number and the baudrate of serial */
         if (g_test_sim == 1) {
             /* Get the number of SIM board && check it */
@@ -660,7 +770,7 @@ int get_parameter(void)
         }
 
         //NIM
-        g_test_nim = user_ack(TRUE, "Test NIM?");
+        g_test_nim = user_ack("Test NIM?");
         /* Get NIM modules setting for which ports should be tested */
         if (g_test_nim == 1) {
             if (0 != input_board_sn("NIM", g_nim_sn, sizeof(g_nim_sn)))
@@ -670,23 +780,23 @@ int get_parameter(void)
             for (i = 0; i < TESC_NUM; i++) {
                 char buf[MAX_STR_LENGTH];
                 snprintf(buf, sizeof(buf), "Test eth%d?", i);
-                g_nim_test_eth[i] = user_ack(TRUE, buf);
+                g_nim_test_eth[i] = user_ack(buf);
             }
         }
 
         //HSM
-        g_test_hsm = user_ack(TRUE, "Test HSM?");
+        g_test_hsm = user_ack("Test HSM?");
         if(g_test_hsm == 1) {
             if (0 != input_board_sn("HSM", g_hsm_sn, sizeof(g_hsm_sn)))
                 return -1;
 
             /* Get HSM test loop */
-            if (0 != input_num("Please input HSM test loop", &g_hsm_test_loop))
+            if (0 != input_hsm_loop(&g_hsm_test_loop))
                 return -1;
         }
 
         //MSM
-        g_test_msm = user_ack(TRUE, "Test MSM?");
+        g_test_msm = user_ack("Test MSM?");
         if(g_test_msm == 1) {
             if (0 != input_board_sn("MSM", g_msm_sn, sizeof(g_msm_sn)))
                 return -1;
