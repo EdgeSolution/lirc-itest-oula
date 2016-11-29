@@ -124,7 +124,7 @@ static void nim_print_status()
         COL_FIX_WIDTH, "NIM", (test_mod_nim.pass) ? STR_MOD_OK : STR_MOD_ERROR);
 
     for (i = 0; i < 4; i++) {
-        printf("eth%-*u SENT:%-*u LOST:%-*u ERR:%-*u\n",
+        printf("eth%-*u SENT(PKT):%-*u LOST(PKT):%-*u ERR(PKT):%-*u\n",
             COL_FIX_WIDTH-3, i, COL_FIX_WIDTH-5, udp_cnt_send[i],
             COL_FIX_WIDTH-5, tesc_lost_no[i], COL_FIX_WIDTH-4, tesc_err_no[i]);
     }
@@ -395,7 +395,7 @@ static int socket_init(int *sockfd, char *ipaddr, uint16_t portid)
     reuse = 1;
     if (setsockopt(*sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
         log_print(log_fd, "setsockopt error: %s\n", strerror(errno));
-        
+
         return -1;
     }
 
@@ -407,7 +407,7 @@ static int socket_init(int *sockfd, char *ipaddr, uint16_t portid)
 
     if (bind(*sockfd, (struct sockaddr *)(&hostaddr), sizeof(struct sockaddr)) == -1) {
         log_print(log_fd, "ip bind error: %s errno=%d, %s\n", ipaddr, errno, strerror(errno));
-        
+
         return -1;
     }
 
@@ -540,12 +540,12 @@ static void udp_recv_test(ether_port_para *net_port_para)
                 } else if (udp_cnt_read < udp_cnt_recv[ethid]) {
                     /* Maybe the package is late in sequence, here skip it */
                     //log_print(log_fd, "NIC%d: receive notice, maybe has received packages from other machine, or the package maybe late\n", ethid);
-                }                
+                }
             }
             udp_cnt_recv[ethid]++;
 
             j++;
-            
+
             /* print log after given times */
             if (j >= LOG_INTERVAL_TIME) {
                 log_print(log_fd, "NIC%d: recv udp count = %u, lost no = %u, err no = %u\n", \
@@ -581,12 +581,12 @@ static int32_t udp_send(int sockfd, char *target_ip, uint16_t port, uint8_t *buf
         send_num = sendto(sockfd, buff, length, 0, (struct sockaddr *)(&targetaddr), sizeof(struct sockaddr_in));
         if (send_num == -1) {
             log_print(log_fd, "sendto: NIC%d send to %s failed!\n", ethid, target_ip);
-            
+
             return -1;
         }
     } else {
         log_print(log_fd, "udp_send failed: now NIC%d busy!\n", ethid);
-        
+
         return -1;
     }
 
@@ -676,14 +676,14 @@ static int set_ipaddr(char *ifname, char *ipaddr, char *netmask)
 
     if ((ifname == NULL) || (ipaddr == NULL)) {
         DBG_PRINT("illegal do config ip!\n");
-        
+
         return -1;
     }
 
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd == -1) {
         DBG_PRINT("socket failed for setting ip! err: %s\n", strerror(errno));
-        
+
         return -1;
     }
 
@@ -698,7 +698,7 @@ static int set_ipaddr(char *ifname, char *ipaddr, char *netmask)
     if (ioctl(sockfd, SIOCSIFADDR, &ifr) < 0) {
         close(sockfd);
         DBG_PRINT("ioctl failed for set ip address! err: %s\n", strerror(errno));
-        
+
         return -1;
     }
 
@@ -707,7 +707,7 @@ static int set_ipaddr(char *ifname, char *ipaddr, char *netmask)
     if  (ioctl(sockfd, SIOCSIFNETMASK, &ifr) < 0) {
         close(sockfd);
         DBG_PRINT("ioctl failed for set netmask! err: %s\n", strerror(errno));
-        
+
         return -1;
     }
 
