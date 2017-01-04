@@ -49,7 +49,7 @@ test_mod_t test_mod_hsm = {
 /* The size of packet to send */
 #define PACKET_SIZE     4
 
-#define SWITCH_INTERVAL     10
+#define SWITCH_INTERVAL_IN_MS     500
 #define WAIT_TIME_IN_MS     200
 #define HOLD_INTERVAL       60
 
@@ -104,7 +104,6 @@ static void hsm_print_result(int fd)
 static void hsm_test_switch(int fd, int log_fd)
 {
     uint64_t test_loop = g_hsm_test_loop;
-    time_t old_time = 0, cur_time;
 
     if (!g_running) {
         return;
@@ -113,33 +112,25 @@ static void hsm_test_switch(int fd, int log_fd)
     log_print(log_fd, "Start HSM switch test: will last %lu loop\n", g_hsm_test_loop);
     log_print(log_fd, "In this test HOST will switch between A and B\n");
 
-    //Get old_time and will use it later
-    old_time = time(NULL);
-
-    //Get original CTS status
-    g_cur_cts = tc_get_cts_casco(fd);
-
-    //NOTE: cts: 1 means A is host, cts: 0 means B is host
-    //We need to set rts signal according the current cts status.
+    //Switch to A, and then start test
     if (g_machine == 'A') {
-        if (g_cur_cts) {
-            g_cur_rts = FALSE;
-        } else {
-            g_cur_rts = TRUE;
-        }
-        tc_set_rts_casco(fd, g_cur_rts);
+        g_cur_rts = TRUE;
+    } else {
+        g_cur_rts = FALSE;
+    }
 
+    tc_set_rts_casco(fd, g_cur_rts);
+
+    if (g_machine == 'A') {
         while (g_running && test_loop > 0) {
-            hsm_send(fd, log_fd);
-            sleep_ms(WAIT_TIME_IN_MS);
-
-            cur_time = time(NULL);
-            if (cur_time < (old_time + SWITCH_INTERVAL)) {
-                continue;
-            }
-
             log_print(log_fd, "Switch loop %lu:\n",
                     (g_hsm_test_loop - test_loop) + 1);
+
+            if (g_cur_rts) {
+                hsm_send(fd, log_fd);
+            }
+
+            sleep_ms(SWITCH_INTERVAL_IN_MS);
 
             g_cur_cts = tc_get_cts_casco(fd);
 
@@ -167,31 +158,22 @@ static void hsm_test_switch(int fd, int log_fd)
             test_loop--;
             test_counter++;
 
-            old_time = cur_time;
+            sleep_ms(SWITCH_INTERVAL_IN_MS);
 
             //Reverse rts flag and signal
             g_cur_rts = !g_cur_rts;
             tc_set_rts_casco(fd, g_cur_rts);
         }
     } else {
-        if (g_cur_cts) {
-            g_cur_rts = TRUE;
-        } else {
-            g_cur_rts = FALSE;
-        }
-        tc_set_rts_casco(fd, g_cur_rts);
-
         while (g_running && test_loop > 0) {
-            hsm_send(fd, log_fd);
-            sleep_ms(WAIT_TIME_IN_MS);
-
-            cur_time = time(NULL);
-            if (cur_time < (old_time + SWITCH_INTERVAL)) {
-                continue;
-            }
-
             log_print(log_fd, "Switch loop %lu:\n",
                     (g_hsm_test_loop - test_loop) + 1);
+
+            if (g_cur_rts) {
+                hsm_send(fd, log_fd);
+            }
+
+            sleep_ms(SWITCH_INTERVAL_IN_MS);
 
             g_cur_cts = tc_get_cts_casco(fd);
 
@@ -219,7 +201,7 @@ static void hsm_test_switch(int fd, int log_fd)
             test_loop--;
             test_counter++;
 
-            old_time = cur_time;
+            sleep_ms(SWITCH_INTERVAL_IN_MS);
 
             //Reverse rts flag and signal
             g_cur_rts = !g_cur_rts;
