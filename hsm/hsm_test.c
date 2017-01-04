@@ -28,6 +28,7 @@
 
 static void hsm_print_status();
 static void hsm_print_result(int fd);
+static void wait_for_cpld_stable(int log_fd, int fd);
 static void hsm_test_switch(int fd, int log_fd);
 static void hsm_test_hold(int fd, int log_fd);
 static void *hsm_test(void *args);
@@ -50,10 +51,10 @@ test_mod_t test_mod_hsm = {
 #define PACKET_SIZE     4
 
 #define SWITCH_INTERVAL_IN_MS     500
-#define WAIT_TIME_IN_MS     200
+#define WAIT_IN_MS     200
 #define HOLD_INTERVAL       60
 
-#define SENDING_COUNT       100
+#define SENDING_COUNT       10
 
 /* The packet to send */
 static char g_packet[PACKET_SIZE];
@@ -88,6 +89,14 @@ static void hsm_print_result(int fd)
     }
 }
 
+static void wait_for_cpld_stable(int log_fd, int fd)
+{
+    int i;
+    for (i = 0; i < SENDING_COUNT; i++) {
+        hsm_send(fd, log_fd);
+        sleep_ms(WAIT_IN_MS);
+    }
+}
 /*
  * hsm_test_switch()
  * In this test host will switch between A and B
@@ -235,7 +244,7 @@ static void hsm_test_hold(int fd, int log_fd)
     if (g_machine == 'A') {
         while (g_running) {
             hsm_send(fd, log_fd);
-            sleep_ms(WAIT_TIME_IN_MS);
+            sleep_ms(WAIT_IN_MS);
 
             cur_time = time(NULL);
             if (cur_time > (old_time + HOLD_INTERVAL)) {
@@ -264,7 +273,7 @@ static void hsm_test_hold(int fd, int log_fd)
     } else {
         while (g_running) {
             hsm_send(fd, log_fd);
-            sleep_ms(WAIT_TIME_IN_MS);
+            sleep_ms(WAIT_IN_MS);
 
             cur_time = time(NULL);
             if (cur_time > (old_time + HOLD_INTERVAL)) {
@@ -322,24 +331,21 @@ static void *hsm_test(void *args)
 
     hsm_test_switch(fd, log_fd);
 
-    g_cur_rts = TRUE;
-
     //Switch host to B.
-    if (g_machine == 'A') {
-        tc_set_rts_casco(fd, FALSE);
-    } else {
-        tc_set_rts_casco(fd, TRUE);
+    if (g_running) {
+        wait_for_cpld_stable(log_fd, fd);
+        if (g_machine == 'A') {
+            tc_set_rts_casco(fd, FALSE);
+        } else {
+            tc_set_rts_casco(fd, TRUE);
+        }
+        wait_for_cpld_stable(log_fd, fd);
     }
-
-    for (i = 0; i < SENDING_COUNT; i++) {
-        hsm_send(fd, log_fd);
-    }
-
-    sleep_ms(500);
 
     //Starting SIM test
     g_sim_starting = TRUE;
 
+    g_cur_rts = TRUE;
     hsm_test_hold(fd, log_fd);
 
     tc_deinit(fd);
