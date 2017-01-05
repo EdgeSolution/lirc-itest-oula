@@ -196,6 +196,7 @@ static int send_uart_packet(int fd, struct uart_package * packet_ptr, int len)
     int ret = 0;
     int i = 0;
     int bytes = 0;
+    int seg_len = 25;
 
     if (packet_ptr == NULL) {
         DBG_PRINT("Have no packet sent\n");
@@ -213,14 +214,23 @@ static int send_uart_packet(int fd, struct uart_package * packet_ptr, int len)
     memcpy(buff + 261, &packet_ptr->crc_err, sizeof(packet_ptr->crc_err));
 
     for (i=0; i<len; ) {
-        ret = write(fd, buff + i, len - i);
-        if (ret == -1) {
-            sleep(1);
-            continue;
-        } else {
-            bytes += ret;
-            i += ret;
+        int j = 0;
+
+        if ((len - i) < seg_len)
+            seg_len = len - i;
+
+        for(j=0; j<seg_len; ) {
+            ret = write(fd, buff + i, seg_len - j);
+            if (ret == -1) {
+                sleep(1);
+                continue;
+            } else {
+                bytes += ret;
+                i += ret;
+                j += ret;
+            }
         }
+        sleep_ms(4);
     }
 
     return bytes;
@@ -580,7 +590,6 @@ static void *port_send_event(void *args)
                     (uint32_t)_uart_array[list_id].send_pack_count);
             }
         }
-        sleep_ms(1000/(uart_param->baudrate/10/BUFF_SIZE));
     }
 
     free(uart_pack);
