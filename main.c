@@ -95,7 +95,7 @@ int main(int argc, char **argv)
     set_timeout(g_duration*60);
 
     //IF msm test wasn't enabled, start quit sync in main thread
-    if (!g_test_msm) {
+    if (!g_test_msm || !g_test_hsm) {
         receive_exit_sync();
     }
 

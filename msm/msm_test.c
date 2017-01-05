@@ -66,6 +66,12 @@ static void dump_data(int log_fd, char *buf, int len);
 
 static void msm_print_status()
 {
+    if (g_hsm_switching) {
+        printf("%-*s %s\n",
+                COL_FIX_WIDTH, "MSM", "Awaiting");
+        return;
+    }
+
     printf("%-*s %s\n"
         "TEST:%-*lu ERROR:%-*lu\n",
         COL_FIX_WIDTH, "MSM", (counter_fail == 0) ? STR_MOD_OK : STR_MOD_ERROR,
@@ -90,6 +96,15 @@ static void *msm_test(void *args)
     log_print(log_fd, "Begin test!\n\n");
 
     int bytes;
+
+    //Wait for HSM switch test end
+    while (g_running && g_hsm_switching) {
+        sleep(2);
+    }
+
+    if (!g_running) {
+        pthread_exit(NULL);
+    }
 
     /* Open the device of storage. */
     int spi = open(ADVSPI_DEVICE, O_RDWR);
