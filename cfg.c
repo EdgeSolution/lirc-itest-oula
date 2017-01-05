@@ -58,11 +58,9 @@ uint8_t g_board_num = 2;
 /* Baudrate of serial port (SIM) */
 int g_baudrate = 115200;
 
-/* SIM: start flag, set by hsm_test */
-uint8_t g_sim_starting = 0;
-
 /* HSM: test loop */
 uint64_t g_hsm_test_loop = 100;
+uint8_t g_hsm_switching = 0;
 
 /* NIM: port test flag, set by user input */
 uint8_t g_nim_test_eth[TESC_NUM];
@@ -801,11 +799,10 @@ int get_parameter(void)
             if (0 != input_board_sn("MSM", g_msm_sn, sizeof(g_msm_sn)))
                 return -1;
         }
+    }
 
-        //If not test hsm, start sim directly
-        if (!g_test_hsm) {
-            g_sim_starting = 1;
-        }
+    if (g_test_hsm) {
+        g_hsm_switching = 1;
     }
 
     DBG_PRINT("Tester: %s, Product SN: %s, Test time: %llu\n",

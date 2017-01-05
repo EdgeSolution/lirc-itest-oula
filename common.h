@@ -8,7 +8,7 @@
  *
  * REVISION(MM/DD/YYYY):
  *     07/25/2016  Shengkui Leng (shengkui.leng@advantech.com.cn)
- *     - Initial version 
+ *     - Initial version
  *
  ******************************************************************************/
 #ifndef _COMMON_H_
@@ -40,8 +40,9 @@ extern uint8_t g_board_num;
 extern int g_baudrate;
 extern char g_progam_path[];
 
-extern uint8_t g_sim_starting;
 extern uint64_t g_hsm_test_loop;
+extern uint8_t g_hsm_switching;
+
 uint8_t g_nim_test_eth[4];
 
 extern int g_test_mode;
@@ -83,13 +84,13 @@ typedef struct _test_mod {
 
     /*
      * Routine to print status of test module, this routine shall be implemented
-     * by test module itself. And called by main process to update status. 
+     * by test module itself. And called by main process to update status.
      */
     void (* print_status)(void);
 
     /*
      * Routine to print result of test module, this routine shall be implemented
-     * by test module itself.  And called by main process to create report. 
+     * by test module itself.  And called by main process to create report.
      */
     void (* print_result)(int fd);
 } test_mod_t;

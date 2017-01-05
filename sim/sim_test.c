@@ -661,16 +661,16 @@ static void *sim_test(void *args)
     int log_fd = test_mod_sim.log_fd;
 
     //Wait for HSM switch test end
-    while (g_running && !g_sim_starting) {
+    while (g_running && g_hsm_switching) {
         sleep(2);
-    }
-
-    if (!g_test_hsm) {
-        hsm_switch2b(log_fd);
     }
 
     if (!g_running) {
         pthread_exit(NULL);
+    }
+
+    if (!g_test_hsm) {
+        hsm_switch2b(log_fd);
     }
 
     //Sleep 2 seconds before start testing
@@ -771,7 +771,7 @@ static void sim_print_status(void)
     int i;
     int port_num = 8 * g_board_num;
 
-    if (!g_sim_starting) {
+    if (g_hsm_switching) {
         printf("%-*s %s\n",
                 COL_FIX_WIDTH, "SIM", "Awaiting");
         return;

@@ -342,8 +342,8 @@ static void *hsm_test(void *args)
         wait_for_cpld_stable(log_fd, fd);
     }
 
-    //Starting SIM test
-    g_sim_starting = TRUE;
+    //Starting SIM/MSM test
+    g_hsm_switching = FALSE;
 
     g_cur_rts = TRUE;
     hsm_test_hold(fd, log_fd);
