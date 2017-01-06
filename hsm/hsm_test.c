@@ -78,9 +78,13 @@ static void hsm_print_status()
             (test_mod_hsm.pass == 1)?STR_MOD_OK:STR_MOD_ERROR);
 
     if (g_machine == 'A') {
-        printf("RTS: %d CTS: %d A is %s\n", !g_cur_rts, g_cur_cts, g_cur_cts?"HOST":"SLAVE");
+        printf("RTS: %d CTS: %d A is %s\n",
+                g_hsm_switching?(!g_cur_rts):g_cur_rts, g_cur_cts,
+                g_cur_cts?"HOST":"SLAVE");
     } else {
-        printf("RTS: %d CTS: %d B is %s\n", !g_cur_rts, g_cur_cts, g_cur_cts?"SLAVE":"HOST");
+        printf("RTS: %d CTS: %d B is %s\n",
+                g_hsm_switching?(!g_cur_rts):g_cur_rts,
+                g_cur_cts, g_cur_cts?"SLAVE":"HOST");
     }
 }
 
