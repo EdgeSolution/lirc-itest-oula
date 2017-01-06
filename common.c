@@ -285,8 +285,6 @@ static void *send_exit_data(void *args)
         pthread_exit(NULL);
     }
 
-    tc_set_rts(fd, FALSE);
-
     //Send exit data 3 times
     for(i=0; i < 3; i++) {
         write(fd, &snt_char, 1);

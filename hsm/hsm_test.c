@@ -255,7 +255,6 @@ static void hsm_test_hold(int fd, int log_fd)
             }
 
             if (!g_running) {
-                g_cur_rts = FALSE;
                 break;
             }
 
@@ -284,7 +283,6 @@ static void hsm_test_hold(int fd, int log_fd)
             }
 
             if (!g_running) {
-                g_cur_rts = FALSE;
                 break;
             }
 
