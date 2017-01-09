@@ -37,6 +37,7 @@ static int tc_get_cts_casco(int fd);
 static void hsm_send(int fd, int log_fd);
 static int hsm_send_switch(int fd);
 static char hsm_wait_switch(int fd);
+static void wait_for_cts_change(int fd);
 static void check_cts_a(int log_fd, int fd);
 static void check_cts_b(int log_fd, int fd);
 
@@ -56,7 +57,7 @@ test_mod_t test_mod_hsm = {
 #define SWITCH_CHAR_A   0xFA
 #define SWITCH_CHAR_B   0xFB
 
-#define WAIT_IN_MS     200
+#define WAIT_IN_MS          50
 #define HOLD_INTERVAL       60
 
 #define SENDING_COUNT       10
@@ -149,7 +150,6 @@ static void hsm_test_switch(int fd, int log_fd)
             if (g_cur_rts) {
                 hsm_send(fd, log_fd);
                 sleep_ms(WAIT_IN_MS);
-                check_cts_a(log_fd, fd);
             }
 
             if (!g_running) {
@@ -157,10 +157,7 @@ static void hsm_test_switch(int fd, int log_fd)
             }
 
             if (g_cur_rts) {
-                g_cur_rts = FALSE;
-                tc_set_rts_casco(fd, g_cur_rts);
-                hsm_send_switch(fd);
-                sleep_ms(WAIT_IN_MS);
+                wait_for_cts_change(fd);
                 check_cts_a(log_fd, fd);
             }
 
@@ -197,7 +194,6 @@ static void hsm_test_switch(int fd, int log_fd)
             if (g_cur_rts) {
                 hsm_send(fd, log_fd);
                 sleep_ms(WAIT_IN_MS);
-                check_cts_b(log_fd, fd);
             }
 
             if (!g_running) {
@@ -205,10 +201,7 @@ static void hsm_test_switch(int fd, int log_fd)
             }
 
             if (g_cur_rts) {
-                g_cur_rts = FALSE;
-                tc_set_rts_casco(fd, g_cur_rts);
-                hsm_send_switch(fd);
-                sleep_ms(WAIT_IN_MS);
+                wait_for_cts_change(fd);
                 check_cts_b(log_fd, fd);
             }
 
@@ -329,12 +322,14 @@ static void *hsm_test(void *args)
     //Switch host to B.
     if (g_running) {
         wait_for_cpld_stable(log_fd, fd);
-        if (g_machine == 'A') {
-            tc_set_rts_casco(fd, FALSE);
-        } else {
-            tc_set_rts_casco(fd, TRUE);
-        }
-        wait_for_cpld_stable(log_fd, fd);
+        do {
+            if (g_machine == 'A') {
+                tc_set_rts_casco(fd, FALSE);
+            } else {
+                tc_set_rts_casco(fd, TRUE);
+            }
+            wait_for_cpld_stable(log_fd, fd);
+        } while (tc_get_cts_casco(fd) != 0);
     }
 
     //Starting SIM/MSM test
@@ -392,7 +387,7 @@ static void hsm_send(int fd, int log_fd)
 
 static int hsm_send_switch(int fd)
 {
-    char buf[2] = {0, 0};
+    char buf[2];
 
     if (g_machine == 'A') {
         buf[0] = SWITCH_CHAR_A;
@@ -435,10 +430,26 @@ static char hsm_wait_switch(int fd)
     return 0;
 }
 
-static void check_cts_a(int log_fd, int fd)
+static void wait_for_cts_change(int fd)
 {
+    uint8_t cts;
+
     g_cur_cts = tc_get_cts_casco(fd);
 
+    g_cur_rts = FALSE;
+    tc_set_rts_casco(fd, g_cur_rts);
+
+    do {
+        hsm_send_switch(fd);
+        sleep_ms(WAIT_IN_MS);
+        cts = tc_get_cts_casco(fd);
+    } while(cts == g_cur_cts);
+
+    g_cur_cts = cts;
+}
+
+static void check_cts_a(int log_fd, int fd)
+{
     if (g_cur_rts && g_cur_cts) { //rts=1 cts=1
         log_print(log_fd, "RTS=%d, CTS=%d, A is HOST. OK\n",
                 g_cur_rts, g_cur_cts);
@@ -463,8 +474,6 @@ static void check_cts_a(int log_fd, int fd)
 
 static void check_cts_b(int log_fd, int fd)
 {
-    g_cur_cts = tc_get_cts_casco(fd);
-
     if (g_cur_rts && g_cur_cts) { //rts=1 cts=1
         log_print(log_fd, "RTS=%d, CTS=%d, B is SLAVE. ERROR\n",
                 g_cur_rts, g_cur_cts);
