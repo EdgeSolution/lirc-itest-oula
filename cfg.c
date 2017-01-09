@@ -801,6 +801,12 @@ int get_parameter(void)
         }
     }
 
+    //If use two SIM board, disable CPU/memory test
+    if (g_test_sim && g_board_num == 2) {
+        g_test_cpu = 0;
+        g_test_mem = 0;
+    }
+
     if (g_test_hsm) {
         g_hsm_switching = 1;
     }
