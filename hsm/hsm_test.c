@@ -423,7 +423,7 @@ static char hsm_wait_switch(int fd)
             if (strchr(buf, SWITCH_CHAR_A)) {
                 return SWITCH_CHAR_A;
             } else if (strchr(buf, SWITCH_CHAR_B)) {
-                return 0xAA;
+                return SWITCH_CHAR_B;
             } else if (strchr(buf, EXIT_SYNC_A)) {
                 g_running = 0;
                 return EXIT_SYNC_A;
