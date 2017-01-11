@@ -329,7 +329,7 @@ static void *hsm_test(void *args)
                 tc_set_rts_casco(fd, TRUE);
             }
             wait_for_cpld_stable(log_fd, fd);
-        } while (tc_get_cts_casco(fd) != 0);
+        } while (tc_get_cts_casco(fd) != 0 && g_running);
     }
 
     //Starting SIM/MSM test
@@ -443,7 +443,7 @@ static void wait_for_cts_change(int fd)
         hsm_send_switch(fd);
         sleep_ms(WAIT_IN_MS);
         cts = tc_get_cts_casco(fd);
-    } while(cts == g_cur_cts);
+    } while(cts == g_cur_cts && g_running);
 
     g_cur_cts = cts;
 }
