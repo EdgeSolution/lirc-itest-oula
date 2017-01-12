@@ -7,11 +7,11 @@ Versions in brackets () are not official releases, but testing versions.
 
 VERSION  DATE        CHANGES / DESCRIPTION
 0.08     2017-01-12  - [cfg]Stop CPU/memory test for SIM x2 SKU
-					 - [sim]Fix switch issue when sim work without hsm
-					 - [sim]Optimize for sim x2 SKU
+                     - [sim]Fix switch issue when sim work without hsm
+                     - [sim]Optimize for sim x2 SKU
                      - [hsm]Rewrite HSM switch logical
-					 - [hsm]Fix status display
-					 - [hsm]Fix unexpect switch in holding test when ctrl-c at B
+                     - [hsm]Fix status display
+                     - [hsm]Fix unexpect switch in holding test when ctrl-c at B
 
 (0.07)   2016-11-29  - [hsm] Fix HSM status display
                      - [ui]Change baudrate selection ui
