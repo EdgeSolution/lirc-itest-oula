@@ -57,10 +57,10 @@ test_mod_t test_mod_hsm = {
 #define SWITCH_CHAR_A   0xFA
 #define SWITCH_CHAR_B   0xFB
 
-#define WAIT_IN_MS          50
+#define WAIT_IN_MS          500
 #define HOLD_INTERVAL       60
 
-#define SENDING_COUNT       10
+#define SENDING_COUNT       2
 
 /* The packet to send */
 static char g_packet[PACKET_SIZE];
