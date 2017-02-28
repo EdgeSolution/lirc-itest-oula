@@ -28,7 +28,15 @@
 
 #define TESC_NUM 4
 
+enum DEV_SKU {
+    SKU_NO_MSM = 0,
+    SKU_STANDALONE,
+    SKU_FULL,
+};
+
+extern enum DEV_SKU g_dev_sku;
 
 int get_parameter(void);
+int parse_params(int argc, char **argv);
 
 #endif /* _CFG_H_ */

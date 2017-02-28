@@ -123,7 +123,10 @@ static void nim_print_status()
     printf("%-*s %s\n",
         COL_FIX_WIDTH, "NIM", (test_mod_nim.pass) ? STR_MOD_OK : STR_MOD_ERROR);
 
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < TESC_NUM; i++) {
+        if (!g_nim_test_eth[i]) {
+            continue;
+        }
         printf("eth%-*u SENT(PKT):%-*u LOST(PKT):%-*u ERR(PKT):%-*u\n",
             COL_FIX_WIDTH-3, i, COL_FIX_WIDTH-5, udp_cnt_send[i],
             COL_FIX_WIDTH-5, tesc_lost_no[i], COL_FIX_WIDTH-4, tesc_err_no[i]);
@@ -146,7 +149,11 @@ static void nim_check_pass(void)
     int i = 0;
     uint8_t flag = 1;
 
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < TESC_NUM; i++) {
+        if (!g_nim_test_eth[i]) {
+            continue;
+        }
+
         /* Check retry count */
         if (timeout_rst_cnt[i] >= MAX_RETRY) {
             flag = 0;
@@ -166,11 +173,11 @@ static void nim_check_pass(void)
 static void *nim_test(void *args)
 {
     int i = 0;
-    int ret[4];
+    int ret[TESC_NUM];
     log_fd = test_mod_nim.log_fd;
 
-    pthread_t ptid_r[4];
-    pthread_t ptid_s[4];
+    pthread_t ptid_r[TESC_NUM];
+    pthread_t ptid_s[TESC_NUM];
 
     log_print(log_fd, "Begin test!\n\n");
 
@@ -225,7 +232,7 @@ static void *nim_test(void *args)
         }
     }
 
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < TESC_NUM; i++) {
         /* Skip ports which not be initialized */
         if (ret[i] != 0)
             continue;
@@ -244,7 +251,7 @@ static void *nim_test(void *args)
     }
 
     /* Wait all udp send packet thread and all udp receive packet thread to endup */
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < TESC_NUM; i++) {
         /* Skip threads about ports which not be initialized */
         if (ret[i] != 0)
             continue;

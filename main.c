@@ -45,6 +45,23 @@ static test_mod_t *g_test_module[MAX_MOD_COUNT] = {0, };
 /* Index of modules in the array of g_test_module */
 static int mod_index = 0;
 
+static void print_usage(void)
+{
+    printf("\nLiRC-ITEST v"PROGRAM_VERSION"\n\n"
+            "lirc-itest: Integration Test Utility for LiRC-3\n"
+            "  -h Show this message\n"
+            "  -s Select Device SKU\n"
+            "    0: Main CCM without MSM (default)\n"
+            "    1: Standalone CCM without IO board\n"
+            "    2: Main CCM with CCM\n"
+            "\n"
+            "Example:\n"
+            "  # Run test on Standalone CCM\n"
+            "  ./lirc-itest -s 1\n"
+            "  # Run test on Main CCM with MSM\n"
+            "  ./lirc-itest -s 2\n");
+}
+
 int main(int argc, char **argv)
 {
     int rc = 0;
@@ -54,9 +71,8 @@ int main(int argc, char **argv)
     char report_file[PATH_MAX];
     int report_fd;
 
-
-    if (argc != 1) {
-        printf("LiRC-ITEST v%s\n", PROGRAM_VERSION);
+    if (0 != parse_params(argc, argv)) {
+        print_usage();
         return -1;
     }
 
@@ -67,12 +83,14 @@ int main(int argc, char **argv)
 
     install_sig_handler();
 
-    printf("Wait the other side to be ready...\n");
-    if (!wait_other_side_ready()) {
-        printf("The other side is not ready!\n");
-        return -1;
+    if (g_dev_sku == SKU_STANDALONE) {
+        printf("Wait the other side to be ready...\n");
+        if (!wait_other_side_ready()) {
+            printf("The other side is not ready!\n");
+            return -1;
+        }
+        printf("OK\n");
     }
-    printf("OK\n");
 
     time_t time_start = time(NULL);
     get_current_time(&tm_start);
@@ -423,7 +441,10 @@ int start_test_module(test_mod_t *pmod)
  *      Generate a test report and print to stdout.
  *
  * PARAMETERS:
- *      None
+ *      fd: Report      file descriptor
+ *      report_file:    Report filename
+ *      tm_start:       test start time
+ *      tm_end:         test end time
  *
  * RETURN:
  *      None

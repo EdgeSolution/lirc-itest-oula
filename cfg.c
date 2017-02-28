@@ -20,6 +20,8 @@
 #include "common.h"
 #include "cfg.h"
 
+enum DEV_SKU g_dev_sku = SKU_NO_MSM;
+
 /* Tester */
 char g_tester[MAX_STR_LENGTH];
 
@@ -63,7 +65,7 @@ uint64_t g_hsm_test_loop = 100;
 uint8_t g_hsm_switching = 0;
 
 /* NIM: port test flag, set by user input */
-uint8_t g_nim_test_eth[TESC_NUM];
+uint8_t g_nim_test_eth[TESC_NUM] = {0};
 
 //Function Prototype
 static char *right_trim(char *str);
@@ -691,6 +693,13 @@ static int input_hsm_loop(uint64_t *loop)
 int get_parameter(void)
 {
     int i;
+    int eth_num;
+
+    if (g_dev_sku == SKU_STANDALONE) {
+        eth_num = TESC_NUM / 2;
+    } else {
+        eth_num = TESC_NUM;
+    }
 
     /* Get the information of tester */
     if (0 != input_tester(g_tester, sizeof(g_tester)))
@@ -713,33 +722,27 @@ int get_parameter(void)
         if (0 != input_product_sn(g_product_sn, sizeof(g_product_sn)))
             return -1;
 
-        /* Get HSM test loop */
-        if (0 != input_hsm_loop(&g_hsm_test_loop))
-            return -1;
+        if (g_dev_sku != SKU_STANDALONE) {
+            /* Get HSM test loop */
+            if (0 != input_hsm_loop(&g_hsm_test_loop))
+                return -1;
 
-        /* Config all modules to 'Y' */
-        g_test_cpu = 1;
-        g_test_sim = 1;
-        g_test_nim = 1;
-        g_test_hsm = 1;
-        g_test_msm = 1;
-        g_test_led = 1;
-        g_test_mem = 1;
+            //SIM
+            /* Get the number of SIM board && check it */
+            if (0 != input_sim_board_num(&g_board_num))
+                return -1;
 
-        //SIM
-        /* Get the number of SIM board && check it */
-        if (0 != input_sim_board_num(&g_board_num))
-            return -1;
-
-        //Baudrate
-        if (0 != input_baudrate(&g_baudrate))
-            return -1;
+            //Baudrate
+            if (0 != input_baudrate(&g_baudrate))
+                return -1;
+        }
 
         //NIM
         /* Config all ethernet ports to 'Y' */
-        for (i = 0; i < TESC_NUM; i++) {
+        for (i = 0; i < eth_num; i++) {
             g_nim_test_eth[i] = 1;
         }
+
     } else if (g_test_mode == 0) {  /* Get separate modules setting for running. */
         //CCM
         if (0 != input_board_sn("CCM", g_ccm_sn, sizeof(g_ccm_sn)))
@@ -749,22 +752,24 @@ int get_parameter(void)
         g_test_led = user_ack("Test LED?");
         g_test_mem = user_ack("Test MEM?");
 
-        //SIM
-        g_test_sim = user_ack("Test SIM?");
-        /* Get the SIM board number and the baudrate of serial */
-        if (g_test_sim == 1) {
-            /* Get the number of SIM board && check it */
-            if (0 != input_sim_board_num(&g_board_num))
-                return -1;
+        if (g_dev_sku != SKU_STANDALONE) {
+            //SIM
+            g_test_sim = user_ack("Test SIM?");
+            /* Get the SIM board number and the baudrate of serial */
+            if (g_test_sim == 1) {
+                /* Get the number of SIM board && check it */
+                if (0 != input_sim_board_num(&g_board_num))
+                    return -1;
 
-            for (i = 0; i < g_board_num; i++) {
-                if (0 != input_board_sn("SIM", g_sim_sn[i], sizeof(g_sim_sn[i])))
+                for (i = 0; i < g_board_num; i++) {
+                    if (0 != input_board_sn("SIM", g_sim_sn[i], sizeof(g_sim_sn[i])))
+                        return -1;
+                }
+
+                //Baudrate
+                if (0 != input_baudrate(&g_baudrate))
                     return -1;
             }
-
-            //Baudrate
-            if (0 != input_baudrate(&g_baudrate))
-                return -1;
         }
 
         //NIM
@@ -775,40 +780,46 @@ int get_parameter(void)
                 return -1;
 
             memset(g_nim_test_eth, 0, sizeof(g_nim_test_eth));
-            for (i = 0; i < TESC_NUM; i++) {
+            for (i = 0; i < eth_num; i++) {
                 char buf[MAX_STR_LENGTH];
                 snprintf(buf, sizeof(buf), "Test eth%d?", i);
                 g_nim_test_eth[i] = user_ack(buf);
             }
         }
 
-        //HSM
-        g_test_hsm = user_ack("Test HSM?");
-        if(g_test_hsm == 1) {
-            if (0 != input_board_sn("HSM", g_hsm_sn, sizeof(g_hsm_sn)))
-                return -1;
+        if (g_dev_sku != SKU_STANDALONE) {
+            //HSM
+            g_test_hsm = user_ack("Test HSM?");
+            if(g_test_hsm == 1) {
+                if (0 != input_board_sn("HSM", g_hsm_sn, sizeof(g_hsm_sn)))
+                    return -1;
 
-            /* Get HSM test loop */
-            if (0 != input_hsm_loop(&g_hsm_test_loop))
-                return -1;
+                /* Get HSM test loop */
+                if (0 != input_hsm_loop(&g_hsm_test_loop))
+                    return -1;
+            }
         }
 
-        //MSM
-        g_test_msm = user_ack("Test MSM?");
-        if(g_test_msm == 1) {
-            if (0 != input_board_sn("MSM", g_msm_sn, sizeof(g_msm_sn)))
-                return -1;
+        if (g_dev_sku == SKU_FULL) {
+            //MSM
+            g_test_msm = user_ack("Test MSM?");
+            if(g_test_msm == 1) {
+                if (0 != input_board_sn("MSM", g_msm_sn, sizeof(g_msm_sn)))
+                    return -1;
+            }
         }
     }
 
-    //If use two SIM board, disable CPU/memory test
-    if (g_test_sim && g_board_num == 2) {
-        g_test_cpu = 0;
-        g_test_mem = 0;
-    }
+    if (g_dev_sku != SKU_STANDALONE) {
+        //If use two SIM board, disable CPU/memory test
+        if (g_test_sim && g_board_num == 2) {
+            g_test_cpu = 0;
+            g_test_mem = 0;
+        }
 
-    if (g_test_hsm) {
-        g_hsm_switching = 1;
+        if (g_test_hsm) {
+            g_hsm_switching = 1;
+        }
     }
 
     DBG_PRINT("Tester: %s, Product SN: %s, Test time: %llu\n",
@@ -836,6 +847,62 @@ int get_parameter(void)
         DBG_PRINT(" eth%d: %u,", i, g_nim_test_eth[i]);
     }
     DBG_PRINT("\n");
+
+    return 0;
+}
+
+/******************************************************************************
+ * NAME:
+ *      get_parameter
+ *
+ * DESCRIPTION:
+ *      Init parameters by the input from user.
+ *
+ * PARAMETERS:
+ *      argc    - argument number
+ *      argv    - argument vector
+ *
+ * RETURN:
+ *      0  - OK
+ *      <0 - error
+ ******************************************************************************/
+int parse_params(int argc, char **argv)
+{
+    int opt;
+
+    while ((opt = getopt(argc, argv, "s:h")) != -1) {
+        switch (opt) {
+        case 's':
+            g_dev_sku = atoi(optarg);
+            break;
+
+        case 'h':
+        default:
+            return -1;
+            break;
+        }
+    }
+
+    if (optind < argc) {
+        printf("Invalid argument: %s\n", argv[optind]);
+        return -1;
+    }
+
+    switch (g_dev_sku) {
+        case SKU_NO_MSM: //without MSM
+            g_test_msm = 0;
+            break;
+        case SKU_STANDALONE: //without SIM, NIM, HSM, MSM
+            g_test_sim = 0;
+            g_test_hsm = 0;
+            g_test_msm = 0;
+            break;
+        case SKU_FULL:
+            break;
+        default:
+            printf("sku: parameter out of range(0-2)\n");
+            return -1;
+    }
 
     return 0;
 }
