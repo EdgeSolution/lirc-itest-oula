@@ -117,4 +117,8 @@ void send_exit_sync(void);
 void receive_exit_sync(void);
 int send_packet(int fd, char *buf, uint8_t len);
 
+int set_ipaddr(char *ifname, char *ipaddr, char *netmask);
+int socket_init(int *sockfd, char *ipaddr, uint16_t portid);
+int wait_other_side_ready_eth(void);
+
 #endif /* _COMMON_H_ */

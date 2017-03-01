@@ -18,9 +18,17 @@
 #include "common.h"
 #include "term.h"
 
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <arpa/inet.h>
 
 //Return code for system
 #define DIAG_SYS_RC(x)    ((WTERMSIG(x) == 0)?(WEXITSTATUS(x)):-1)
+
+#define IPSTR_LEN   16
+#define UDP_PORT    9527
 
 void kill_process(char *name)
 {
@@ -390,6 +398,223 @@ int send_packet(int fd, char *buf, uint8_t len)
             break;
         }
     }
+
+    return rc;
+}
+
+int set_ipaddr(char *ifname, char *ipaddr, char *netmask)
+{
+    int sockfd = -1;
+    struct ifreq ifr;
+    struct sockaddr_in *sin;
+
+    if ((ifname == NULL) || (ipaddr == NULL)) {
+        DBG_PRINT("illegal do config ip!\n");
+
+        return -1;
+    }
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd == -1) {
+        DBG_PRINT("socket failed for setting ip! err: %s\n", strerror(errno));
+
+        return -1;
+    }
+
+    memset(&ifr, 0, sizeof(ifr));
+    strcpy(ifr.ifr_name, ifname);
+    sin = (struct sockaddr_in *)&ifr.ifr_addr;
+
+    sin->sin_family = AF_INET;
+
+    /* config ip address */
+    sin->sin_addr.s_addr = inet_addr(ipaddr);
+    if (ioctl(sockfd, SIOCSIFADDR, &ifr) < 0) {
+        close(sockfd);
+        DBG_PRINT("ioctl failed for set ip address! err: %s\n", strerror(errno));
+
+        return -1;
+    }
+
+    /* config netmask */
+    sin->sin_addr.s_addr = inet_addr(netmask);
+    if  (ioctl(sockfd, SIOCSIFNETMASK, &ifr) < 0) {
+        close(sockfd);
+        DBG_PRINT("ioctl failed for set netmask! err: %s\n", strerror(errno));
+
+        return -1;
+    }
+
+    close(sockfd);
+
+    return 0;
+}
+
+int socket_init(int *sockfd, char *ipaddr, uint16_t portid)
+{
+    struct sockaddr_in hostaddr;
+    int reuse;
+
+    *sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP /*0*/);
+    if (*sockfd == -1) {
+        return -1;
+    }
+
+    reuse = 1;
+    if (setsockopt(*sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
+        return -1;
+    }
+
+    memset(&hostaddr, 0, sizeof(struct sockaddr_in));
+
+    hostaddr.sin_family = AF_INET;
+    hostaddr.sin_port = htons(portid);
+    hostaddr.sin_addr.s_addr = inet_addr(ipaddr);
+
+    if (bind(*sockfd, (struct sockaddr *)(&hostaddr), sizeof(struct sockaddr)) == -1) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static int send_sync_data_eth(int sockfd, char snt_char, char* target_ip)
+{
+    char buf[2] = {snt_char, 0};
+
+    //Set target addr for sendto
+    struct sockaddr_in taddr;
+    memset(&taddr, 0, sizeof(taddr));
+    taddr.sin_family = AF_INET;
+    taddr.sin_port = htons(UDP_PORT);
+    taddr.sin_addr.s_addr = inet_addr(target_ip);
+
+    int size = sendto(sockfd, buf, sizeof(buf), 0,
+            (struct sockaddr*)&taddr, sizeof(taddr));
+    if (size > 0){
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}
+
+static int recv_sync_data_eth(int sockfd, char rcv_char, char snt_char)
+{
+    fd_set rfds;
+    struct timeval tv;
+    int retval;
+    char buf[64];
+
+    /* Watch fd to see when it has input. */
+    FD_ZERO(&rfds);
+    FD_SET(sockfd, &rfds);
+
+    /* Wait up to 3 seconds. */
+    tv.tv_sec = 3;
+    tv.tv_usec = 0;
+
+    struct sockaddr_in raddr;
+    socklen_t len;
+    memset(&raddr, 0, sizeof(raddr));
+    len = sizeof(struct sockaddr_in);
+
+    retval = select(sockfd+1, &rfds, NULL, NULL, &tv);
+    /* Don't rely on the value of tv now! */
+    if (retval > 0) {
+        /* FD_ISSET(0, &rfds) will be true. */
+        DBG_PRINT("Data is available now.\n");
+
+        memset(buf, 0 ,sizeof(buf));
+        int size = recvfrom(sockfd, buf, sizeof(buf), 0,
+                (struct sockaddr*)&raddr, &len);
+        if (size > 0) {
+            if (strchr(buf, rcv_char)) {
+                return 1;
+            } else if (strchr(buf, snt_char)) {
+                return -1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+/******************************************************************************
+ * NAME:
+ *      wait_other_side_ready
+ *
+ * DESCRIPTION:
+ *      Wait the test program on the other side(machine) to be ready.
+ *
+ * PARAMETERS:
+ *      None
+ *
+ * RETURN:
+ *      1 - Ready.
+ *      0 - Not Ready(fail).
+ ******************************************************************************/
+int wait_other_side_ready_eth(void)
+{
+    int sockfd;
+
+    char local_ip[IPSTR_LEN];
+    char target_ip[IPSTR_LEN];
+    char rcv_char;
+    char snt_char;
+    char nic[5];
+
+    if (g_machine == 'A') {
+        sprintf(local_ip, "192.100.1.2");
+        sprintf(target_ip, "192.100.1.3");
+        snt_char = DATA_SYNC_A;
+        rcv_char = DATA_SYNC_B;
+    } else {
+        sprintf(local_ip, "192.100.1.3");
+        sprintf(target_ip, "192.100.1.2");
+        snt_char = DATA_SYNC_B;
+        rcv_char = DATA_SYNC_A;
+    }
+
+    //Check if nic was enabled in test
+    if (g_nim_test_eth[0]) {
+        sprintf(nic, "eth0");
+    } else if (g_nim_test_eth[1]) {
+        sprintf(nic, "eth1");
+    } else {
+        return TRUE;
+    }
+
+    if (0 != set_ipaddr("eth0", local_ip, "255.255.255.0")) {
+        printf("Set IP address fail\n");
+        return FALSE;
+    }
+
+    if (0 != socket_init(&sockfd, local_ip, UDP_PORT)) {
+        printf("Set IP address fail\n");
+        return FALSE;
+    }
+
+    int rc = FALSE;
+    while (g_running) {
+        /* Send sync request */
+        if (send_sync_data_eth(sockfd, snt_char, target_ip) == 0) {
+            continue;
+        }
+
+        int ch = recv_sync_data_eth(sockfd, rcv_char, snt_char);
+        if (ch == 1) {
+            send_sync_data_eth(sockfd, snt_char, target_ip);
+            rc = TRUE;
+            break;
+        } else if (ch == -1) {
+            printf("Invalid machine!\n");
+            rc = FALSE;
+            break;
+        }
+    }
+
+    close(sockfd);
+    sleep(3);
 
     return rc;
 }

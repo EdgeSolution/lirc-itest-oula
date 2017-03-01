@@ -90,14 +90,12 @@ static int log_fd;
 /* Function Defination */
 static void ether_port_init(uint32_t ethid, uint16_t portid);
 static int udp_test_init(uint32_t ethid, uint16_t portid);
-static int socket_init(int *sockfd, char *ipaddr, uint16_t portid);
 static void udp_send_test(ether_port_para *net_port_para);
 static void udp_recv_test(ether_port_para *net_port_para);
 static int32_t udp_send(int sockfd, char *target_ip, uint16_t port, uint8_t *buff, int32_t length, int32_t ethid);
 static int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t length, int32_t ethid);
 static int is_udp_write_ready(int sockfd);
 static int is_udp_read_ready(int sockfd);
-static int set_ipaddr(char *ifname, char *ipaddr, char *netmask);
 
 static void nim_print_status();
 static void nim_print_result(int fd);
@@ -387,42 +385,6 @@ static int udp_test_init(uint32_t ethid, uint16_t portid)
     return 0;
 }
 
-static int socket_init(int *sockfd, char *ipaddr, uint16_t portid)
-{
-    struct sockaddr_in hostaddr;
-    int reuse;
-
-    *sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP /*0*/);
-    if (*sockfd == -1) {
-        log_print(log_fd, "create socket failed! errno=%d, %s\n", errno, strerror(errno));
-
-        return -1;
-    }
-
-    reuse = 1;
-    if (setsockopt(*sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
-        log_print(log_fd, "setsockopt error: %s\n", strerror(errno));
-
-        return -1;
-    }
-
-    memset(&hostaddr, 0, sizeof(struct sockaddr_in));
-
-    hostaddr.sin_family = AF_INET;
-    hostaddr.sin_port = htons(portid);
-    hostaddr.sin_addr.s_addr = inet_addr(ipaddr);
-
-    if (bind(*sockfd, (struct sockaddr *)(&hostaddr), sizeof(struct sockaddr)) == -1) {
-        log_print(log_fd, "ip bind error: %s errno=%d, %s\n", ipaddr, errno, strerror(errno));
-
-        return -1;
-    }
-
-    log_print(log_fd, "socket %d init done !\n", *sockfd);
-
-    return 0;
-}
-
 static void udp_send_test(ether_port_para *net_port_para)
 {
     int sockfd;
@@ -673,52 +635,4 @@ static int is_udp_read_ready(int sockfd)
     }
 
     return ret;
-}
-
-static int set_ipaddr(char *ifname, char *ipaddr, char *netmask)
-{
-    int sockfd = -1;
-    struct ifreq ifr;
-    struct sockaddr_in *sin;
-
-    if ((ifname == NULL) || (ipaddr == NULL)) {
-        DBG_PRINT("illegal do config ip!\n");
-
-        return -1;
-    }
-
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sockfd == -1) {
-        DBG_PRINT("socket failed for setting ip! err: %s\n", strerror(errno));
-
-        return -1;
-    }
-
-    memset(&ifr, 0, sizeof(ifr));
-    strcpy(ifr.ifr_name, ifname);
-    sin = (struct sockaddr_in *)&ifr.ifr_addr;
-
-    sin->sin_family = AF_INET;
-
-    /* config ip address */
-    sin->sin_addr.s_addr = inet_addr(ipaddr);
-    if (ioctl(sockfd, SIOCSIFADDR, &ifr) < 0) {
-        close(sockfd);
-        DBG_PRINT("ioctl failed for set ip address! err: %s\n", strerror(errno));
-
-        return -1;
-    }
-
-    /* config netmask */
-    sin->sin_addr.s_addr = inet_addr(netmask);
-    if  (ioctl(sockfd, SIOCSIFNETMASK, &ifr) < 0) {
-        close(sockfd);
-        DBG_PRINT("ioctl failed for set netmask! err: %s\n", strerror(errno));
-
-        return -1;
-    }
-
-    close(sockfd);
-
-    return 0;
 }

@@ -85,14 +85,20 @@ int main(int argc, char **argv)
 
     install_sig_handler();
 
+    printf("Wait the other side to be ready...\n");
     if (g_dev_sku == SKU_STANDALONE) {
-        printf("Wait the other side to be ready...\n");
+        if (!wait_other_side_ready_eth()) {
+            printf("The other side is not ready!\n");
+            return -1;
+        }
+    } else {
         if (!wait_other_side_ready()) {
             printf("The other side is not ready!\n");
             return -1;
         }
-        printf("OK\n");
     }
+
+    printf("OK\n");
 
     time_t time_start = time(NULL);
     get_current_time(&tm_start);
@@ -115,7 +121,7 @@ int main(int argc, char **argv)
     set_timeout(g_duration*60);
 
     //IF msm test wasn't enabled, start quit sync in main thread
-    if (!g_test_msm || !g_test_hsm) {
+    if ((!g_test_msm || !g_test_hsm) && g_dev_sku != SKU_STANDALONE) {
         receive_exit_sync();
     }
 
