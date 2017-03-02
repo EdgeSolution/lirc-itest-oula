@@ -874,8 +874,10 @@ int parse_params(int argc, char **argv)
     if (argc == 1) {
         if (strcmp(APPNAME_STANDALONE, basename(argv[0])) == 0) {
             g_dev_sku = SKU_STANDALONE;
-        } else {
+        } else if (strcmp(APPNAME_MAIN, basename(argv[0])) == 0){
             g_dev_sku = SKU_NO_MSM;
+        } else {
+            return -EINVAL;
         }
     } else if (argc == 2){
         if (strcmp("-msm", argv[1]) == 0) {
