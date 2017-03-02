@@ -28,6 +28,9 @@
 
 #define TESC_NUM 4
 
+#define APPNAME_STANDALONE         "lirc-cpu"
+#define APPNAME_MAIN               "lirc-itest"
+
 enum DEV_SKU {
     SKU_NO_MSM = 0,
     SKU_STANDALONE,

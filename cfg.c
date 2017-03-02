@@ -17,6 +17,8 @@
 #include <ctype.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <libgen.h>
 #include "common.h"
 #include "cfg.h"
 
@@ -868,24 +870,21 @@ int get_parameter(void)
  ******************************************************************************/
 int parse_params(int argc, char **argv)
 {
-    int opt;
-
-    while ((opt = getopt(argc, argv, "s:h")) != -1) {
-        switch (opt) {
-        case 's':
-            g_dev_sku = atoi(optarg);
-            break;
-
-        case 'h':
-        default:
-            return -1;
-            break;
+    //Check parameter
+    if (argc == 1) {
+        if (strcmp(APPNAME_STANDALONE, basename(argv[0])) == 0) {
+            g_dev_sku = SKU_STANDALONE;
+        } else {
+            g_dev_sku = SKU_NO_MSM;
         }
-    }
-
-    if (optind < argc) {
-        printf("Invalid argument: %s\n", argv[optind]);
-        return -1;
+    } else if (argc == 2){
+        if (strcmp("-msm", argv[1]) == 0) {
+            g_dev_sku = SKU_FULL;
+        } else {
+            return -EINVAL;
+        }
+    } else {
+        return -EINVAL;
     }
 
     switch (g_dev_sku) {
@@ -900,8 +899,7 @@ int parse_params(int argc, char **argv)
         case SKU_FULL:
             break;
         default:
-            printf("sku: parameter out of range(0-2)\n");
-            return -1;
+            return -EINVAL;
     }
 
     return 0;

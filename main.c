@@ -45,21 +45,23 @@ static test_mod_t *g_test_module[MAX_MOD_COUNT] = {0, };
 /* Index of modules in the array of g_test_module */
 static int mod_index = 0;
 
-static void print_usage(void)
+static void print_usage(char *name)
 {
-    printf("\nLiRC-ITEST v"PROGRAM_VERSION"\n\n"
-            "lirc-itest: Integration Test Utility for LiRC-3\n"
-            "  -h Show this message\n"
-            "  -s Select Device SKU\n"
-            "    0: Main CCM without MSM (default)\n"
-            "    1: Standalone CCM without IO board\n"
-            "    2: Main CCM with CCM\n"
-            "\n"
-            "Example:\n"
-            "  # Run test on Standalone CCM\n"
-            "  ./lirc-itest -s 1\n"
-            "  # Run test on Main CCM with MSM\n"
-            "  ./lirc-itest -s 2\n");
+    if (strcmp(APPNAME_STANDALONE, basename(name)) == 0) {
+        printf("\nLiRC-ITEST v"PROGRAM_VERSION"\n\n"
+                APPNAME_STANDALONE
+                ": Integration Test Utility for the sencondary CCM on LiRC-3\n");
+
+    } else if (strcmp(APPNAME_MAIN, basename(name)) == 0){
+        printf("\nLiRC-ITEST v"PROGRAM_VERSION"\n\n"
+                APPNAME_MAIN ": Integration Test Utility for LiRC-3\n"
+                "  -msm \n"
+                "    Run with MSM test\n");
+    } else {
+        printf("\n This App name MUST be %s or %s, "
+                "please rename it to the correct one!\n",
+                APPNAME_MAIN, APPNAME_STANDALONE);
+    }
 }
 
 int main(int argc, char **argv)
@@ -72,7 +74,7 @@ int main(int argc, char **argv)
     int report_fd;
 
     if (0 != parse_params(argc, argv)) {
-        print_usage();
+        print_usage(argv[0]);
         return -1;
     }
 
