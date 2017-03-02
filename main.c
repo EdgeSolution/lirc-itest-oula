@@ -458,6 +458,8 @@ void generate_report(int fd, char *report_file, struct tm *tm_start, struct tm *
     char ts_end[MAX_STR_LENGTH];
 
     write_file(fd, "================== Test Report ==================\n");
+    write_file(fd, "Machine %c    CCM: %s\n", g_machine,
+            (g_dev_sku == SKU_STANDALONE)?"Secondary":"Main");
     write_file(fd, "Tester: %s\n", g_tester);
 
     if (g_test_mode) {
@@ -473,8 +475,10 @@ void generate_report(int fd, char *report_file, struct tm *tm_start, struct tm *
             write_file(fd, "MSM SN: %s\n", g_msm_sn);
         }
 
-        if (g_test_nim) {
-            write_file(fd, "NIM SN: %s\n", g_nim_sn);
+        if (g_dev_sku != SKU_STANDALONE) {
+            if (g_test_nim) {
+                write_file(fd, "NIM SN: %s\n", g_nim_sn);
+            }
         }
 
         if (g_test_sim) {
