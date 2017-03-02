@@ -47,18 +47,18 @@ static int mod_index = 0;
 
 static void print_usage(char *name)
 {
+    printf("LiRC-ITEST v"PROGRAM_VERSION"\n");
+
     if (strcmp(APPNAME_STANDALONE, basename(name)) == 0) {
-        printf("\nLiRC-ITEST v"PROGRAM_VERSION"\n\n"
-                APPNAME_STANDALONE
+        printf(APPNAME_STANDALONE
                 ": Integration Test Utility for the sencondary CCM on LiRC-3\n");
 
     } else if (strcmp(APPNAME_MAIN, basename(name)) == 0){
-        printf("\nLiRC-ITEST v"PROGRAM_VERSION"\n\n"
-                APPNAME_MAIN ": Integration Test Utility for LiRC-3\n"
+        printf(APPNAME_MAIN ": Integration Test Utility for LiRC-3\n"
                 "  -msm \n"
                 "    Run with MSM test\n");
     } else {
-        printf("\n This App name MUST be %s or %s, "
+        printf("This App name MUST be %s or %s, "
                 "please rename it to the correct one!\n",
                 APPNAME_MAIN, APPNAME_STANDALONE);
     }
