@@ -744,7 +744,6 @@ int get_parameter(void)
         for (i = 0; i < eth_num; i++) {
             g_nim_test_eth[i] = 1;
         }
-
     } else if (g_test_mode == 0) {  /* Get separate modules setting for running. */
         //CCM
         if (0 != input_board_sn("CCM", g_ccm_sn, sizeof(g_ccm_sn)))
@@ -775,11 +774,17 @@ int get_parameter(void)
         }
 
         //NIM
-        g_test_nim = user_ack("Test NIM?");
+        if (g_dev_sku == SKU_STANDALONE) {
+            g_test_nim = user_ack("Test Ethernet Port?");
+        } else {
+            g_test_nim = user_ack("Test NIM?");
+        }
         /* Get NIM modules setting for which ports should be tested */
         if (g_test_nim == 1) {
-            if (0 != input_board_sn("NIM", g_nim_sn, sizeof(g_nim_sn)))
-                return -1;
+            if (g_dev_sku != SKU_STANDALONE) {
+                if (0 != input_board_sn("NIM", g_nim_sn, sizeof(g_nim_sn)))
+                    return -1;
+            }
 
             memset(g_nim_test_eth, 0, sizeof(g_nim_test_eth));
             for (i = 0; i < eth_num; i++) {
