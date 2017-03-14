@@ -22,7 +22,7 @@
 #include "common.h"
 #include "cfg.h"
 
-enum DEV_SKU g_dev_sku = SKU_NO_MSM;
+enum DEV_SKU g_dev_sku = SKU_CCM;
 
 /* Tester */
 char g_tester[MAX_STR_LENGTH];
@@ -697,7 +697,7 @@ int get_parameter(void)
     int i;
     int eth_num;
 
-    if (g_dev_sku == SKU_STANDALONE) {
+    if (g_dev_sku == SKU_CIM) {
         eth_num = TESC_NUM / 2;
     } else {
         eth_num = TESC_NUM;
@@ -724,7 +724,7 @@ int get_parameter(void)
         if (0 != input_product_sn(g_product_sn, sizeof(g_product_sn)))
             return -1;
 
-        if (g_dev_sku != SKU_STANDALONE) {
+        if (g_dev_sku != SKU_CIM) {
             /* Get HSM test loop */
             if (0 != input_hsm_loop(&g_hsm_test_loop))
                 return -1;
@@ -746,14 +746,15 @@ int get_parameter(void)
         }
     } else if (g_test_mode == 0) {  /* Get separate modules setting for running. */
         //CCM
-        if (0 != input_board_sn("CCM", g_ccm_sn, sizeof(g_ccm_sn)))
+        if (0 != input_board_sn((g_dev_sku == SKU_CIM)?"CIM":"CCM",
+                    g_ccm_sn, sizeof(g_ccm_sn)))
             return -1;
 
         g_test_cpu = user_ack("Test CPU?");
         g_test_led = user_ack("Test LED?");
         g_test_mem = user_ack("Test MEM?");
 
-        if (g_dev_sku != SKU_STANDALONE) {
+        if (g_dev_sku != SKU_CIM) {
             //SIM
             g_test_sim = user_ack("Test SIM?");
             /* Get the SIM board number and the baudrate of serial */
@@ -774,14 +775,14 @@ int get_parameter(void)
         }
 
         //NIM
-        if (g_dev_sku == SKU_STANDALONE) {
+        if (g_dev_sku == SKU_CIM) {
             g_test_nim = user_ack("Test Ethernet Port?");
         } else {
             g_test_nim = user_ack("Test NIM?");
         }
         /* Get NIM modules setting for which ports should be tested */
         if (g_test_nim == 1) {
-            if (g_dev_sku != SKU_STANDALONE) {
+            if (g_dev_sku != SKU_CIM) {
                 if (0 != input_board_sn("NIM", g_nim_sn, sizeof(g_nim_sn)))
                     return -1;
             }
@@ -794,7 +795,7 @@ int get_parameter(void)
             }
         }
 
-        if (g_dev_sku != SKU_STANDALONE) {
+        if (g_dev_sku != SKU_CIM) {
             //HSM
             g_test_hsm = user_ack("Test HSM?");
             if(g_test_hsm == 1) {
@@ -807,7 +808,7 @@ int get_parameter(void)
             }
         }
 
-        if (g_dev_sku == SKU_FULL) {
+        if (g_dev_sku == SKU_CCM_MSM) {
             //MSM
             g_test_msm = user_ack("Test MSM?");
             if(g_test_msm == 1) {
@@ -817,7 +818,7 @@ int get_parameter(void)
         }
     }
 
-    if (g_dev_sku != SKU_STANDALONE) {
+    if (g_dev_sku != SKU_CIM) {
         //If use two SIM board, disable CPU/memory test
         if (g_test_sim && g_board_num == 2) {
             g_test_cpu = 0;
@@ -877,16 +878,16 @@ int parse_params(int argc, char **argv)
 {
     //Check parameter
     if (argc == 1) {
-        if (strcmp(APPNAME_STANDALONE, basename(argv[0])) == 0) {
-            g_dev_sku = SKU_STANDALONE;
-        } else if (strcmp(APPNAME_MAIN, basename(argv[0])) == 0){
-            g_dev_sku = SKU_NO_MSM;
+        if (strcmp(APPNAME_CIM, basename(argv[0])) == 0) {
+            g_dev_sku = SKU_CIM;
+        } else if (strcmp(APPNAME_CCM, basename(argv[0])) == 0){
+            g_dev_sku = SKU_CCM;
         } else {
             return -EINVAL;
         }
     } else if (argc == 2){
         if (strcmp("-msm", argv[1]) == 0) {
-            g_dev_sku = SKU_FULL;
+            g_dev_sku = SKU_CCM_MSM;
         } else {
             return -EINVAL;
         }
@@ -895,15 +896,15 @@ int parse_params(int argc, char **argv)
     }
 
     switch (g_dev_sku) {
-        case SKU_NO_MSM: //without MSM
+        case SKU_CCM: //without MSM
             g_test_msm = 0;
             break;
-        case SKU_STANDALONE: //without SIM, NIM, HSM, MSM
+        case SKU_CIM: //without SIM, NIM, HSM, MSM
             g_test_sim = 0;
             g_test_hsm = 0;
             g_test_msm = 0;
             break;
-        case SKU_FULL:
+        case SKU_CCM_MSM:
             break;
         default:
             return -EINVAL;

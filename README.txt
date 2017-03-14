@@ -41,12 +41,12 @@ Usage
 -----------
 To run the program:
 # ./lirc-itest
-Run test on main CCM without MSM
+Run test on CCM without MSM
 
 # ./lirc-itest -msm
-Run test on main CCM with MSM
+Run test on CCM with MSM
 
 # ./lirc-cpu
-Run test on secondary CCM
+Run test on CIM
 
 This program shall be run on both machine A and B.

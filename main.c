@@ -49,18 +49,18 @@ static void print_usage(char *name)
 {
     printf("LiRC-ITEST v"PROGRAM_VERSION"\n");
 
-    if (strcmp(APPNAME_STANDALONE, basename(name)) == 0) {
-        printf(APPNAME_STANDALONE
+    if (strcmp(APPNAME_CIM, basename(name)) == 0) {
+        printf(APPNAME_CIM
                 ": Integration Test Utility for the sencondary CCM on LiRC-3\n");
 
-    } else if (strcmp(APPNAME_MAIN, basename(name)) == 0){
-        printf(APPNAME_MAIN ": Integration Test Utility for LiRC-3\n"
+    } else if (strcmp(APPNAME_CCM, basename(name)) == 0){
+        printf(APPNAME_CCM ": Integration Test Utility for LiRC-3\n"
                 "  -msm \n"
                 "    Run with MSM test\n");
     } else {
         printf("This App name MUST be %s or %s, "
                 "please rename it to the correct one!\n",
-                APPNAME_MAIN, APPNAME_STANDALONE);
+                APPNAME_CCM, APPNAME_CIM);
     }
 }
 
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
     install_sig_handler();
 
     printf("Wait the other side to be ready...\n");
-    if (g_dev_sku == SKU_STANDALONE) {
+    if (g_dev_sku == SKU_CIM) {
         if (!wait_other_side_ready_eth()) {
             printf("The other side is not ready!\n");
             return -1;
@@ -121,7 +121,7 @@ int main(int argc, char **argv)
     set_timeout(g_duration*60);
 
     //IF msm test wasn't enabled, start quit sync in main thread
-    if ((!g_test_msm || !g_test_hsm) && g_dev_sku != SKU_STANDALONE) {
+    if ((!g_test_msm || !g_test_hsm) && g_dev_sku != SKU_CIM) {
         receive_exit_sync();
     }
 
@@ -464,14 +464,14 @@ void generate_report(int fd, char *report_file, struct tm *tm_start, struct tm *
     char ts_end[MAX_STR_LENGTH];
 
     write_file(fd, "================== Test Report ==================\n");
-    write_file(fd, "Machine %c    CCM: %s\n", g_machine,
-            (g_dev_sku == SKU_STANDALONE)?"Secondary":"Main");
+    write_file(fd, "%s (%c)\n", g_machine,
+            (g_dev_sku == SKU_CIM)?"CIM":"CCM");
     write_file(fd, "Tester: %s\n", g_tester);
 
     if (g_test_mode) {
         write_file(fd, "Product SN: %s\n", g_product_sn);
     } else {
-        write_file(fd, "CCM SN: %s\n", g_ccm_sn);
+        write_file(fd, "%s SN: %s\n", (g_dev_sku == SKU_CIM)?"CIM":"CCM",  g_ccm_sn);
 
         if (g_test_hsm) {
             write_file(fd, "HSM SN: %s\n", g_hsm_sn);
@@ -481,7 +481,7 @@ void generate_report(int fd, char *report_file, struct tm *tm_start, struct tm *
             write_file(fd, "MSM SN: %s\n", g_msm_sn);
         }
 
-        if (g_dev_sku != SKU_STANDALONE) {
+        if (g_dev_sku != SKU_CIM) {
             if (g_test_nim) {
                 write_file(fd, "NIM SN: %s\n", g_nim_sn);
             }

@@ -28,13 +28,13 @@
 
 #define TESC_NUM 4
 
-#define APPNAME_STANDALONE         "lirc-cpu"
-#define APPNAME_MAIN               "lirc-itest"
+#define APPNAME_CIM         "lirc-cpu"
+#define APPNAME_CCM         "lirc-itest"
 
 enum DEV_SKU {
-    SKU_NO_MSM = 0,
-    SKU_STANDALONE,
-    SKU_FULL,
+    SKU_CCM = 0,
+    SKU_CIM,
+    SKU_CCM_MSM,
 };
 
 extern enum DEV_SKU g_dev_sku;
