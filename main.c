@@ -51,10 +51,11 @@ static void print_usage(char *name)
 
     if (strcmp(APPNAME_CIM, basename(name)) == 0) {
         printf(APPNAME_CIM
-                ": Integration Test Utility for the sencondary CCM on LiRC-3\n");
+                ": Integration Test Utility for CIM on LiRC-3\n");
 
     } else if (strcmp(APPNAME_CCM, basename(name)) == 0){
-        printf(APPNAME_CCM ": Integration Test Utility for LiRC-3\n"
+        printf(APPNAME_CCM
+                ": Integration Test Utility for CCM on LiRC-3\n"
                 "  -msm \n"
                 "    Run with MSM test\n");
     } else {
