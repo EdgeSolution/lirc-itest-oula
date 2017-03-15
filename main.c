@@ -464,8 +464,7 @@ void generate_report(int fd, char *report_file, struct tm *tm_start, struct tm *
     char ts_end[MAX_STR_LENGTH];
 
     write_file(fd, "================== Test Report ==================\n");
-    write_file(fd, "%s (%c)\n", g_machine,
-            (g_dev_sku == SKU_CIM)?"CIM":"CCM");
+    write_file(fd, "%s (%c)\n", (g_dev_sku == SKU_CIM)?"CIM":"CCM", g_machine);
     write_file(fd, "Tester: %s\n", g_tester);
 
     if (g_test_mode) {
