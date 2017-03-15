@@ -776,7 +776,7 @@ int get_parameter(void)
 
         //NIM
         if (g_dev_sku == SKU_CIM) {
-            g_test_nim = user_ack("Test Ethernet Port?");
+            g_test_nim = user_ack("Test ETH?");
         } else {
             g_test_nim = user_ack("Test NIM?");
         }
