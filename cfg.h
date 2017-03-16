@@ -28,7 +28,6 @@
 
 #define TESC_NUM 4
 
-#define APPNAME_CIM         "lirc-cpu"
 #define APPNAME_CCM         "lirc-itest"
 
 enum DEV_SKU {

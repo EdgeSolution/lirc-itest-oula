@@ -49,20 +49,12 @@ static void print_usage(char *name)
 {
     printf("LiRC-ITEST v"PROGRAM_VERSION"\n");
 
-    if (strcmp(APPNAME_CIM, basename(name)) == 0) {
-        printf(APPNAME_CIM
-                ": Integration Test Utility for CIM on LiRC-3\n");
-
-    } else if (strcmp(APPNAME_CCM, basename(name)) == 0){
-        printf(APPNAME_CCM
-                ": Integration Test Utility for CCM on LiRC-3\n"
-                "  -msm \n"
-                "    Run with MSM test\n");
-    } else {
-        printf("This App name MUST be %s or %s, "
-                "please rename it to the correct one!\n",
-                APPNAME_CCM, APPNAME_CIM);
-    }
+    printf(APPNAME_CCM
+            ": Integration Test Utility for CCM on LiRC-3\n"
+            "  -msm\n"
+            "    Run with MSM test\n"
+            "  -cim\n"
+            "    Run test on CIM\n");
 }
 
 int main(int argc, char **argv)

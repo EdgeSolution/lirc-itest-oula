@@ -878,16 +878,12 @@ int parse_params(int argc, char **argv)
 {
     //Check parameter
     if (argc == 1) {
-        if (strcmp(APPNAME_CIM, basename(argv[0])) == 0) {
-            g_dev_sku = SKU_CIM;
-        } else if (strcmp(APPNAME_CCM, basename(argv[0])) == 0){
-            g_dev_sku = SKU_CCM;
-        } else {
-            return -EINVAL;
-        }
+        g_dev_sku = SKU_CCM;
     } else if (argc == 2){
         if (strcmp("-msm", argv[1]) == 0) {
             g_dev_sku = SKU_CCM_MSM;
+        } else if (strcmp("-cim", argv[1]) == 0) {
+            g_dev_sku = SKU_CIM;
         } else {
             return -EINVAL;
         }
