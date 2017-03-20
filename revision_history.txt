@@ -1,14 +1,15 @@
 LIRC-ITEST REVISION HISTORY
 
-LAST UPDATE 2017-03-02
+LAST UPDATE 2017-03-20
 
 
 Versions in brackets () are not official releases, but testing versions.
 
 VERSION  DATE        CHANGES / DESCRIPTION
-0.10     2017-03-15  - Support new sku of LiRC-3
+0.10     2017-03-20  - Support new sku of LiRC-3
                      - Add sync mechanism via ethernet port for CIM
                      - Add CCM/CIM and machine info to report
+                     - Start MSM or CIM via parameter
 
 0.08     2017-01-12  - [cfg]Stop CPU/memory test for SIM x2 SKU
                      - [sim]Fix switch issue when sim work without hsm
