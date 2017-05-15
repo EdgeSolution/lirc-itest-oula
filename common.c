@@ -618,3 +618,32 @@ int wait_other_side_ready_eth(void)
 
     return rc;
 }
+
+/******************************************************************************
+ * NAME:
+ *      set_if_up(char *ifname)
+ *
+ * DESCRIPTION:
+ *      Bring up interface with given name
+ *
+ * PARAMETERS:
+ *      None
+ *
+ * RETURN:
+ *      0 - success
+ *      other - fail
+ ******************************************************************************/
+int set_if_up(char *ifname)
+{
+    int rc = 0;
+    char cmd[MAX_STR_LENGTH];
+
+    if (ifname == NULL)
+        return 1;
+
+    sprintf(cmd, "ifconfig %s up > /dev/null 2>&1", ifname);
+
+    rc = DIAG_SYS_RC(system(cmd));
+
+    return rc;
+}

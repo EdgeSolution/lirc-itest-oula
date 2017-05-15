@@ -120,5 +120,6 @@ int send_packet(int fd, char *buf, uint8_t len);
 int set_ipaddr(char *ifname, char *ipaddr, char *netmask);
 int socket_init(int *sockfd, char *ipaddr, uint16_t portid);
 int wait_other_side_ready_eth(void);
+int set_if_up(char *ifname);
 
 #endif /* _COMMON_H_ */

@@ -6,6 +6,8 @@ LAST UPDATE 2017-03-20
 Versions in brackets () are not official releases, but testing versions.
 
 VERSION  DATE        CHANGES / DESCRIPTION
+0.12     2017-05-15  - Bring up NIC before ethernet test
+
 0.10     2017-03-20  - Support new sku of LiRC-3
                      - Add sync mechanism via ethernet port for CIM
                      - Add CCM/CIM and machine info to report
