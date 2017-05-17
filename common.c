@@ -30,6 +30,9 @@
 #define IPSTR_LEN   16
 #define UDP_PORT    9527
 
+static int check_link_status(char *ifname);
+static int set_if_up(char *ifname);
+
 void kill_process(char *name)
 {
     char kill[260];
@@ -619,6 +622,33 @@ int wait_other_side_ready_eth(void)
     return rc;
 }
 
+static int check_link_status(char *ifname)
+{
+    char buf[MAX_STR_LENGTH];
+    char cmd[MAX_STR_LENGTH];
+    FILE *read_fp;
+    int chars_read;
+    int ret = -1;
+
+    snprintf(cmd, sizeof(cmd), "ifconfig %s 2>/dev/null | grep RUNNING",
+            ifname);
+
+    memset(buf, 0, MAX_STR_LENGTH);
+
+    read_fp = popen(cmd, "r");
+    if (read_fp != NULL) {
+        chars_read = fread(buf, sizeof(chars_read), MAX_STR_LENGTH-1, read_fp);
+        if (chars_read > 0) {
+            ret = 1;
+        } else {
+            ret = 0;
+        }
+        pclose(read_fp);
+    }
+
+    return ret;
+}
+
 /******************************************************************************
  * NAME:
  *      set_if_up(char *ifname)
@@ -627,13 +657,13 @@ int wait_other_side_ready_eth(void)
  *      Bring up interface with given name
  *
  * PARAMETERS:
- *      None
+ *      ifname -ethernet interface name
  *
  * RETURN:
  *      0 - success
  *      other - fail
  ******************************************************************************/
-int set_if_up(char *ifname)
+static int set_if_up(char *ifname)
 {
     int rc = 0;
     char cmd[MAX_STR_LENGTH];
@@ -646,4 +676,38 @@ int set_if_up(char *ifname)
     rc = DIAG_SYS_RC(system(cmd));
 
     return rc;
+}
+
+/******************************************************************************
+ * NAME:
+ *      set_if_up_all(uint8_t num)
+ *
+ * DESCRIPTION:
+ *      Bring up interface with given name
+ *
+ * PARAMETERS:
+ *      num -max port
+ *
+ * RETURN:
+ *      NONE
+ ******************************************************************************/
+void set_if_up_all(const uint8_t num)
+{
+    char ifname[MAX_STR_LENGTH];
+    uint8_t i;
+
+    for (i = 0; i < num; i++) {
+        sprintf(ifname, "eth%d", i);
+
+        //Briing up interface
+        set_if_up(ifname);
+
+        //Wait for link up
+        while (1) {
+            if (check_link_status(ifname)) {
+                break;
+            }
+            sleep_ms(10);
+        }
+    }
 }

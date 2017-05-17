@@ -262,11 +262,6 @@ static void *nim_test(void *args)
 
 static void ether_port_init(uint32_t ethid, uint16_t portid)
 {
-    //Bring up interface
-    char ifname[MAX_STR_LENGTH];
-    sprintf(ifname, "eth%d", ethid);
-    set_if_up(ifname);
-
     memset(target_ip[ethid], 0, 20);
 
     if (g_machine == 'A') {

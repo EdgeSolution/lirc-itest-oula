@@ -76,6 +76,9 @@ int main(int argc, char **argv)
         return -1;
     }
 
+    //Bring up ethernet interface
+    set_if_up_all((g_dev_sku == SKU_CIM)?2:4);
+
     install_sig_handler();
 
     printf("Wait the other side to be ready...\n");
