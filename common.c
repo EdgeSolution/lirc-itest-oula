@@ -691,23 +691,32 @@ static int set_if_up(char *ifname)
  * RETURN:
  *      NONE
  ******************************************************************************/
+#define TIME_STEP 10
+#define TIME_OUT  3000
 void set_if_up_all(const uint8_t num)
 {
     char ifname[MAX_STR_LENGTH];
     uint8_t i;
+    uint32_t counter;
 
     for (i = 0; i < num; i++) {
         sprintf(ifname, "eth%d", i);
+        counter = 0;
 
         //Briing up interface
         set_if_up(ifname);
 
         //Wait for link up
         while (1) {
-            if (check_link_status(ifname)) {
+            if (check_link_status(ifname))
                 break;
-            }
-            sleep_ms(10);
+
+            sleep_ms(TIME_STEP);
+
+            counter += TIME_STEP;
+            //wait up to 3 seconds
+            if (counter > TIME_OUT)
+                break;
         }
     }
 }
