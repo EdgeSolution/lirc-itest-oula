@@ -66,6 +66,9 @@ int main(int argc, char **argv)
     char report_file[PATH_MAX];
     int report_fd;
 
+    //Bring up all NICs
+    set_if_up_all();
+
     if (0 != parse_params(argc, argv)) {
         print_usage(argv[0]);
         return -1;
@@ -78,7 +81,7 @@ int main(int argc, char **argv)
 
     //Bring up ethernet interface
     if (g_test_nim) {
-        set_if_up_all((g_dev_sku == SKU_CIM)?2:4);
+        wait_link_status_all((g_dev_sku == SKU_CIM)?2:4);
     }
 
     install_sig_handler();

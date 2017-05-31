@@ -692,8 +692,21 @@ static int set_if_up(char *ifname)
  *      NONE
  ******************************************************************************/
 #define TIME_STEP 10
-#define TIME_OUT  3000
-void set_if_up_all(const uint8_t num)
+#define TIME_OUT  5000
+void set_if_up_all(void)
+{
+    char ifname[MAX_STR_LENGTH];
+    uint8_t i;
+
+    for (i = 0; i < 4; i++) {
+        sprintf(ifname, "eth%d", i);
+
+        //Briing up interface
+        set_if_up(ifname);
+    }
+}
+
+void wait_link_status_all(const uint8_t num)
 {
     char ifname[MAX_STR_LENGTH];
     uint8_t i;
@@ -702,9 +715,6 @@ void set_if_up_all(const uint8_t num)
     for (i = 0; i < num; i++) {
         sprintf(ifname, "eth%d", i);
         counter = 0;
-
-        //Briing up interface
-        set_if_up(ifname);
 
         //Wait for link up
         while (1) {
@@ -715,8 +725,10 @@ void set_if_up_all(const uint8_t num)
 
             counter += TIME_STEP;
             //wait up to 3 seconds
-            if (counter > TIME_OUT)
+            if (counter > TIME_OUT) {
+                printf("%s link status not ready\n", ifname);
                 break;
+            }
         }
     }
 }
