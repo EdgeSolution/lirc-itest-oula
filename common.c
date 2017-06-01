@@ -691,8 +691,6 @@ static int set_if_up(char *ifname)
  * RETURN:
  *      NONE
  ******************************************************************************/
-#define TIME_STEP 10
-#define TIME_OUT  5000
 void set_if_up_all(void)
 {
     char ifname[MAX_STR_LENGTH];
@@ -706,6 +704,21 @@ void set_if_up_all(void)
     }
 }
 
+/******************************************************************************
+ * NAME:
+ *      wait_link_status_all(uint8_t num)
+ *
+ * DESCRIPTION:
+ *      wait for link up
+ *
+ * PARAMETERS:
+ *      num -max port
+ *
+ * RETURN:
+ *      NONE
+ ******************************************************************************/
+#define TIME_STEP 10
+#define TIME_OUT  3000
 void wait_link_status_all(const uint8_t num)
 {
     char ifname[MAX_STR_LENGTH];
