@@ -79,27 +79,31 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    //Bring up ethernet interface
+    //Wait for link up
     if (g_test_nim) {
         wait_link_status_all((g_dev_sku == SKU_CIM)?2:4);
     }
 
     install_sig_handler();
 
-    printf("Wait the other side to be ready...\n");
     if (g_dev_sku == SKU_CIM) {
-        if (!wait_other_side_ready_eth()) {
-            printf("The other side is not ready!\n");
-            return -1;
+        if (g_test_nim) {
+            printf("Wait the other side to be ready...\n");
+            if (!wait_other_side_ready_eth()) {
+                printf("The other side is not ready!\n");
+                return -1;
+            }
+            printf("OK\n");
         }
     } else {
+        printf("Wait the other side to be ready...\n");
         if (!wait_other_side_ready()) {
             printf("The other side is not ready!\n");
             return -1;
         }
+        printf("OK\n");
     }
 
-    printf("OK\n");
 
     time_t time_start = time(NULL);
     get_current_time(&tm_start);
