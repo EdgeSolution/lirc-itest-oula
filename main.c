@@ -26,7 +26,7 @@
 #include "main.h"
 
 /* Version of the program */
-#define PROGRAM_VERSION     "0.12"
+#define PROGRAM_VERSION     "0.13"
 
 static int g_runned_minute = 0;
 static int g_runned_second = 0;
