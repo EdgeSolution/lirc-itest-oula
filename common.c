@@ -738,10 +738,8 @@ void wait_link_status_all(const uint8_t num)
 
             counter += TIME_STEP;
             //wait up to 3 seconds
-            if (counter > TIME_OUT) {
-                printf("%s link status not ready\n", ifname);
+            if (counter > TIME_OUT)
                 break;
-            }
         }
     }
 }
