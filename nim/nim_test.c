@@ -73,7 +73,6 @@ static char target_ip[TESC_NUM][20];
 
 static uint32_t udp_cnt_send[TESC_NUM] = {0};
 static uint32_t udp_cnt_recv[TESC_NUM] = {0};
-static uint32_t timeout_cnt[TESC_NUM] = {0};
 static uint32_t timeout_rst_cnt[TESC_NUM] = {0};
 
 static uint32_t tesc_err_no[TESC_NUM] = {0};
@@ -126,9 +125,16 @@ static void nim_print_status()
         if (!g_nim_test_eth[i]) {
             continue;
         }
-        printf("eth%-*u SENT(PKT):%-*u LOST(PKT):%-*u ERR(PKT):%-*u\n",
-            COL_FIX_WIDTH-3, i, COL_FIX_WIDTH-5, udp_cnt_send[i],
-            COL_FIX_WIDTH-5, tesc_lost_no[i], COL_FIX_WIDTH-4, tesc_err_no[i]);
+
+        if (timeout_rst_cnt[i] >= MAX_RETRY) {
+            printf("eth%-*u SENT(PKT):%-*u TIMEOUT(%-*us)\n",
+            COL_FIX_WIDTH-3, i, COL_FIX_WIDTH-10, udp_cnt_send[i],
+            COL_FIX_WIDTH-8, timeout_rst_cnt[i] * 1);
+        } else {
+            printf("eth%-*u SENT(PKT):%-*u LOST(PKT):%-*u ERR(PKT):%-*u\n",
+            COL_FIX_WIDTH-3, i, COL_FIX_WIDTH-10, udp_cnt_send[i],
+            COL_FIX_WIDTH-10, tesc_lost_no[i], COL_FIX_WIDTH-9, tesc_err_no[i]);
+        }
     }
 }
 
@@ -180,7 +186,6 @@ static void *nim_test(void *args)
     /* Initial global variable for statistics */
     memset(udp_cnt_send, 0, TESC_NUM * sizeof(uint32_t));
     memset(udp_cnt_recv, 0, TESC_NUM * sizeof(uint32_t));
-    memset(timeout_cnt, 0, TESC_NUM * sizeof(uint32_t));
     memset(timeout_rst_cnt, 0, TESC_NUM * sizeof(uint32_t));
     memset(tesc_err_no, 0, TESC_NUM * sizeof(uint32_t));
     memset(tesc_lost_no, 0, TESC_NUM * sizeof(uint32_t));
@@ -578,7 +583,6 @@ static int32_t udp_recv(int sockfd, uint16_t portid, uint8_t *buff, int32_t leng
             log_print(log_fd, "udp_recv error: %d!\n", ethid);
         }
     } else if (tv == 1) {    /* select timeout */
-        timeout_cnt[ethid]++;
         timeout_rst_cnt[ethid]++;
     }
 
