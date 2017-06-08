@@ -317,12 +317,9 @@ static int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
         /*timeout*/
         if (retry_count > MAX_RETRY_COUNT) {
             if(g_running) {
-                log_print(log_fd,"%s check PACKET HEAD timeout when received %d packet\n", port_list[list_id], _uart_array[list_id].recv_pack_count);
-                /*_uart_array[list_id].target_send_pack_num++;*//*timeout so estimate the target_send_pack_num+1*/
-                /* _rate[list_id] =
-                       (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num; test_mod_sim.pass = 0;
-                */
-                /*_loss_pack_count[list_id] = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;*/
+                //log_print(log_fd,"%s check PACKET HEAD timeout when received %d packet\n", port_list[list_id], _uart_array[list_id].recv_pack_count);
+                DBG_PRINT("%s check PACKET HEAD timeout when received %d packet\n", port_list[list_id], _uart_array[list_id].recv_pack_count);
+
                 test_mod_sim.pass = 0;
                 retry_count = 0;
             }
@@ -351,20 +348,18 @@ static int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
         } else if (ret == 0) {
             if (++retry_count > MAX_RETRY_COUNT) {
                 if (g_running) {
-                    /*_uart_array[list_id].target_send_pack_num++;*//*timeout so estimate the target_send_pack_num+1*/
-                    /*_rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num;*/
-                    /*_loss_pack_count[list_id] = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;*/
                     log_print(log_fd,"%s receive %d packet timeout\n", port_list[list_id], _uart_array[list_id].recv_pack_count);
+                    _uart_array[list_id].timeout_count += 3;
                     test_mod_sim.pass = 0;
                 }
                 break;
             } else {
-               /* sleep(1);*//*Delete this sleep, because read function do not wait  write function even if read nothing*/
                 DBG_PRINT("Retry:%d\n", retry_count);
             }
         } else {
             bytes += ret;
             len = len - ret;
+            _uart_array[list_id].timeout_count = 0;
         }
     } /* end while (len > 0) */
 
@@ -423,27 +418,9 @@ static int analysis_packet(uint8_t *buff, int list_id)
             test_mod_sim.pass = 0;
         }
 
-        /*
-         * check HEAD
-         */
-
-        /*
-         * check data
-         */
-
-        /*
-         * check uart_id
-         */
-        //to do....
-
-        /*
-         * check packet number
-         */
-        //to do....
         return -1;
     } else {
         _uart_array[list_id].target_send_pack_num = recv_packet->pack_num;
-        /* _rate[list_id] = (float)(_uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count) / _uart_array[list_id].target_send_pack_num;*/
         tmp = _uart_array[list_id].target_send_pack_num - _uart_array[list_id].recv_pack_count;
         if (tmp > 0) {
             test_mod_sim.pass = 0;
@@ -509,9 +486,6 @@ static void *port_recv_event(void *args)
             if (g_running) {
                 test_mod_sim.pass = 0;
             }
-            //to do
-            //break while(1)
-            //pthread_exit((void *)-1);
         } else {
             if (_uart_array[list_id].recv_pack_count % 1000 == 0) {
                 log_print(log_fd,"%s received %d packet successfully\n",
@@ -789,18 +763,18 @@ static void sim_print_status(void)
     printf("%-*s %s\n",
         COL_FIX_WIDTH, "SIM", (test_mod_sim.pass) ? STR_MOD_OK : STR_MOD_ERROR);
     for (i=0; i<port_num; i++) {
-        printf("%-*s SENT(PKT):%-*u LOST(PKT):%-*u ERR(PKT):%-*u\n",
-            COL_FIX_WIDTH, port_list[i],
-            COL_FIX_WIDTH-5, _uart_array[i].send_pack_count,
-            COL_FIX_WIDTH-5, _loss_pack_count[i],
-            COL_FIX_WIDTH-4, _uart_array[i].err_count);
+        if (_uart_array[i].timeout_count > 0) {
+            printf("%-*s SENT(PKT):%-*u TIMEOUT(%-*us)",
+                COL_FIX_WIDTH, port_list[i],
+                COL_FIX_WIDTH-10, _uart_array[i].send_pack_count,
+                COL_FIX_WIDTH-8, _uart_array[i].timeout_count * 2);
+        }
+        else { 
+            printf("%-*s SENT(PKT):%-*u LOST(PKT):%-*u ERR(PKT):%-*u\n",
+                COL_FIX_WIDTH, port_list[i],
+                COL_FIX_WIDTH-10, _uart_array[i].send_pack_count,
+                COL_FIX_WIDTH-10, _loss_pack_count[i],
+                COL_FIX_WIDTH-9, _uart_array[i].err_count);
+        }
     }
-
-    //for (i=0; i<port_num; i++) {
-    //    printf("%s test result:\n", port_list[i]);
-    //    printf("                \\-- Packet loss rate = %.2f\n", _rate[i]);
-    //    printf("                \\-- Error packet = %d\n",(uint32_t)_uart_array[i].err_count);
-    //    printf("                \\-- sent %d packet\n", (uint32_t)_uart_array[i].send_pack_count);
-    //    printf("                \\-- Recived %d packet\n",(uint32_t)_uart_array[i].recv_pack_count);
-    //}
 }
