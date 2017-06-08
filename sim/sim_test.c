@@ -35,7 +35,7 @@
 
 #define BUFF_SIZE 265
 
- /*Uart head 0xca5c051111 define*/
+/*Uart head 0xca5c051111 define*/
 static const uint8_t head[5] = {
     0xca,
     0x5c,
@@ -110,13 +110,14 @@ struct uart_count_list {
     uint32_t recv_pack_count;//global variable, count received packet
     uint32_t send_pack_count;//global variable, count send packet
     uint32_t target_send_pack_num;//Record target amount of packets sent
+    uint32_t timeout_count;
 }__attribute__ ((packed));
 
 static struct uart_count_list _uart_array[16];//init uart_count
 //static float _rate[16];
 static uint32_t _loss_pack_count[16];
 
-static int read_pack_head_1_byte(int fd, uint8_t *buff);
+static int read_pack_head_1_byte(int fd, uint8_t *buff, int list_id);
 
 static void creat_uart_pack(struct uart_package *uart_pack, uint32_t pack_num, uint8_t uart_id);
 static int send_uart_packet(int fd, struct uart_package * packet_ptr, int len);
@@ -245,10 +246,11 @@ static int send_uart_packet(int fd, struct uart_package * packet_ptr, int len)
  * PARAMETERS:
  *      fd:file point
  *      buff:save data
+ *      list_id:array id number
  * Return:
  *       read status
  */
-static int read_pack_head_1_byte(int fd, uint8_t *buff)
+static int read_pack_head_1_byte(int fd, uint8_t *buff, int list_id)
 {
     int ret = 0;
     do {
@@ -259,8 +261,11 @@ static int read_pack_head_1_byte(int fd, uint8_t *buff)
             break;
         } else if (ret == 0) {
             buff[0] = 0;/*if read anything, init buff[0] = 0*/
+            _uart_array[list_id].timeout_count++;
             DBG_PRINT("received timeout\n");
             break;
+        } else if (ret == 1) {
+            _uart_array[list_id].timeout_count = 0;
         }
     } while (ret != 1);
     return ret;
@@ -291,21 +296,23 @@ static int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
     log_fd = test_mod_sim.log_fd;
 
     /*matching head*/
-    ret = read_pack_head_1_byte(fd, buff + 0);
+    ret = read_pack_head_1_byte(fd, buff + 0, list_id);
+
     while (i < 5) {
         /*check head[i]*/
         if (buff[i] == head[i] || buff[i] == stop_sign[i]) {/*start if*/
             i++;
 
             if (i < 5) {
-                ret = read_pack_head_1_byte(fd, buff + i);
+                ret = read_pack_head_1_byte(fd, buff + i, list_id);
             }
         } else {
-            log_print(log_fd, "%s received HEAD%d data = %02x\n", port_list[list_id], i, buff[i]);
+            //log_print(log_fd, "%s received HEAD%d data = %02x\n", port_list[list_id], i, buff[i]);
+            DBG_PRINT("%s received HEAD%d data = %02x\n", port_list[list_id], i, buff[i]);
             if (i == 0) {
                 retry_count++;
                 if (retry_count <= MAX_RETRY_COUNT) {/*if timeout,not read again to avoid data loss*/
-                    ret = read_pack_head_1_byte(fd, buff + 0);
+                    ret = read_pack_head_1_byte(fd, buff + 0, list_id);
                 }
             } else {
                 retry_count++;
