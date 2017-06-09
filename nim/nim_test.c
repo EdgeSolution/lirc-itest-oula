@@ -127,9 +127,9 @@ static void nim_print_status()
         }
 
         if (timeout_rst_cnt[i] >= MAX_RETRY) {
-            printf("eth%-*u SENT(PKT):%-*u TIMEOUT(%-*us)\n",
+            printf("eth%-*u SENT(PKT):%-*u TIMEOUT(%us)\n",
             COL_FIX_WIDTH-3, i, COL_FIX_WIDTH-10, udp_cnt_send[i],
-            COL_FIX_WIDTH-8, timeout_rst_cnt[i] * 1);
+            timeout_rst_cnt[i] * 1);
         } else {
             printf("eth%-*u SENT(PKT):%-*u LOST(PKT):%-*u ERR(PKT):%-*u\n",
             COL_FIX_WIDTH-3, i, COL_FIX_WIDTH-10, udp_cnt_send[i],

@@ -771,12 +771,11 @@ static void sim_print_status(void)
         COL_FIX_WIDTH, "SIM", (test_mod_sim.pass) ? STR_MOD_OK : STR_MOD_ERROR);
     for (i=0; i<port_num; i++) {
         if (_uart_array[i].timeout_count > 0) {
-            printf("%-*s SENT(PKT):%-*u TIMEOUT(%-*us)",
+            printf("%-*s SENT(PKT):%-*u TIMEOUT(%us)\n",
                 COL_FIX_WIDTH, port_list[i],
                 COL_FIX_WIDTH-10, _uart_array[i].send_pack_count,
-                COL_FIX_WIDTH-8, _uart_array[i].timeout_count * 2);
-        }
-        else { 
+                _uart_array[i].timeout_count * 2);
+        } else {
             printf("%-*s SENT(PKT):%-*u LOST(PKT):%-*u ERR(PKT):%-*u\n",
                 COL_FIX_WIDTH, port_list[i],
                 COL_FIX_WIDTH-10, _uart_array[i].send_pack_count,
