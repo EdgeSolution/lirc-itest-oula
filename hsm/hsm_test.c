@@ -59,6 +59,7 @@ test_mod_t test_mod_hsm = {
 
 #define WAIT_IN_MS          500
 #define HOLD_INTERVAL       60
+#define WAIT_TIMEOUT        5
 
 #define SENDING_COUNT       2
 
@@ -408,6 +409,7 @@ static int hsm_send_switch(int fd)
 static char hsm_wait_switch(int fd)
 {
     char buf[64];
+    uint8_t cnt = 0;
 
     while (g_running) {
         memset(buf, 0, sizeof(buf));
@@ -424,6 +426,13 @@ static char hsm_wait_switch(int fd)
                 g_running = 0;
                 return EXIT_SYNC_B;
             }
+        } else {
+            cnt++;
+            if (cnt > WAIT_TIMEOUT) {
+                log_print(test_mod_hsm.log_fd, "Wait for switch signal timeout\n");
+                test_mod_hsm.pass = 0;
+                break;
+            }
         }
     }
 
@@ -433,6 +442,7 @@ static char hsm_wait_switch(int fd)
 static void wait_for_cts_change(int fd)
 {
     uint8_t cts;
+    uint8_t cnt = 0;
 
     g_cur_cts = tc_get_cts_casco(fd);
 
@@ -443,6 +453,13 @@ static void wait_for_cts_change(int fd)
         hsm_send_switch(fd);
         sleep_ms(WAIT_IN_MS);
         cts = tc_get_cts_casco(fd);
+
+        cnt++;
+        if (cnt > WAIT_TIMEOUT) {
+            log_print(test_mod_hsm.log_fd, "Wait for cts change timeout\n");
+            test_mod_hsm.pass = 0;
+            break;
+        }
     } while(cts == g_cur_cts && g_running);
 
     g_cur_cts = cts;
