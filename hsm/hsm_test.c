@@ -92,6 +92,13 @@ static void hsm_print_status()
 
 static void hsm_print_result(int fd)
 {
+    //Fix unexpect fail counter increase when break test
+    if (switch_fail_cntr == 1)
+        switch_fail_cntr--;
+
+    if (switch_fail_cntr || hold_fail_cntr)
+        test_mod_hsm.pass = 0;
+
     if (test_mod_hsm.pass) {
         write_file(fd, "HSM: PASS. test=%lu\n", test_counter);
     } else {
@@ -365,14 +372,12 @@ static int tc_get_cts_casco(int fd)
     int nReg = 0x06;
 
     if (ioperm (m_nBasePort, 7, 1)) {
-        //perror ("ioperm");
         return -2;
     }
 
     reg_val = inb (m_nBasePort + nReg);
 
     if (ioperm (m_nBasePort, 7, 0)) {
-        //perror ("ioperm");
         return -2;
     }
 
@@ -474,12 +479,10 @@ static void check_cts_a(int log_fd, int fd)
     } else if (g_cur_rts && !g_cur_cts) { //rts=1 cts=0
         log_print(log_fd, "RTS=%d, CTS=%d, A is SLAVE. ERROR\n",
                 g_cur_rts, g_cur_cts);
-        test_mod_hsm.pass = 0;
         switch_fail_cntr++;
     } else if (!g_cur_rts && g_cur_cts) { //rts=0 cts=1
         log_print(log_fd, "RTS=%d, CTS=%d, A is HOST. ERROR\n",
                 g_cur_rts, g_cur_cts);
-        test_mod_hsm.pass = 0;
         switch_fail_cntr++;
     } else if (!g_cur_rts && !g_cur_cts) { //rts=0 cts=0
         log_print(log_fd, "RTS=%d, CTS=%d, A is SLAVE. OK\n",
@@ -495,7 +498,6 @@ static void check_cts_b(int log_fd, int fd)
     if (g_cur_rts && g_cur_cts) { //rts=1 cts=1
         log_print(log_fd, "RTS=%d, CTS=%d, B is SLAVE. ERROR\n",
                 g_cur_rts, g_cur_cts);
-        test_mod_hsm.pass = 0;
         switch_fail_cntr++;
     } else if (g_cur_rts && !g_cur_cts) { //rts=1 cts=0
         log_print(log_fd, "RTS=%d, CTS=%d, B is HOST. OK\n",
@@ -506,7 +508,6 @@ static void check_cts_b(int log_fd, int fd)
     } else if (!g_cur_rts && !g_cur_cts) { //rts=0 cts=0
         log_print(log_fd, "RTS=%d, CTS=%d, B is HOST. ERROR\n",
                 g_cur_rts, g_cur_cts);
-        test_mod_hsm.pass = 0;
         switch_fail_cntr++;
     } else {
         log_print(log_fd, "Shouldn't be here....\n");
