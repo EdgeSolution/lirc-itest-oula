@@ -95,8 +95,9 @@ static void hsm_print_result(int fd)
     if (test_mod_hsm.pass) {
         write_file(fd, "HSM: PASS. test=%lu\n", test_counter);
     } else {
-        write_file(fd, "HSM: FAIL. test=%lu, switch fail=%lu, hold fail=%lu\n",
-                test_counter, switch_fail_cntr, hold_fail_cntr);
+        write_file(fd, "HSM: FAIL. test=%lu, switch fail=%lu, hold fail=%lu%s\n",
+                test_counter, switch_fail_cntr, hold_fail_cntr,
+                (switch_fail_cntr==0)?" Timeout":"");
     }
 }
 
