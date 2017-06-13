@@ -81,7 +81,11 @@ static void msm_print_status()
 static void msm_print_result(int fd)
 {
     if (test_mod_msm.pass) {
-        write_file(fd, "MSM: PASS. Test count:%lu\n", counter_test);
+        if (g_hsm_switching) {
+            write_file(fd, "MSM: Not started\n");
+        } else {
+            write_file(fd, "MSM: PASS. Test count:%lu\n", counter_test);
+        }
     } else {
         write_file(fd, "MSM: FAIL. Test count:%lu;  Failed:%lu;\n",
             counter_test, counter_fail);

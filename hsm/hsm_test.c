@@ -330,10 +330,10 @@ static void *hsm_test(void *args)
             }
             wait_for_cpld_stable(log_fd, fd);
         } while (tc_get_cts_casco(fd) != 0 && g_running);
-    }
 
-    //Starting SIM/MSM test
-    g_hsm_switching = FALSE;
+        //Starting SIM/MSM test
+        g_hsm_switching = FALSE;
+    }
 
     g_cur_rts = TRUE;
     hsm_test_hold(fd, log_fd);

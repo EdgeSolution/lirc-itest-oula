@@ -739,7 +739,11 @@ static void *sim_test(void *args)
 static void sim_print_result(int fd)
 {
     if (test_mod_sim.pass) {
-        write_file(fd, "SIM: PASS\n");
+        if (g_hsm_switching) {
+            write_file(fd, "SIM: Not Started\n");
+        } else {
+            write_file(fd, "SIM: PASS\n");
+        }
     } else {
         write_file(fd, "SIM: FAIL\n");
     }
