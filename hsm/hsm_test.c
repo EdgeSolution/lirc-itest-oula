@@ -432,13 +432,13 @@ static char hsm_wait_switch(int fd)
                 g_running = 0;
                 return EXIT_SYNC_B;
             }
-        } else {
-            cnt++;
-            if (cnt > WAIT_TIMEOUT) {
-                log_print(test_mod_hsm.log_fd, "Wait for switch signal timeout\n");
-                test_mod_hsm.pass = 0;
-                break;
-            }
+        }
+
+        cnt++;
+        if (cnt > WAIT_TIMEOUT) {
+            log_print(test_mod_hsm.log_fd, "Wait for switch signal timeout\n");
+            test_mod_hsm.pass = 0;
+            break;
         }
     }
 
