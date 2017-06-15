@@ -125,8 +125,7 @@ int main(int argc, char **argv)
     /* Set test duration. */
     set_timeout(g_duration*60);
 
-    //IF msm test wasn't enabled, start quit sync in main thread
-    if ((!g_test_msm || !g_test_hsm) && g_dev_sku != SKU_CIM) {
+    if (g_dev_sku != SKU_CIM) {
         receive_exit_sync();
     }
 

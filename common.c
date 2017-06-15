@@ -97,9 +97,10 @@ int ser_open(char *dev)
  ******************************************************************************/
 static int send_sync_data(int fd, char snt_char)
 {
-    char buf[2] = {snt_char, 0};
+    char buf[MAX_STR_LENGTH] = {snt_char, 0};
+    memset(buf, snt_char, sizeof(buf) - 1);
 
-    int size = write(fd, buf, 1);
+    int size = write(fd, buf, sizeof(buf));
     if (size > 0) {
         return 1;
     } else {
@@ -180,6 +181,8 @@ int wait_other_side_ready(void)
     int rc = 0;
     char snt_char, rcv_char;
 
+    g_syncing = 1;
+
     if (g_machine == 'A') {
         snt_char = DATA_SYNC_A;
         rcv_char = DATA_SYNC_B;
@@ -213,8 +216,9 @@ int wait_other_side_ready(void)
         }
     }
 
+    g_syncing = 0;
+
     close(fd);
-    sleep(3);
 
     return rc;
 }
@@ -319,6 +323,16 @@ static void *receive_exit_data(void *args)
     }
 
     while (g_running) {
+        if (g_syncing) {
+            sleep_ms(100);
+            continue;
+        }
+
+        //If has msm test and hsm switch test finished, then break
+        if (g_test_msm && !g_hsm_switching) {
+            break;
+        }
+
         memset(buf, 0, sizeof(buf));
         int size = read(fd, buf, sizeof(buf)-1);
         if (size > 0) {
@@ -544,7 +558,7 @@ static int recv_sync_data_eth(int sockfd, char rcv_char, char snt_char)
 
 /******************************************************************************
  * NAME:
- *      wait_other_side_ready
+ *      wait_other_side_ready_eth_eth
  *
  * DESCRIPTION:
  *      Wait the test program on the other side(machine) to be ready.

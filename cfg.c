@@ -24,6 +24,10 @@
 
 enum DEV_SKU g_dev_sku = SKU_CCM;
 
+/* Syncing flag: When this flag is 1, everything operation to the ttyS1 should
+ * be stopped, except the syncing routine*/
+uint8_t g_syncing = 0;
+
 /* Tester */
 char g_tester[MAX_STR_LENGTH];
 

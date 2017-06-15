@@ -59,7 +59,7 @@ test_mod_t test_mod_hsm = {
 
 #define WAIT_IN_MS          500
 #define HOLD_INTERVAL       60
-#define WAIT_TIMEOUT        5
+#define WAIT_TIMEOUT        3
 
 #define SENDING_COUNT       2
 
@@ -331,6 +331,7 @@ static void *hsm_test(void *args)
 
     //Switch host to B.
     if (g_running) {
+        int cnt = 0;
         wait_for_cpld_stable(log_fd, fd);
         do {
             if (g_machine == 'A') {
@@ -339,9 +340,24 @@ static void *hsm_test(void *args)
                 tc_set_rts_casco(fd, TRUE);
             }
             wait_for_cpld_stable(log_fd, fd);
-        } while (tc_get_cts_casco(fd) != 0 && g_running);
 
-        //Starting SIM/MSM test
+            cnt++;
+            if (cnt > WAIT_TIMEOUT) {
+                log_print(log_fd, "Switch host to B fail\n\n");
+                timeout_cntr++;
+                test_mod_hsm.pass = 0;
+                break;
+            }
+
+        } while (tc_get_cts_casco(fd) != 0 && g_running);
+    }
+
+    if (g_running) {
+        wait_other_side_ready();
+    }
+
+    //Starting SIM/MSM test
+    if (g_running) {
         g_hsm_switching = FALSE;
     }
 

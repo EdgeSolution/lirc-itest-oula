@@ -20,6 +20,8 @@
 #include "log.h"
 #include "cfg.h"
 
+extern uint8_t g_syncing;
+
 
 /* Global variables **/
 extern char g_tester[];
