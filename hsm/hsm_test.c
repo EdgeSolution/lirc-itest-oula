@@ -70,6 +70,7 @@ static char g_packet[PACKET_SIZE];
 static uint32_t test_counter = 0;
 static uint32_t switch_fail_cntr = 0;
 static uint32_t hold_fail_cntr = 0;
+static uint32_t timeout_cntr = 0;
 
 static uint8_t g_cur_cts;
 static uint8_t g_cur_rts;
@@ -104,7 +105,7 @@ static void hsm_print_result(int fd)
     } else {
         write_file(fd, "HSM: FAIL. test=%lu, switch fail=%lu, hold fail=%lu%s\n",
                 test_counter, switch_fail_cntr, hold_fail_cntr,
-                (switch_fail_cntr==0)?" Timeout":"");
+                timeout_cntr?" Timeout":"");
     }
 }
 
@@ -437,6 +438,7 @@ static char hsm_wait_switch(int fd)
         cnt++;
         if (cnt > WAIT_TIMEOUT) {
             log_print(test_mod_hsm.log_fd, "Wait for switch signal timeout\n");
+            timeout_cntr++;
             test_mod_hsm.pass = 0;
             break;
         }
@@ -464,6 +466,7 @@ static void wait_for_cts_change(int fd)
         if (cnt > WAIT_TIMEOUT) {
             log_print(test_mod_hsm.log_fd, "Wait for cts change timeout\n");
             test_mod_hsm.pass = 0;
+            timeout_cntr++;
             break;
         }
     } while(cts == g_cur_cts && g_running);
