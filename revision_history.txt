@@ -1,11 +1,19 @@
 LIRC-ITEST REVISION HISTORY
 
-LAST UPDATE 2017-06-01
+LAST UPDATE 2017-06-22
 
 
 Versions in brackets () are not official releases, but testing versions.
 
 VERSION  DATE        CHANGES / DESCRIPTION
+0.14     2017-06-22  - [nim] Show timeout when receive timeout
+                     - [sim] Show timeout when receive timeout
+                     - [sim] If test not start, display "not started" in result
+                     - [msm] If test not start, display "not started" in result
+                     - [hsm] Fix wrong result issue when hsm switch hang
+                     - [hsm] Add timeout in hsm result
+                     - [hsm] Add sync after hsm switch for SIM and MSM
+
 (0.13)   2017-06-01  - Add timeout for link status check function.
 
 0.12     2017-05-15  - Bring up NIC before ethernet test
