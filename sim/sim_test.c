@@ -203,7 +203,7 @@ static int send_uart_packet(int fd, struct uart_package * packet_ptr, int len)
         DBG_PRINT("Have no packet sent\n");
         return -1;
     }
-    memcpy(buff + 0, packet_ptr->pack_head, sizeof(packet_ptr->pack_head));
+    memcpy(buff, packet_ptr->pack_head, sizeof(packet_ptr->pack_head));
 
     buff[5] = packet_ptr->uart_id;
 
@@ -296,7 +296,7 @@ static int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
     log_fd = test_mod_sim.log_fd;
 
     /*matching head*/
-    ret = read_pack_head_1_byte(fd, buff + 0, list_id);
+    read_pack_head_1_byte(fd, buff, list_id);
 
     while (i < 5) {
         /*check head[i]*/
@@ -304,7 +304,7 @@ static int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
             i++;
 
             if (i < 5) {
-                ret = read_pack_head_1_byte(fd, buff + i, list_id);
+                read_pack_head_1_byte(fd, buff + i, list_id);
             }
         } else {
             //log_print(log_fd, "%s received HEAD%d data = %02x\n", port_list[list_id], i, buff[i]);
@@ -312,7 +312,7 @@ static int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
             if (i == 0) {
                 retry_count++;
                 if (retry_count <= MAX_RETRY_COUNT) {/*if timeout,not read again to avoid data loss*/
-                    ret = read_pack_head_1_byte(fd, buff + 0, list_id);
+                    read_pack_head_1_byte(fd, buff, list_id);
                 }
             } else {
                 retry_count++;
@@ -328,7 +328,6 @@ static int recv_uart_packet(int fd, uint8_t *buff, int len, int list_id)
                 DBG_PRINT("%s check PACKET HEAD timeout when received %d packet\n", port_list[list_id], _uart_array[list_id].recv_pack_count);
 
                 test_mod_sim.pass = 0;
-                retry_count = 0;
             }
             return bytes;
         }
