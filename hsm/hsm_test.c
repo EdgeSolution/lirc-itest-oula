@@ -36,7 +36,7 @@ static void tc_set_rts_casco(int fd, char enabled);
 static int tc_get_cts_casco(int fd);
 static void hsm_send(int fd, int log_fd);
 static int hsm_send_switch(int fd);
-static char hsm_wait_switch(int fd);
+static uint8_t hsm_wait_switch(int fd);
 static void wait_for_cts_change(int fd);
 static void check_cts_a(int log_fd, int fd);
 static void check_cts_b(int log_fd, int fd);
@@ -133,7 +133,7 @@ static void wait_for_cpld_stable(int log_fd, int fd)
 static void hsm_test_switch(int fd, int log_fd)
 {
     uint64_t test_loop = g_hsm_test_loop;
-    char pattern;
+    uint8_t pattern;
 
     if (!g_running) {
         return;
@@ -429,7 +429,7 @@ static int hsm_send_switch(int fd)
     return 0;
 }
 
-static char hsm_wait_switch(int fd)
+static uint8_t hsm_wait_switch(int fd)
 {
     char buf[64];
     uint8_t cnt = 0;
