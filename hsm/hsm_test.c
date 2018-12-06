@@ -38,8 +38,8 @@ static void hsm_send(int fd, int log_fd);
 static int hsm_send_switch(int fd);
 static uint8_t hsm_wait_switch(int fd);
 static void wait_for_cts_change(int fd);
-static void check_cts_a(int log_fd, int fd);
-static void check_cts_b(int log_fd, int fd);
+static void check_cts_a(int log_fd);
+static void check_cts_b(int log_fd);
 
 test_mod_t test_mod_hsm = {
     .run = 1,
@@ -168,7 +168,7 @@ static void hsm_test_switch(int fd, int log_fd)
 
             if (g_cur_rts) {
                 wait_for_cts_change(fd);
-                check_cts_a(log_fd, fd);
+                check_cts_a(log_fd);
             }
 
             pattern = hsm_wait_switch(fd);
@@ -212,7 +212,7 @@ static void hsm_test_switch(int fd, int log_fd)
 
             if (g_cur_rts) {
                 wait_for_cts_change(fd);
-                check_cts_b(log_fd, fd);
+                check_cts_b(log_fd);
             }
 
             test_loop--;
@@ -490,7 +490,7 @@ static void wait_for_cts_change(int fd)
     g_cur_cts = cts;
 }
 
-static void check_cts_a(int log_fd, int fd)
+static void check_cts_a(int log_fd)
 {
     if (g_cur_rts && g_cur_cts) { //rts=1 cts=1
         log_print(log_fd, "RTS=%d, CTS=%d, A is HOST. OK\n",
@@ -512,7 +512,7 @@ static void check_cts_a(int log_fd, int fd)
     }
 }
 
-static void check_cts_b(int log_fd, int fd)
+static void check_cts_b(int log_fd)
 {
     if (g_cur_rts && g_cur_cts) { //rts=1 cts=1
         log_print(log_fd, "RTS=%d, CTS=%d, B is SLAVE. ERROR\n",
