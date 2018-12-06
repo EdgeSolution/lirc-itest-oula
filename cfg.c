@@ -9,6 +9,8 @@
  * REVISION(MM/DD/YYYY):
  *     07/25/2016  Shengkui Leng (shengkui.leng@advantech.com.cn)
  *     - Initial version
+ *     12/06/2018  Jia Sui (jia.sui@advantech.com.cn)
+ *     - Add HSM test for CIM
  *
  ******************************************************************************/
 #include <stdio.h>
@@ -728,10 +730,11 @@ int get_parameter(void)
         if (0 != input_product_sn(g_product_sn, sizeof(g_product_sn)))
             return -1;
 
+        /* Get HSM test loop */
+        if (0 != input_hsm_loop(&g_hsm_test_loop))
+            return -1;
+
         if (g_dev_sku != SKU_CIM) {
-            /* Get HSM test loop */
-            if (0 != input_hsm_loop(&g_hsm_test_loop))
-                return -1;
 
             //SIM
             /* Get the number of SIM board && check it */
@@ -799,17 +802,17 @@ int get_parameter(void)
             }
         }
 
-        if (g_dev_sku != SKU_CIM) {
-            //HSM
-            g_test_hsm = user_ack("Test HSM?");
-            if(g_test_hsm == 1) {
-                if (0 != input_board_sn("HSM", g_hsm_sn, sizeof(g_hsm_sn)))
-                    return -1;
+        //HSM
+        g_test_hsm = user_ack("Test HSM?");
+        if(g_test_hsm == 1) {
+            if (0 != input_board_sn("HSM", g_hsm_sn, sizeof(g_hsm_sn)))
+                return -1;
 
-                /* Get HSM test loop */
-                if (0 != input_hsm_loop(&g_hsm_test_loop))
-                    return -1;
-            }
+            /* Get HSM test loop */
+            if (0 != input_hsm_loop(&g_hsm_test_loop))
+                return -1;
+
+            g_hsm_switching = 1;
         }
 
         if (g_dev_sku == SKU_CCM_MSM) {
@@ -827,10 +830,6 @@ int get_parameter(void)
         if (g_test_sim && g_board_num == 2) {
             g_test_cpu = 0;
             g_test_mem = 0;
-        }
-
-        if (g_test_hsm) {
-            g_hsm_switching = 1;
         }
     }
 
@@ -899,9 +898,8 @@ int parse_params(int argc, char **argv)
         case SKU_CCM: //without MSM
             g_test_msm = 0;
             break;
-        case SKU_CIM: //without SIM, NIM, HSM, MSM
+        case SKU_CIM: //without SIM, NIM, MSM
             g_test_sim = 0;
-            g_test_hsm = 0;
             g_test_msm = 0;
             break;
         case SKU_CCM_MSM:
