@@ -123,7 +123,8 @@ static void hsm_print_result(int fd)
 
     //Print HSM test result
     if (test_mod_hsm.pass) {
-        write_file(fd, "HSM: PASS. test=%lu\n", test_counter);
+        write_file(fd, "HSM: PASS. test=%lu\n",
+                (g_dev_sku == SKU_CIM)?test_counter/2:test_counter);
     } else {
         if (g_dev_sku == SKU_CIM) {
             write_file(fd, "HSM: FAIL. test=%lu\n", test_counter/2);
@@ -143,6 +144,7 @@ static void wait_for_cpld_stable(int log_fd, int fd)
         sleep_ms(WAIT_IN_MS);
     }
 }
+
 /*
  * hsm_test_switch()
  * In this test host will switch between A and B
@@ -584,14 +586,16 @@ static void hsm_test_cim(int fd, int log_fd)
     log_print(log_fd, "Start HSM switch test: will last %lu loop\n", g_hsm_test_loop);
 
     old_cts = tc_get_cts_casco(fd);
+    log_print(log_fd, "CTS: %u\n", g_cur_cts);
 
     do {
         g_cur_cts = tc_get_cts_casco(fd);
-        if (old_cts != g_cur_cts) {
-            log_print(log_fd, "CTS status changed from %d to %d\n",
-                    old_cts, g_cur_cts);
+        log_print(log_fd, "CTS: %u\n", g_cur_cts);
 
+        if (old_cts != g_cur_cts) {
             test_counter++;
+            log_print(log_fd, "Switch Counter: %lu, CTS status changed from %d to %d\n",
+                    (test_counter+1)/2, old_cts, g_cur_cts);
             old_cts = g_cur_cts;
         }
 
