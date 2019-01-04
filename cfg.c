@@ -244,8 +244,9 @@ static int is_product_sn_valid(char *psn)
  * DESCRIPTION:
  *      Check if the board SN valid or not
  *      The format of the board SN:
- *          AKOXNNNNNN
- *      AKO: "AKO"
+ *          AKCXNNNNNN
+ *      AK: "AK"
+ *      C: Uppercase letter
  *      X: hexadecimal digit number
  *      NNNNNN: digit number
  *
@@ -268,8 +269,13 @@ static int is_board_sn_valid(char *bsn)
         return 0;
     }
 
-    /* Check AKO */
-    if (strncasecmp(bsn, "AKO", 3) != 0) {
+    /* Check AK */
+    if (strncasecmp(bsn, "AK", 2) != 0) {
+        return 0;
+    }
+
+    /* Check if C is uppercase letter */
+    if (!isupper(bsn[2])) {
         return 0;
     }
 
