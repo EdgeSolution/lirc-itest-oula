@@ -110,6 +110,9 @@ typedef struct _test_mod {
 #define EXIT_SYNC_A         0xEA
 #define EXIT_SYNC_B         0xEB
 
+//Switch interval for hsm_test
+#define WAIT_IN_MS          500
+
 void kill_process(char *name);
 int wait_other_side_ready(void);
 int sleep_ms(unsigned int ms);

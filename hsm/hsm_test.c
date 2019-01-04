@@ -61,7 +61,6 @@ test_mod_t test_mod_hsm = {
 #define SWITCH_CHAR_A   0xFA
 #define SWITCH_CHAR_B   0xFB
 
-#define WAIT_IN_MS          500
 #define HOLD_INTERVAL       60
 #define WAIT_TIMEOUT        3
 

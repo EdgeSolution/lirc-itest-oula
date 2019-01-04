@@ -244,8 +244,9 @@ static int is_product_sn_valid(char *psn)
  * DESCRIPTION:
  *      Check if the board SN valid or not
  *      The format of the board SN:
- *          AKOXNNNNNN
- *      AKO: "AKO"
+ *          AKCXNNNNNN
+ *      AK: "AK"
+ *      C: Uppercase letter
  *      X: hexadecimal digit number
  *      NNNNNN: digit number
  *
@@ -268,8 +269,13 @@ static int is_board_sn_valid(char *bsn)
         return 0;
     }
 
-    /* Check AKO */
-    if (strncasecmp(bsn, "AKO", 3) != 0) {
+    /* Check AK */
+    if (strncasecmp(bsn, "AK", 2) != 0) {
+        return 0;
+    }
+
+    /* Check if C is uppercase letter */
+    if (!isupper(bsn[2])) {
         return 0;
     }
 
@@ -672,6 +678,15 @@ static int input_hsm_loop(uint64_t *loop)
 
     do {
         if (0 != input_num("Please input HSM test loop", &tmp)) {
+            ret = -1;
+            continue;
+        }
+
+        //Compare HSM switch time with test duration
+        if (tmp*(WAIT_IN_MS*2/1000) >= g_duration*60) {
+            printf("Invalid HSM test loop, HSM switch duration (%lus)"
+                    " must smaller than total test duration (%lus)\n",
+                    tmp*(WAIT_IN_MS*2/1000), g_duration*60);
             ret = -1;
             continue;
         }
