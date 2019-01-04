@@ -1,11 +1,15 @@
 LIRC-ITEST REVISION HISTORY
 
-LAST UPDATE 2017-06-22
+LAST UPDATE 2018-01-04
 
 
 Versions in brackets () are not official releases, but testing versions.
 
 VERSION  DATE        CHANGES / DESCRIPTION
+(0.15)   2019-01-04  - [hsm] Add HSM test for CIM
+                     - [cfg] Use the new board SN rule
+                     - [cfg] Check HSM switch test duration with total test duration
+
 0.14     2017-06-22  - [nim] Show timeout when receive timeout
                      - [sim] Show timeout when receive timeout
                      - [sim] If test not start, display "not started" in result
@@ -84,4 +88,3 @@ VERSION  DATE        CHANGES / DESCRIPTION
                      - Implemented HSM, MSM, LED, CPU and MEM test module.
                      - Support test log and report
                      - Support config file
-
