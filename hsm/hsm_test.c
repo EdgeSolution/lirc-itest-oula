@@ -11,6 +11,8 @@
 *     - Initial version
 *     10/12/2016  Jia Sui (jia.sui@advantech.com.cn)
 *     - Implement new requirement
+*     12/06/2016  Jia Sui (jia.sui@advantech.com.cn)
+*     - Add HSM test for CIM
 *
 ******************************************************************************/
 #include <stdio.h>
@@ -36,10 +38,12 @@ static void tc_set_rts_casco(int fd, char enabled);
 static int tc_get_cts_casco(int fd);
 static void hsm_send(int fd, int log_fd);
 static int hsm_send_switch(int fd);
-static char hsm_wait_switch(int fd);
+static uint8_t hsm_wait_switch(int fd);
 static void wait_for_cts_change(int fd);
-static void check_cts_a(int log_fd, int fd);
-static void check_cts_b(int log_fd, int fd);
+static void check_cts_a(int log_fd);
+static void check_cts_b(int log_fd);
+static void hsm_test_ccm(int fd, int log_fd);
+static void hsm_test_cim(int fd, int log_fd);
 
 test_mod_t test_mod_hsm = {
     .run = 1,
@@ -80,32 +84,55 @@ static void hsm_print_status()
     printf("%-*s %s\n", COL_FIX_WIDTH, "HSM",
             (test_mod_hsm.pass == 1)?STR_MOD_OK:STR_MOD_ERROR);
 
-    if (g_machine == 'A') {
-        printf("RTS: %d CTS: %d A is %s\n",
-                g_hsm_switching?(!g_cur_rts):g_cur_rts, g_cur_cts,
-                g_cur_cts?"HOST":"SLAVE");
+    if (g_dev_sku == SKU_CIM) {
+        if (g_machine == 'A') {
+            printf("CTS: %d A is %s\n", g_cur_cts, g_cur_cts?"HOST":"SLAVE");
+        } else {
+            printf("CTS: %d B is %s\n", g_cur_cts, g_cur_cts?"SLAVE":"HOST");
+        }
     } else {
-        printf("RTS: %d CTS: %d B is %s\n",
-                g_hsm_switching?(!g_cur_rts):g_cur_rts,
-                g_cur_cts, g_cur_cts?"SLAVE":"HOST");
+        if (g_machine == 'A') {
+            printf("RTS: %d CTS: %d A is %s\n",
+                    g_hsm_switching?(!g_cur_rts):g_cur_rts, g_cur_cts,
+                    g_cur_cts?"HOST":"SLAVE");
+        } else {
+            printf("RTS: %d CTS: %d B is %s\n",
+                    g_hsm_switching?(!g_cur_rts):g_cur_rts,
+                    g_cur_cts, g_cur_cts?"SLAVE":"HOST");
+        }
     }
 }
 
 static void hsm_print_result(int fd)
 {
-    //Fix unexpect fail counter increase when break test
-    if (switch_fail_cntr == 1)
-        switch_fail_cntr--;
-
-    if (switch_fail_cntr || hold_fail_cntr)
-        test_mod_hsm.pass = 0;
-
-    if (test_mod_hsm.pass) {
-        write_file(fd, "HSM: PASS. test=%lu\n", test_counter);
+    //Check HSM test result
+    if (g_dev_sku == SKU_CIM) {
+        if (test_counter / 2 == g_hsm_test_loop && test_counter%2 == 0) {
+            test_mod_hsm.pass = 1;
+        } else {
+            test_mod_hsm.pass = 0;
+        }
     } else {
-        write_file(fd, "HSM: FAIL. test=%lu, switch fail=%lu, hold fail=%lu%s\n",
-                test_counter, switch_fail_cntr, hold_fail_cntr,
-                timeout_cntr?" Timeout":"");
+        //Fix unexpect fail counter increase when break test
+        if (switch_fail_cntr == 1)
+            switch_fail_cntr--;
+
+        if (switch_fail_cntr || hold_fail_cntr)
+            test_mod_hsm.pass = 0;
+    }
+
+    //Print HSM test result
+    if (test_mod_hsm.pass) {
+        write_file(fd, "HSM: PASS. test=%lu\n",
+                (g_dev_sku == SKU_CIM)?test_counter/2:test_counter);
+    } else {
+        if (g_dev_sku == SKU_CIM) {
+            write_file(fd, "HSM: FAIL. test=%lu\n", test_counter/2);
+        } else {
+            write_file(fd, "HSM: FAIL. test=%lu, switch fail=%lu, hold fail=%lu%s\n",
+                    test_counter, switch_fail_cntr, hold_fail_cntr,
+                    timeout_cntr?" Timeout":"");
+        }
     }
 }
 
@@ -117,6 +144,7 @@ static void wait_for_cpld_stable(int log_fd, int fd)
         sleep_ms(WAIT_IN_MS);
     }
 }
+
 /*
  * hsm_test_switch()
  * In this test host will switch between A and B
@@ -133,7 +161,7 @@ static void wait_for_cpld_stable(int log_fd, int fd)
 static void hsm_test_switch(int fd, int log_fd)
 {
     uint64_t test_loop = g_hsm_test_loop;
-    char pattern;
+    uint8_t pattern;
 
     if (!g_running) {
         return;
@@ -168,7 +196,7 @@ static void hsm_test_switch(int fd, int log_fd)
 
             if (g_cur_rts) {
                 wait_for_cts_change(fd);
-                check_cts_a(log_fd, fd);
+                check_cts_a(log_fd);
             }
 
             pattern = hsm_wait_switch(fd);
@@ -212,7 +240,7 @@ static void hsm_test_switch(int fd, int log_fd)
 
             if (g_cur_rts) {
                 wait_for_cts_change(fd);
-                check_cts_b(log_fd, fd);
+                check_cts_b(log_fd);
             }
 
             test_loop--;
@@ -327,42 +355,11 @@ static void *hsm_test(void *args)
         log_print(log_fd, "open mac %c at %s is Successful!\n", g_machine, CCM_SERIAL_PORT);
     }
 
-    hsm_test_switch(fd, log_fd);
-
-    //Switch host to B.
-    if (g_running) {
-        int cnt = 0;
-        wait_for_cpld_stable(log_fd, fd);
-        do {
-            if (g_machine == 'A') {
-                tc_set_rts_casco(fd, FALSE);
-            } else {
-                tc_set_rts_casco(fd, TRUE);
-            }
-            wait_for_cpld_stable(log_fd, fd);
-
-            cnt++;
-            if (cnt > WAIT_TIMEOUT) {
-                log_print(log_fd, "Switch host to B fail\n\n");
-                timeout_cntr++;
-                test_mod_hsm.pass = 0;
-                break;
-            }
-
-        } while (tc_get_cts_casco(fd) != 0 && g_running);
+    if (g_dev_sku == SKU_CIM) {
+        hsm_test_cim(fd, log_fd);
+    } else {
+        hsm_test_ccm(fd, log_fd);
     }
-
-    if (g_running) {
-        wait_other_side_ready();
-    }
-
-    //Starting SIM/MSM test
-    if (g_running) {
-        g_hsm_switching = FALSE;
-    }
-
-    g_cur_rts = TRUE;
-    hsm_test_hold(fd, log_fd);
 
     tc_deinit(fd);
 
@@ -429,7 +426,7 @@ static int hsm_send_switch(int fd)
     return 0;
 }
 
-static char hsm_wait_switch(int fd)
+static uint8_t hsm_wait_switch(int fd)
 {
     char buf[64];
     uint8_t cnt = 0;
@@ -490,7 +487,7 @@ static void wait_for_cts_change(int fd)
     g_cur_cts = cts;
 }
 
-static void check_cts_a(int log_fd, int fd)
+static void check_cts_a(int log_fd)
 {
     if (g_cur_rts && g_cur_cts) { //rts=1 cts=1
         log_print(log_fd, "RTS=%d, CTS=%d, A is HOST. OK\n",
@@ -512,7 +509,7 @@ static void check_cts_a(int log_fd, int fd)
     }
 }
 
-static void check_cts_b(int log_fd, int fd)
+static void check_cts_b(int log_fd)
 {
     if (g_cur_rts && g_cur_cts) { //rts=1 cts=1
         log_print(log_fd, "RTS=%d, CTS=%d, B is SLAVE. ERROR\n",
@@ -532,4 +529,76 @@ static void check_cts_b(int log_fd, int fd)
         log_print(log_fd, "Shouldn't be here....\n");
         test_mod_hsm.pass = 0;
     }
+}
+
+//Test routine for CCM, it includes switch test and hold test
+static void hsm_test_ccm(int fd, int log_fd)
+{
+    hsm_test_switch(fd, log_fd);
+
+    //Switch host to B.
+    if (g_running) {
+        int cnt = 0;
+        wait_for_cpld_stable(log_fd, fd);
+        do {
+            if (g_machine == 'A') {
+                tc_set_rts_casco(fd, FALSE);
+            } else {
+                tc_set_rts_casco(fd, TRUE);
+            }
+            wait_for_cpld_stable(log_fd, fd);
+
+            cnt++;
+            if (cnt > WAIT_TIMEOUT) {
+                log_print(log_fd, "Switch host to B fail\n\n");
+                timeout_cntr++;
+                test_mod_hsm.pass = 0;
+                break;
+            }
+
+        } while (tc_get_cts_casco(fd) != 0 && g_running);
+    }
+
+    if (g_running) {
+        wait_other_side_ready();
+    }
+
+    //Starting SIM/MSM test
+    if (g_running) {
+        g_hsm_switching = FALSE;
+    }
+
+    g_cur_rts = TRUE;
+    hsm_test_hold(fd, log_fd);
+
+}
+
+//test routine for CIM
+static void hsm_test_cim(int fd, int log_fd)
+{
+    uint8_t old_cts;
+    uint64_t test_loop = g_hsm_test_loop * 2;
+
+    if (!g_running) {
+        return;
+    }
+
+    log_print(log_fd, "Start HSM switch test: will last %lu loop\n", g_hsm_test_loop);
+
+    old_cts = tc_get_cts_casco(fd);
+    log_print(log_fd, "CTS: %u\n", g_cur_cts);
+
+    do {
+        g_cur_cts = tc_get_cts_casco(fd);
+        log_print(log_fd, "CTS: %u\n", g_cur_cts);
+
+        if (old_cts != g_cur_cts) {
+            test_counter++;
+            log_print(log_fd, "Switch Counter: %lu, CTS status changed from %d to %d\n",
+                    (test_counter+1)/2, old_cts, g_cur_cts);
+            old_cts = g_cur_cts;
+        }
+
+        sleep_ms(WAIT_IN_MS/2);
+    } while ((test_counter < test_loop) && g_running);
 }
