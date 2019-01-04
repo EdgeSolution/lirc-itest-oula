@@ -684,8 +684,8 @@ static int input_hsm_loop(uint64_t *loop)
 
         //Compare HSM switch time with test duration
         if (tmp*(WAIT_IN_MS*2/1000) >= g_duration*60) {
-            printf("Invalid HSM test loop, HSM switch duration (%lus)"
-                    " must smaller than total test duration (%lus)\n",
+            printf("Invalid HSM test loop, HSM switch duration (%llus)"
+                    " must smaller than total test duration (%llus)\n",
                     tmp*(WAIT_IN_MS*2/1000), g_duration*60);
             ret = -1;
             continue;
