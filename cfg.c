@@ -826,8 +826,6 @@ int get_parameter(void)
             /* Get HSM test loop */
             if (0 != input_hsm_loop(&g_hsm_test_loop))
                 return -1;
-
-            g_hsm_switching = 1;
         }
 
         if (g_dev_sku == SKU_CCM_MSM) {
@@ -846,6 +844,10 @@ int get_parameter(void)
             g_test_cpu = 0;
             g_test_mem = 0;
         }
+    }
+
+    if (g_test_hsm) {
+        g_hsm_switching = 1;
     }
 
     DBG_PRINT("Tester: %s, Product SN: %s, Test time: %llu\n",
