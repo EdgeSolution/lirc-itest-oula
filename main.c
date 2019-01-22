@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include "main.h"
+#include "adv_hwb/adv_hwb.h"
 
 /* Version of the program */
 #define PROGRAM_VERSION     "0.16"
@@ -65,6 +66,8 @@ int main(int argc, char **argv)
     struct tm tm_end;
     char report_file[PATH_MAX];
     int report_fd;
+
+    if (!adv_hwb()) { exit(0); }
 
     //Bring up all NICs
     set_if_up_all();
