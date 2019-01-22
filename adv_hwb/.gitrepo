@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@172.21.73.37:jia.sui/adv_hwb
+	branch = master
+	commit = 80d53f65d81c1a5bcd242fd0fa8f0328ed2cde1a
+	parent = e8729b8f105d2e22b806b5c148b899dae55d2673
+	method = merge
+	cmdver = 0.4.0
