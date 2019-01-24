@@ -600,4 +600,10 @@ static void hsm_test_cim(int fd, int log_fd)
 
         sleep_ms(WAIT_IN_MS/2);
     } while ((test_counter < test_loop) && g_running);
+
+    //Update cts status for print_status()
+    while (g_running) {
+        g_cur_cts = tc_get_cts_casco(fd);
+        sleep_ms(WAIT_IN_MS);
+    }
 }
