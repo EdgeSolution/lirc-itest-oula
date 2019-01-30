@@ -112,13 +112,6 @@ static void hsm_print_result(int fd)
     if (switch_fail_cntr || hold_fail_cntr)
         test_mod_hsm.pass = 0;
 
-    //Check HSM test result
-    if (g_dev_sku == SKU_CIM) {
-        if (test_counter / 2 != g_hsm_test_loop || test_counter%2 != 0) {
-            test_mod_hsm.pass = 0;
-        }
-    }
-
     //Print HSM test result
     if (test_mod_hsm.pass) {
         write_file(fd, "HSM: PASS. test=%lu\n",
@@ -577,6 +570,10 @@ static void hsm_test_cim(int fd, int log_fd)
 {
     uint8_t old_cts;
     uint64_t test_loop = g_hsm_test_loop * 2;
+    uint8_t first = 1;
+    time_t end_time = 0;
+    time_t old_time = 0;
+    time_t cur_time = 0;
 
     if (!g_running) {
         return;
@@ -591,7 +588,15 @@ static void hsm_test_cim(int fd, int log_fd)
         g_cur_cts = tc_get_cts_casco(fd);
         log_print(log_fd, "CTS: %u\n", g_cur_cts);
 
+
         if (old_cts != g_cur_cts) {
+            //Detected the CTS change for the first time
+            if (first) {
+                end_time = time(NULL) + g_hsm_test_loop*1000/(WAIT_IN_MS*2);
+            }
+
+            old_time = time(NULL);
+
             test_counter++;
             log_print(log_fd, "Switch Counter: %lu, CTS status changed from %d to %d\n",
                     (test_counter+1)/2, old_cts, g_cur_cts);
@@ -599,7 +604,26 @@ static void hsm_test_cim(int fd, int log_fd)
         }
 
         sleep_ms(WAIT_IN_MS/2);
+
+        if (!first) {
+            //Total test timeout
+            cur_time = time(NULL);
+            if (cur_time > end_time) {
+                log_print(log_fd, "Timeup, exit switch test.\n");
+                break;
+            }
+
+            //Switch timeout
+            if(cur_time > old_time) {
+                switch_fail_cntr++;
+            }
+        }
     } while ((test_counter < test_loop) && g_running);
+
+    //Check HSM test result
+    if (test_counter != test_loop) {
+        test_mod_hsm.pass = 0;
+    }
 
     hsm_test_cim_hold(fd, log_fd);
 }
