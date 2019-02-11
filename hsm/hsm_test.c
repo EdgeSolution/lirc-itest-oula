@@ -118,8 +118,8 @@ static void hsm_print_result(int fd)
                 (g_dev_sku == SKU_CIM)?test_counter/2:test_counter);
     } else {
         if (g_dev_sku == SKU_CIM) {
-            write_file(fd, "HSM: FAIL. test=%lu, hold fail=%lu\n",
-                    test_counter/2, hold_fail_cntr);
+            write_file(fd, "HSM: FAIL. test=%lu, switch_fail_cntr=%lu, hold fail=%lu\n",
+                    test_counter/2, switch_fail_cntr, hold_fail_cntr);
         } else {
             write_file(fd, "HSM: FAIL. test=%lu, switch fail=%lu, hold fail=%lu%s\n",
                     test_counter, switch_fail_cntr, hold_fail_cntr,
@@ -572,7 +572,6 @@ static void hsm_test_cim(int fd, int log_fd)
     uint64_t test_loop = g_hsm_test_loop * 2;
     uint8_t first = 1;
     time_t end_time = 0;
-    time_t old_time = 0;
     time_t cur_time = 0;
 
     if (!g_running) {
@@ -585,17 +584,25 @@ static void hsm_test_cim(int fd, int log_fd)
     log_print(log_fd, "CTS: %u\n", g_cur_cts);
 
     do {
+        if (!first) {
+            //Total test timeout
+            cur_time = time(NULL);
+            if (cur_time >= end_time) {
+                log_print(log_fd, "Time's up, exit switch test.\n");
+                break;
+            }
+        }
+
         g_cur_cts = tc_get_cts_casco(fd);
         log_print(log_fd, "CTS: %u\n", g_cur_cts);
 
-
+        //Detect cts change
         if (old_cts != g_cur_cts) {
-            //Detected the CTS change for the first time
+            //The first time of cts change event
             if (first) {
-                end_time = time(NULL) + g_hsm_test_loop*1000/(WAIT_IN_MS*2);
+                end_time = time(NULL) + test_loop*1000/(WAIT_IN_MS*2);
+                first = 0;
             }
-
-            old_time = time(NULL);
 
             test_counter++;
             log_print(log_fd, "Switch Counter: %lu, CTS status changed from %d to %d\n",
@@ -603,22 +610,8 @@ static void hsm_test_cim(int fd, int log_fd)
             old_cts = g_cur_cts;
         }
 
-        sleep_ms(WAIT_IN_MS/2);
-
-        if (!first) {
-            //Total test timeout
-            cur_time = time(NULL);
-            if (cur_time > end_time) {
-                log_print(log_fd, "Timeup, exit switch test.\n");
-                break;
-            }
-
-            //Switch timeout
-            if(cur_time > old_time) {
-                switch_fail_cntr++;
-            }
-        }
-    } while ((test_counter < test_loop) && g_running);
+        sleep_ms(WAIT_IN_MS/3);
+    } while (g_running);
 
     //Check HSM test result
     if (test_counter != test_loop) {
