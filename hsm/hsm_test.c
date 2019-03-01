@@ -118,8 +118,8 @@ static void hsm_print_result(int fd)
                 (g_dev_sku == SKU_CIM)?test_counter/2:test_counter);
     } else {
         if (g_dev_sku == SKU_CIM) {
-            write_file(fd, "HSM: FAIL. test=%lu, switch_fail_cntr=%lu, hold fail=%lu\n",
-                    test_counter/2, switch_fail_cntr, hold_fail_cntr);
+            write_file(fd, "HSM: FAIL. test=%lu, hold fail=%lu\n",
+                    test_counter/2, hold_fail_cntr);
         } else {
             write_file(fd, "HSM: FAIL. test=%lu, switch fail=%lu, hold fail=%lu%s\n",
                     test_counter, switch_fail_cntr, hold_fail_cntr,
