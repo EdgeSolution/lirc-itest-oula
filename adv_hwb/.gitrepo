@@ -4,7 +4,7 @@
 ; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
 ;
 [subrepo]
-	remote = git@172.21.73.37:jia.sui/adv_hwb
+	remote = git@172.21.73.37:Library/adv_hwb
 	branch = master
 	commit = 80d53f65d81c1a5bcd242fd0fa8f0328ed2cde1a
 	parent = e8729b8f105d2e22b806b5c148b899dae55d2673
