@@ -8,7 +8,7 @@
 *
 * REVISION(MM/DD/YYYY):
 *     08/16/2016  Shengkui Leng (shengkui.leng@advantech.com.cn)
-*     - Initial version 
+*     - Initial version
 *
 ******************************************************************************/
 #include <stdio.h>
@@ -63,6 +63,8 @@ static void *mem_test(void *args)
     char prog_path[1024];
     char cmd[1024];
 
+    print_version(log_fd, "MEM");
+
     snprintf(prog_path, sizeof(prog_path), "%s/%s", g_progam_path, prog);
     if (!is_exe_exist(prog_path)) {
         snprintf(prog_path, sizeof(prog_path), "%s", prog);
@@ -106,7 +108,7 @@ static void *mem_test(void *args)
  * NAME:
  *      find_fail_str
  *
- * DESCRIPTION: 
+ * DESCRIPTION:
  *      Search "FAIL" string from log file.
  *
  * PARAMETERS:

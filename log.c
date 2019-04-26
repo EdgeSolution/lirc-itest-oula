@@ -19,8 +19,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "log.h"
-
-
+#include "version.h"
 
 /******************************************************************************
  * NAME:
@@ -152,7 +151,7 @@ int log_init(char *log_file, char *prefix, char *dir)
  * NAME:
  *      log_close
  *
- * DESCRIPTION: 
+ * DESCRIPTION:
  *      Close the opened log file.
  *
  * PARAMETERS:
@@ -234,4 +233,32 @@ void dump_file(char *file)
     printf("\n");
 
     fclose(fp);
+}
+
+/******************************************************************************
+ * NAME:
+ *      print_version
+ *
+ * DESCRIPTION:
+ *      Print lirc-itest version into given fd
+ *
+ * PARAMETERS:
+ *      fd    - The fd of a file
+ *      name  - Test name
+ *
+ * RETURN:
+ *      None
+ ******************************************************************************/
+void print_version(int fd, char *name)
+{
+    if (fd < 0) {
+        printf("Invalid file descriptor\n");
+        return;
+    }
+
+    if (name) {
+        write_file(fd, "LiRC-itest v%s: %s test\n", PROGRAM_VERSION, name);
+    } else {
+        write_file(fd, "LiRC-itest v%s\n", PROGRAM_VERSION);
+    }
 }

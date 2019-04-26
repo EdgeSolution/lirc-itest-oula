@@ -649,6 +649,8 @@ static void *sim_test(void *args)
 
     int log_fd = test_mod_sim.log_fd;
 
+    print_version(log_fd, "SIM");
+
     //Wait for HSM switch test end
     while (g_running && g_hsm_switching) {
         sleep(2);

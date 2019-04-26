@@ -181,6 +181,7 @@ static void *nim_test(void *args)
     pthread_t ptid_r[TESC_NUM];
     pthread_t ptid_s[TESC_NUM];
 
+    print_version(log_fd, "NIM");
     log_print(log_fd, "Begin test!\n\n");
 
     /* Initial global variable for statistics */

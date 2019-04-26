@@ -97,6 +97,7 @@ static void *msm_test(void *args)
 {
     int log_fd = test_mod_msm.log_fd;
 
+    print_version(log_fd, "MSM");
     log_print(log_fd, "Begin test!\n\n");
 
     int bytes;
