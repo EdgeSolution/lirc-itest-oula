@@ -118,7 +118,7 @@ static void nim_print_status()
     nim_check_pass();
 
     printf("%-*s %s\n",
-        COL_FIX_WIDTH, (g_dev_sku == SKU_CIM)?"ETH":"NIM",
+        COL_FIX_WIDTH, "ETH",
         (test_mod_nim.pass) ? STR_MOD_OK : STR_MOD_ERROR);
 
     for (i = 0; i < TESC_NUM; i++) {
@@ -142,7 +142,7 @@ static void nim_print_result(int fd)
 {
     nim_check_pass();
 
-    write_file(fd, "%s: %s\n", (g_dev_sku == SKU_CIM)?"ETH":"NIM",
+    write_file(fd, "%s: %s\n", "ETH",
             test_mod_nim.pass?"PASS":"FAIL");
 }
 

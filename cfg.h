@@ -32,6 +32,7 @@
 
 enum DEV_SKU {
     SKU_CCM = 0,
+    SKU_CCM_LEGACY,
     SKU_CIM,
     SKU_CCM_MSM,
 };
@@ -40,5 +41,6 @@ extern enum DEV_SKU g_dev_sku;
 
 int get_parameter(void);
 int parse_params(int argc, char **argv);
+int get_eth_num(enum DEV_SKU sku);
 
 #endif /* _CFG_H_ */
