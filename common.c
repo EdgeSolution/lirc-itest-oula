@@ -24,6 +24,10 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 
+#ifdef DEBUG
+#include <errno.h>
+#endif
+
 //Return code for system
 #define DIAG_SYS_RC(x)    ((WTERMSIG(x) == 0)?(WEXITSTATUS(x)):-1)
 
