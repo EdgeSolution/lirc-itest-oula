@@ -8,7 +8,7 @@
 *
 * REVISION(MM/DD/YYYY):
 *     07/28/2016  Shengkui Leng (shengkui.leng@advantech.com.cn)
-*     - Initial version 
+*     - Initial version
 *
 ******************************************************************************/
 #include <stdio.h>
@@ -64,6 +64,7 @@ static void *led_test(void *args)
         pthread_exit(NULL);
     }
 
+    print_version(log_fd, "LED");
     log_print(log_fd, "Begin test!\n\n");
 
     log_print(log_fd, "Test L1 L2 circularly\n\n");

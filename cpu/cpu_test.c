@@ -8,7 +8,7 @@
 *
 * REVISION(MM/DD/YYYY):
 *     08/16/2016  Shengkui Leng (shengkui.leng@advantech.com.cn)
-*     - Initial version 
+*     - Initial version
 *
 ******************************************************************************/
 #include <stdio.h>
@@ -61,6 +61,8 @@ static void *cpu_test(void *args)
     char *prog = "stresscpu2";
     char prog_path[1024];
     char cmd[1024];
+
+    print_version(log_fd, "CPU");
 
     snprintf(prog_path, sizeof(prog_path), "%s/%s", g_progam_path, prog);
     if (!is_exe_exist(prog_path)) {

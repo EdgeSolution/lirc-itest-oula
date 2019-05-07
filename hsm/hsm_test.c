@@ -330,6 +330,7 @@ static void *hsm_test(void *args)
     int log_fd = test_mod_hsm.log_fd;
     int fd;
 
+    print_version(log_fd, "HSM");
     log_print(log_fd, "Begin test!\n\n");
 
     /* Init the packet to be sent */

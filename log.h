@@ -8,7 +8,7 @@
  *
  * REVISION(MM/DD/YYYY):
  *     07/25/2016  Shengkui Leng (shengkui.leng@advantech.com.cn)
- *     - Initial version 
+ *     - Initial version
  *
  ******************************************************************************/
 #ifndef _LOG_H_
@@ -25,7 +25,7 @@ void log_print(int fd, char *format, ...);
 void log_close(int fd);
 void write_file(int fd, char *format, ...);
 void dump_file(char *file);
-
+void print_version(int fd, char *name);
 
 /* Print message to log file */
 #define LOG_OUT(fd, format, args...)    log_print(fd, (char*)format, ## args);

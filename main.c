@@ -24,10 +24,8 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include "main.h"
+#include "version.h"
 #include "adv_hwb/adv_hwb.h"
-
-/* Version of the program */
-#define PROGRAM_VERSION     "0.17"
 
 static int g_runned_minute = 0;
 static int g_runned_second = 0;
@@ -68,6 +66,8 @@ int main(int argc, char **argv)
     int report_fd;
 
     if (!adv_hwb()) { exit(0); }
+
+    printf("LiRC-itest v%s\n", PROGRAM_VERSION);
 
     //Bring up all NICs
     set_if_up_all();
@@ -470,6 +470,7 @@ void generate_report(int fd, char *report_file, struct tm *tm_start, struct tm *
     char ts_start[MAX_STR_LENGTH];
     char ts_end[MAX_STR_LENGTH];
 
+    print_version(fd, NULL);
     write_file(fd, "================== Test Report ==================\n");
     write_file(fd, "%s (%c)\n", (g_dev_sku == SKU_CIM)?"CIM":"CCM", g_machine);
     write_file(fd, "Tester: %s\n", g_tester);
