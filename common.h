@@ -45,7 +45,7 @@ extern char g_progam_path[];
 extern uint64_t g_hsm_test_loop;
 extern uint8_t g_hsm_switching;
 
-uint8_t g_nim_test_eth[TESC_NUM];
+uint8_t g_nim_test_eth[MAX_NIC_COUNT];
 
 extern int g_test_mode;
 

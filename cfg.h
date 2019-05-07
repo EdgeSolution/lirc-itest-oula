@@ -26,7 +26,7 @@
 /* Max counter of sim modules */
 #define MAX_SIM_COUNT       2
 
-#define TESC_NUM 4
+#define MAX_NIC_COUNT 4
 
 #define APPNAME_CCM         "lirc-itest"
 

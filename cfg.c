@@ -73,7 +73,7 @@ uint64_t g_hsm_test_loop = 100;
 uint8_t g_hsm_switching = 0;
 
 /* NIM: port test flag, set by user input */
-uint8_t g_nim_test_eth[TESC_NUM] = {0};
+uint8_t g_nim_test_eth[MAX_NIC_COUNT] = {0};
 
 //Function Prototype
 static char *right_trim(char *str);
@@ -723,10 +723,10 @@ int get_parameter(void)
     switch(g_dev_sku){
         case SKU_CIM:
         case SKU_CCM:
-            eth_num = TESC_NUM / 2;
+            eth_num = MAX_NIC_COUNT / 2;
             break;
         default:
-            eth_num = TESC_NUM;
+            eth_num = MAX_NIC_COUNT;
             break;
     }
 
@@ -877,7 +877,7 @@ int get_parameter(void)
     DBG_PRINT("hsm test loop: %llu\n", g_hsm_test_loop);
 
     DBG_PRINT("nim test port: ");
-    for (i = 0; i < TESC_NUM; i++) {
+    for (i = 0; i < MAX_NIC_COUNT; i++) {
         DBG_PRINT(" eth%d: %u,", i, g_nim_test_eth[i]);
     }
     DBG_PRINT("\n");
@@ -957,8 +957,8 @@ int get_eth_num(enum DEV_SKU sku)
     switch(g_dev_sku){
         case SKU_CIM:
         case SKU_CCM:
-            return TESC_NUM / 2;
+            return MAX_NIC_COUNT / 2;
         default:
-            return TESC_NUM;
+            return MAX_NIC_COUNT;
     }
 }

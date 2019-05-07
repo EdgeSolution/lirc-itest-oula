@@ -68,21 +68,21 @@ typedef struct _ether_port_para {
 #define FRAME_LOSS_RATE 100000
 
 /* Global Variables */
-static int net_sockid[TESC_NUM];
-static char target_ip[TESC_NUM][20];
+static int net_sockid[MAX_NIC_COUNT];
+static char target_ip[MAX_NIC_COUNT][20];
 
-static uint32_t udp_cnt_send[TESC_NUM] = {0};
-static uint32_t udp_cnt_recv[TESC_NUM] = {0};
-static uint32_t timeout_rst_cnt[TESC_NUM] = {0};
+static uint32_t udp_cnt_send[MAX_NIC_COUNT] = {0};
+static uint32_t udp_cnt_recv[MAX_NIC_COUNT] = {0};
+static uint32_t timeout_rst_cnt[MAX_NIC_COUNT] = {0};
 
-static uint32_t tesc_err_no[TESC_NUM] = {0};
-static uint32_t tesc_lost_no[TESC_NUM] = {0};
+static uint32_t tesc_err_no[MAX_NIC_COUNT] = {0};
+static uint32_t tesc_lost_no[MAX_NIC_COUNT] = {0};
 
-static int32_t udp_send_task_id[TESC_NUM];
-static int32_t udp_recv_task_id[TESC_NUM];
+static int32_t udp_send_task_id[MAX_NIC_COUNT];
+static int32_t udp_recv_task_id[MAX_NIC_COUNT];
 
-static ether_port_para net_port_para_recv[TESC_NUM];
-static ether_port_para net_port_para_send[TESC_NUM];
+static ether_port_para net_port_para_recv[MAX_NIC_COUNT];
+static ether_port_para net_port_para_send[MAX_NIC_COUNT];
 
 static int log_fd;
 
@@ -121,7 +121,7 @@ static void nim_print_status()
         COL_FIX_WIDTH, "ETH",
         (test_mod_nim.pass) ? STR_MOD_OK : STR_MOD_ERROR);
 
-    for (i = 0; i < TESC_NUM; i++) {
+    for (i = 0; i < MAX_NIC_COUNT; i++) {
         if (!g_nim_test_eth[i]) {
             continue;
         }
@@ -151,7 +151,7 @@ static void nim_check_pass(void)
     int i = 0;
     uint8_t flag = 1;
 
-    for (i = 0; i < TESC_NUM; i++) {
+    for (i = 0; i < MAX_NIC_COUNT; i++) {
         if (!g_nim_test_eth[i]) {
             continue;
         }
@@ -175,21 +175,21 @@ static void nim_check_pass(void)
 static void *nim_test(void *args)
 {
     int i = 0;
-    int ret[TESC_NUM];
+    int ret[MAX_NIC_COUNT];
     log_fd = test_mod_nim.log_fd;
 
-    pthread_t ptid_r[TESC_NUM];
-    pthread_t ptid_s[TESC_NUM];
+    pthread_t ptid_r[MAX_NIC_COUNT];
+    pthread_t ptid_s[MAX_NIC_COUNT];
 
     print_version(log_fd, "NIM");
     log_print(log_fd, "Begin test!\n\n");
 
     /* Initial global variable for statistics */
-    memset(udp_cnt_send, 0, TESC_NUM * sizeof(uint32_t));
-    memset(udp_cnt_recv, 0, TESC_NUM * sizeof(uint32_t));
-    memset(timeout_rst_cnt, 0, TESC_NUM * sizeof(uint32_t));
-    memset(tesc_err_no, 0, TESC_NUM * sizeof(uint32_t));
-    memset(tesc_lost_no, 0, TESC_NUM * sizeof(uint32_t));
+    memset(udp_cnt_send, 0, MAX_NIC_COUNT * sizeof(uint32_t));
+    memset(udp_cnt_recv, 0, MAX_NIC_COUNT * sizeof(uint32_t));
+    memset(timeout_rst_cnt, 0, MAX_NIC_COUNT * sizeof(uint32_t));
+    memset(tesc_err_no, 0, MAX_NIC_COUNT * sizeof(uint32_t));
+    memset(tesc_lost_no, 0, MAX_NIC_COUNT * sizeof(uint32_t));
 
     memset(ret, -1, sizeof(ret));
 
@@ -234,7 +234,7 @@ static void *nim_test(void *args)
         }
     }
 
-    for (i = 0; i < TESC_NUM; i++) {
+    for (i = 0; i < MAX_NIC_COUNT; i++) {
         /* Skip ports which not be initialized */
         if (ret[i] != 0)
             continue;
@@ -253,7 +253,7 @@ static void *nim_test(void *args)
     }
 
     /* Wait all udp send packet thread and all udp receive packet thread to endup */
-    for (i = 0; i < TESC_NUM; i++) {
+    for (i = 0; i < MAX_NIC_COUNT; i++) {
         /* Skip threads about ports which not be initialized */
         if (ret[i] != 0)
             continue;

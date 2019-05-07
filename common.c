@@ -714,7 +714,7 @@ void set_if_up_all(void)
     char ifname[MAX_STR_LENGTH];
     uint8_t i;
 
-    for (i = 0; i < TESC_NUM; i++) {
+    for (i = 0; i < MAX_NIC_COUNT; i++) {
         sprintf(ifname, "eth%d", i);
 
         //Briing up interface
