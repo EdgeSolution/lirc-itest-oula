@@ -67,8 +67,6 @@ int main(int argc, char **argv)
 
     if (!adv_hwb()) { exit(0); }
 
-    printf("LiRC-itest v%s\n", PROGRAM_VERSION);
-
     //Bring up all NICs
     set_if_up_all();
 

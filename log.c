@@ -257,7 +257,7 @@ void print_version(int fd, char *name)
     }
 
     if (name) {
-        write_file(fd, "LiRC-itest v%s: %s test\n", PROGRAM_VERSION, name);
+        write_file(fd, "LiRC-itest v%s - %s test\n", PROGRAM_VERSION, name);
     } else {
         write_file(fd, "LiRC-itest v%s\n", PROGRAM_VERSION);
     }
