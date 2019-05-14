@@ -2,6 +2,6 @@
 #define _VERSION_H_ 1
 
 /* Version of the program */
-#define PROGRAM_VERSION     "0.17"
+#define PROGRAM_VERSION     "0.19"
 
 #endif /* ifndef _VERSION_H_ */
