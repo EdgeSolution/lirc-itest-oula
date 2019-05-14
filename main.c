@@ -53,7 +53,10 @@ static void print_usage(char *name)
             "  -msm\n"
             "    Run with MSM test\n"
             "  -cim\n"
-            "    Run test on CIM\n");
+            "    Run test on CIM\n"
+            "  -nim\n"
+            "    Run with legacy SKU of CCM with NIM support\n"
+            );
 }
 
 int main(int argc, char **argv)
