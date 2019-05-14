@@ -24,6 +24,10 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 
+#ifdef DEBUG
+#include <errno.h>
+#endif
+
 //Return code for system
 #define DIAG_SYS_RC(x)    ((WTERMSIG(x) == 0)?(WEXITSTATUS(x)):-1)
 
@@ -710,7 +714,7 @@ void set_if_up_all(void)
     char ifname[MAX_STR_LENGTH];
     uint8_t i;
 
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < MAX_NIC_COUNT; i++) {
         sprintf(ifname, "eth%d", i);
 
         //Briing up interface

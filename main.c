@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 
     //Wait for link up
     if (g_test_nim) {
-        wait_link_status_all((g_dev_sku == SKU_CIM)?2:4);
+        wait_link_status_all(get_eth_num(g_dev_sku));
     }
 
     install_sig_handler();

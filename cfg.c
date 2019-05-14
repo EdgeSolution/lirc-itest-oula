@@ -73,7 +73,7 @@ uint64_t g_hsm_test_loop = 100;
 uint8_t g_hsm_switching = 0;
 
 /* NIM: port test flag, set by user input */
-uint8_t g_nim_test_eth[TESC_NUM] = {0};
+uint8_t g_nim_test_eth[MAX_NIC_COUNT] = {0};
 
 //Function Prototype
 static char *right_trim(char *str);
@@ -718,10 +718,16 @@ int get_parameter(void)
     int i;
     int eth_num;
 
-    if (g_dev_sku == SKU_CIM) {
-        eth_num = TESC_NUM / 2;
-    } else {
-        eth_num = TESC_NUM;
+    //Calculate NIC number
+    eth_num = get_eth_num(g_dev_sku);
+    switch(g_dev_sku){
+        case SKU_CIM:
+        case SKU_CCM:
+            eth_num = MAX_NIC_COUNT / 2;
+            break;
+        default:
+            eth_num = MAX_NIC_COUNT;
+            break;
     }
 
     /* Get the information of tester */
@@ -750,7 +756,6 @@ int get_parameter(void)
             return -1;
 
         if (g_dev_sku != SKU_CIM) {
-
             //SIM
             /* Get the number of SIM board && check it */
             if (0 != input_sim_board_num(&g_board_num))
@@ -797,16 +802,17 @@ int get_parameter(void)
         }
 
         //NIM
-        if (g_dev_sku == SKU_CIM) {
-            g_test_nim = user_ack("Test ETH?");
-        } else {
-            g_test_nim = user_ack("Test NIM?");
-        }
+        g_test_nim = user_ack("Test ETH?");
         /* Get NIM modules setting for which ports should be tested */
         if (g_test_nim == 1) {
-            if (g_dev_sku != SKU_CIM) {
-                if (0 != input_board_sn("NIM", g_nim_sn, sizeof(g_nim_sn)))
-                    return -1;
+            switch (g_dev_sku) {
+                case SKU_CCM_MSM:
+                case SKU_CCM_LEGACY:
+                    if (0 != input_board_sn("NIM", g_nim_sn, sizeof(g_nim_sn)))
+                        return -1;
+                    break;
+                default:
+                    break;
             }
 
             memset(g_nim_test_eth, 0, sizeof(g_nim_test_eth));
@@ -871,7 +877,7 @@ int get_parameter(void)
     DBG_PRINT("hsm test loop: %llu\n", g_hsm_test_loop);
 
     DBG_PRINT("nim test port: ");
-    for (i = 0; i < TESC_NUM; i++) {
+    for (i = 0; i < MAX_NIC_COUNT; i++) {
         DBG_PRINT(" eth%d: %u,", i, g_nim_test_eth[i]);
     }
     DBG_PRINT("\n");
@@ -904,6 +910,8 @@ int parse_params(int argc, char **argv)
             g_dev_sku = SKU_CCM_MSM;
         } else if (strcmp("-cim", argv[1]) == 0) {
             g_dev_sku = SKU_CIM;
+        } else if (strcmp("-nim", argv[1]) == 0) {
+            g_dev_sku = SKU_CCM_LEGACY;
         } else {
             return -EINVAL;
         }
@@ -926,4 +934,31 @@ int parse_params(int argc, char **argv)
     }
 
     return 0;
+}
+
+
+/******************************************************************************
+ * NAME:
+ *      get_eth_num
+ *
+ * DESCRIPTION:
+ *      Get ethernet port number from device SKU
+ *
+ * PARAMETERS:
+ *      argc    - argument number
+ *      argv    - argument vector
+ *
+ * RETURN:
+ *      0  - OK
+ *      <0 - error
+ ******************************************************************************/
+int get_eth_num(enum DEV_SKU sku)
+{
+    switch(g_dev_sku){
+        case SKU_CIM:
+        case SKU_CCM:
+            return MAX_NIC_COUNT / 2;
+        default:
+            return MAX_NIC_COUNT;
+    }
 }

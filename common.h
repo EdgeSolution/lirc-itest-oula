@@ -45,7 +45,7 @@ extern char g_progam_path[];
 extern uint64_t g_hsm_test_loop;
 extern uint8_t g_hsm_switching;
 
-uint8_t g_nim_test_eth[4];
+uint8_t g_nim_test_eth[MAX_NIC_COUNT];
 
 extern int g_test_mode;
 
@@ -101,7 +101,6 @@ typedef struct _test_mod {
 #define COL_FIX_WIDTH       20
 #define STR_MOD_OK          "MODULE is OK"
 #define STR_MOD_ERROR       "MODULE is ERROR"
-
 
 #define CCM_SERIAL_PORT     "/dev/ttyS1"
 #define DATA_SYNC_A         0xFA
