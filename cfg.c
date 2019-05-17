@@ -920,7 +920,8 @@ int parse_params(int argc, char **argv)
     }
 
     switch (g_dev_sku) {
-        case SKU_CCM: //without MSM
+        case SKU_CCM: //without MSM, NIM, single SIM
+        case SKU_CCM_LEGACY: //without MSM
             g_test_msm = 0;
             break;
         case SKU_CIM: //without SIM, NIM, MSM
