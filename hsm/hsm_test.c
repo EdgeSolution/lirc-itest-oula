@@ -590,12 +590,19 @@ static void hsm_test_cim(int fd, int log_fd)
         }
 
         //Check CIM HSM status
-        if (test_counter/2 >= g_hsm_test_loop+1) {
+        if (test_counter/2 > g_hsm_test_loop+1) {
             test_mod_hsm.pass = 0;
         }
 
         sleep_ms(WAIT_IN_MS/3);
     } while (g_running);
+
+    //Remove noise during test in final result
+    if (test_counter/2 == g_hsm_test_loop+1) {
+        test_counter -= 2;
+        log_print(log_fd, "Remove noise from test counter, final count %lu\n",
+                test_counter%2);
+    }
 
     //Check CIM HSM status
     if (test_counter < test_loop) {
