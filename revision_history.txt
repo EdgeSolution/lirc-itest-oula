@@ -1,14 +1,19 @@
 LIRC-ITEST REVISION HISTORY
 
-LAST UPDATE 2019-05-14
+LAST UPDATE 2019-05-20
 
 
 Versions in brackets () are not official releases, but testing versions.
 
 VERSION  DATE        CHANGES / DESCRIPTION
-(0.19)   2019-05-14  - Add lirc-itest version into log file
-                     - Add new SKU support
-                     - Add new parameter -nim to support the legacy SKU of CCM
+0.20     2019-05-20  - [main] Fix parameter '-nim' support
+                     - [main] Remove sleep in main loop
+                     - [nim] Update hsm test for CIM
+                     - [cfg] Remove dead code
+
+(0.19)   2019-05-14  - [log] Add lirc-itest version into log file
+                     - [main] Add new SKU support
+                     - [main] Add new parameter -nim to support the legacy SKU of CCM
 
 (0.17)   2019-02-27  - Add HSM hold test for CIM
                      - Add timeout check
