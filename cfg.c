@@ -720,15 +720,6 @@ int get_parameter(void)
 
     //Calculate NIC number
     eth_num = get_eth_num(g_dev_sku);
-    switch(g_dev_sku){
-        case SKU_CIM:
-        case SKU_CCM:
-            eth_num = MAX_NIC_COUNT / 2;
-            break;
-        default:
-            eth_num = MAX_NIC_COUNT;
-            break;
-    }
 
     /* Get the information of tester */
     if (0 != input_tester(g_tester, sizeof(g_tester)))
