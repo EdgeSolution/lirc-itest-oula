@@ -140,7 +140,6 @@ int main(int argc, char **argv)
         for (i = 0; i < mod_index; i++) {
             if (g_test_module[i] && g_test_module[i]->run) {
                 g_test_module[i]->print_status();
-                sleep(1);
             }
         }
 
