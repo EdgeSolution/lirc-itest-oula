@@ -44,7 +44,6 @@ static void check_cts_a(int log_fd);
 static void check_cts_b(int log_fd);
 static void hsm_test_ccm(int fd, int log_fd);
 static void hsm_test_cim(int fd, int log_fd);
-static void hsm_test_cim_hold(int fd, int log_fd);
 
 test_mod_t test_mod_hsm = {
     .run = 1,
@@ -86,9 +85,11 @@ static void hsm_print_status()
 
     if (g_dev_sku == SKU_CIM) {
         if (g_machine == 'A') {
-            printf("CTS: %d A is %s\n", g_cur_cts, g_cur_cts?"HOST":"SLAVE");
+            printf("CTS: %d A is %s, count: %d\n", g_cur_cts,
+                    g_cur_cts?"HOST":"SLAVE", test_counter/2);
         } else {
-            printf("CTS: %d B is %s\n", g_cur_cts, g_cur_cts?"SLAVE":"HOST");
+            printf("CTS: %d B is %s, count: %d\n", g_cur_cts,
+                    g_cur_cts?"SLAVE":"HOST", test_counter/2);
         }
     } else {
         if (g_machine == 'A') {
@@ -118,8 +119,7 @@ static void hsm_print_result(int fd)
                 (g_dev_sku == SKU_CIM)?test_counter/2:test_counter);
     } else {
         if (g_dev_sku == SKU_CIM) {
-            write_file(fd, "HSM: FAIL. test=%lu, hold fail=%lu\n",
-                    test_counter/2, hold_fail_cntr);
+            write_file(fd, "HSM: FAIL. test=%lu\n", test_counter/2);
         } else {
             write_file(fd, "HSM: FAIL. test=%lu, switch fail=%lu, hold fail=%lu%s\n",
                     test_counter, switch_fail_cntr, hold_fail_cntr,
@@ -571,13 +571,6 @@ static void hsm_test_cim(int fd, int log_fd)
 {
     uint8_t old_cts;
     uint64_t test_loop = g_hsm_test_loop * 2;
-    uint8_t first = 1;
-    time_t end_time = 0;
-    time_t cur_time = 0;
-
-    if (!g_running) {
-        return;
-    }
 
     log_print(log_fd, "Start HSM switch test: will last %lu loop\n", g_hsm_test_loop);
 
@@ -585,94 +578,34 @@ static void hsm_test_cim(int fd, int log_fd)
     log_print(log_fd, "CTS: %u\n", g_cur_cts);
 
     do {
-        if (!first) {
-            //Total test timeout
-            cur_time = time(NULL);
-            if (cur_time >= end_time) {
-                log_print(log_fd, "Time's up, exit switch test.\n");
-                break;
-            }
-        }
-
         g_cur_cts = tc_get_cts_casco(fd);
         log_print(log_fd, "CTS: %u\n", g_cur_cts);
 
         //Detect cts change
         if (old_cts != g_cur_cts) {
-            //The first time of cts change event
-            if (first) {
-                end_time = time(NULL) + test_loop*1000/(WAIT_IN_MS*2);
-                first = 0;
-            }
-
             test_counter++;
             log_print(log_fd, "Switch Counter: %lu, CTS status changed from %d to %d\n",
                     (test_counter+1)/2, old_cts, g_cur_cts);
             old_cts = g_cur_cts;
         }
 
+        //Check CIM HSM status
+        if (test_counter/2 > g_hsm_test_loop+1) {
+            test_mod_hsm.pass = 0;
+        }
+
         sleep_ms(WAIT_IN_MS/3);
     } while (g_running);
 
-    //Check HSM test result
-    if (test_counter != test_loop) {
+    //Remove noise during test in final result
+    if (test_counter/2 == g_hsm_test_loop+1) {
+        test_counter -= 2;
+        log_print(log_fd, "Remove noise from test counter, final count %lu\n",
+                test_counter%2);
+    }
+
+    //Check CIM HSM status
+    if (test_counter < test_loop) {
         test_mod_hsm.pass = 0;
     }
-
-    hsm_test_cim_hold(fd, log_fd);
-}
-
-static void hsm_test_cim_hold(int fd, int log_fd)
-{
-    time_t old_time = 0, cur_time;
-    int old_cts;
-
-    if (!g_running) {
-        log_print(log_fd, "Exit flag detected, return\n");
-        return;
-    }
-
-    log_print(log_fd, "Start HSM hold test for CIM\n");
-    log_print(log_fd, "In this test HOST will hold at B\n");
-
-    log_print(log_fd, "Wait HOST switch to B\n");
-    while(tc_get_cts_casco(fd) && g_running) {
-        sleep_ms(WAIT_IN_MS);
-    }
-    log_print(log_fd, "Host is B now.\n");
-
-    //Get original CTS status
-    old_cts = tc_get_cts_casco(fd);
-
-    tc_set_rts_casco(fd, g_cur_rts);
-
-    while (g_running) {
-        sleep_ms(WAIT_IN_MS);
-
-        cur_time = time(NULL);
-        if (cur_time > (old_time + HOLD_INTERVAL)) {
-            g_cur_cts = tc_get_cts_casco(fd);
-            log_print(log_fd, "CTS=%d, switch count: %lu\n",
-                    g_cur_cts, hold_fail_cntr);
-
-            old_time = cur_time;
-        }
-
-        if (!g_running) {
-            break;
-        }
-
-        g_cur_cts = tc_get_cts_casco(fd);
-        if (g_cur_cts != old_cts) {
-            hold_fail_cntr++;
-            old_cts = g_cur_cts;
-            test_mod_hsm.pass = 0;
-
-            log_print(log_fd, "CTS=%d, switch count: %lu\n",
-                    g_cur_cts, hold_fail_cntr);
-        }
-    }
-
-    log_print(log_fd, "Hold fail counter: %lu\n", hold_fail_cntr);
-    log_print(log_fd, "End HSM hold test: %s\n\n", (hold_fail_cntr == 0)?"PASS":"FAIL");
 }
