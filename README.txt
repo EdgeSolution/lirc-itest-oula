@@ -49,4 +49,7 @@ Run test on CCM with MSM
 # ./lirc-itest -cim
 Run test on CIM
 
+# ./lirc-itest -nim
+Run test on CCM with NIM support
+
 This program shall be run on both machine A and B.
