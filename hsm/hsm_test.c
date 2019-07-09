@@ -351,6 +351,7 @@ static void *hsm_test(void *args)
     if (g_dev_sku == SKU_CIM) {
         hsm_test_cim(fd, log_fd);
     } else {
+        tc_set_rts_casco(fd, TRUE);
         hsm_test_ccm(fd, log_fd);
     }
 
@@ -548,12 +549,11 @@ static void hsm_test_ccm(int fd, int log_fd)
                 test_mod_hsm.pass = 0;
                 break;
             }
-
         } while (tc_get_cts_casco(fd) != 0 && g_running);
     }
 
     if (g_running) {
-        wait_other_side_ready();
+        wait_other_side_ready(FALSE);
     }
 
     //Starting SIM/MSM test
@@ -563,7 +563,6 @@ static void hsm_test_ccm(int fd, int log_fd)
 
     g_cur_rts = TRUE;
     hsm_test_hold(fd, log_fd);
-
 }
 
 //test routine for CIM

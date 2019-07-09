@@ -113,7 +113,7 @@ typedef struct _test_mod {
 #define WAIT_IN_MS          500
 
 void kill_process(char *name);
-int wait_other_side_ready(void);
+int wait_other_side_ready(int flag);
 int sleep_ms(unsigned int ms);
 int is_exe_exist(char *exe);
 int ser_open(char *dev);

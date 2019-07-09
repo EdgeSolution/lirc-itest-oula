@@ -101,7 +101,7 @@ int main(int argc, char **argv)
         }
     } else {
         printf("Wait the other side to be ready...\n");
-        if (!wait_other_side_ready()) {
+        if (!wait_other_side_ready(TRUE)) {
             printf("The other side is not ready!\n");
             return -1;
         }

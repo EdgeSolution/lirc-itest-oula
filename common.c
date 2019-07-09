@@ -180,7 +180,7 @@ static int recv_sync_data(int fd, char rcv_char, char snt_char)
  *      1 - Ready.
  *      0 - Not Ready(fail).
  ******************************************************************************/
-int wait_other_side_ready(void)
+int wait_other_side_ready(int flag)
 {
     int rc = 0;
     char snt_char, rcv_char;
@@ -199,6 +199,10 @@ int wait_other_side_ready(void)
     if (fd < 0) {
         printf("Open the serial port of CCM fail!\n");
         return 0;
+    }
+
+    if (flag) {
+        tc_set_rts(fd, FALSE);
     }
 
     while (g_running) {
