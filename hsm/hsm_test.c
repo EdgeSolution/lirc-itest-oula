@@ -34,7 +34,6 @@ static void wait_for_cpld_stable(int log_fd, int fd);
 static void hsm_test_switch(int fd, int log_fd);
 static void hsm_test_hold(int fd, int log_fd);
 static void *hsm_test(void *args);
-static void tc_set_rts_casco(int fd, char enabled);
 static int tc_get_cts_casco(int fd);
 static void hsm_send(int fd, int log_fd);
 static int hsm_send_switch(int fd);
@@ -361,18 +360,6 @@ static void *hsm_test(void *args)
     pthread_exit(NULL);
 }
 
-
-static void tc_set_rts_casco(int fd, char enabled)
-{
-    unsigned char flags = TIOCM_RTS;
-
-    if (enabled == TRUE) {
-        ioctl(fd, TIOCMBIC, &flags);
-    } else {
-        ioctl(fd, TIOCMBIS, &flags);
-    }
-}
-
 static int tc_get_cts_casco(int fd)
 {
     uint8_t reg_val;
@@ -553,7 +540,7 @@ static void hsm_test_ccm(int fd, int log_fd)
     }
 
     if (g_running) {
-        wait_other_side_ready(FALSE);
+        wait_other_side_ready(fd);
     }
 
     //Starting SIM/MSM test
