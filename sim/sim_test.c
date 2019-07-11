@@ -392,17 +392,18 @@ static int analysis_packet(uint8_t *buff, int list_id)
     int i;
     int log_fd;
     int tmp;
+    int uart_id;
 
     struct uart_package *recv_packet;
     recv_packet = (struct uart_package *)buff;
 
     log_fd = test_mod_sim.log_fd;
+
     /*
      * check crc and printf which data is error
      */
     crc_check = crc32(0, (uint8_t *)recv_packet, 261);
     if ((uint32_t)crc_check != (uint32_t)recv_packet->crc_err) {
-
         if (g_running) {
             /*means received error packet*/
             log_print(log_fd, "%s Received \"%d\"packet error\n", port_list[list_id], _uart_array[list_id].recv_pack_count);
@@ -418,7 +419,6 @@ static int analysis_packet(uint8_t *buff, int list_id)
             write_file(log_fd, "\n    Received pack_num = %u\n", (uint32_t)recv_packet->pack_num);
             write_file(log_fd, "    Received crc = %08X\n", (uint32_t)recv_packet->crc_err);
             write_file(log_fd, "    Calculated crc = %08X\n", (uint32_t)crc_check);
-
 
             _uart_array[list_id].err_count++;
             test_mod_sim.pass = 0;
@@ -436,8 +436,20 @@ static int analysis_packet(uint8_t *buff, int list_id)
             }
         }
     }
-    return 0;
 
+    //Check UART ID
+    int sender_id = recv_packet->uart_id;
+    uart_id = uart_id_list[list_id];
+    if (uart_id != sender_id) {
+        test_mod_sim.pass = 0;
+        log_print(log_fd,
+                "Mismatched port: sender COM-%d, receiver COM-%d\n",
+                sender_id-1, uart_id-1);
+        g_running = 0;
+        return -1;
+    }
+
+    return 0;
 }
 
 
@@ -491,6 +503,7 @@ static void *port_recv_event(void *args)
         if (status != 0) {
             if (g_running) {
                 test_mod_sim.pass = 0;
+                log_print(log_fd, "Analyze packet fail\n");
             }
         } else {
             if (_uart_array[list_id].recv_pack_count % 1000 == 0) {
@@ -499,6 +512,11 @@ static void *port_recv_event(void *args)
             }
         }
     } /*end while(g_running)*/
+
+    log_print(log_fd, "COM-%d summary: error: %lu, timeout: %lu\n",
+            uart_id_list[list_id]-1,
+            _uart_array[list_id].err_count,
+            _uart_array[list_id].timeout_count);
 
     pthread_exit((void *)0);
 }
@@ -588,7 +606,6 @@ static void *port_send_event(void *args)
     }
 
     pthread_exit((void *)0);
-
 }
 
 void hsm_switch2b(int log_fd)
@@ -690,6 +707,7 @@ static void *sim_test(void *args)
         if (tc_set_port(fd, 8, 1, 0) == -1) {
             tc_deinit(fd);
             test_mod_sim.pass = 0;
+            log_print(log_fd, "Set port fail\n");
             /*return NULL;*/
         }
 
@@ -723,6 +741,7 @@ static void *sim_test(void *args)
         tc_deinit(uart_param[i].uart_fd);
     }
 
+    log_print(log_fd, "Test %s\n", test_mod_sim.pass?"PASS":"FAIL");
     log_print(log_fd, "Test end\n\n");
     pthread_exit(NULL);
 }
