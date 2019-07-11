@@ -234,6 +234,13 @@ static void *nim_test(void *args)
         }
     }
 
+    //NOTE: if port initial fail, exit the test
+    if (test_mod_nim.pass == 0) {
+        log_print(log_fd, "Port initial failed, exit\n");
+        g_running = 0;
+        return 0;
+    }
+
     for (i = 0; i < MAX_NIC_COUNT; i++) {
         /* Skip ports which not be initialized */
         if (ret[i] != 0)
@@ -525,7 +532,6 @@ static void udp_recv_test(ether_port_para *net_port_para)
                     ethid, udp_cnt_recv[ethid], tesc_lost_no[ethid], tesc_err_no[ethid]);
                 j = 0;
              }
-
         } else if ((recv_num > 0) && (recv_num < NET_MAX_NUM)) {
             log_print(log_fd, "NIC%d: receive packet of %d bytes, lost %d bytes!\n", \
                     ethid, recv_num, NET_MAX_NUM - recv_num);
