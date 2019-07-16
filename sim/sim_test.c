@@ -606,9 +606,9 @@ void hsm_switch2b(int log_fd)
 
     //Switch host to B.
     if (g_machine == 'A') {
-        tc_set_rts(fd, TRUE);
+        tc_set_rts_casco(fd, FALSE);
     } else {
-        tc_set_rts(fd, FALSE);
+        tc_set_rts_casco(fd, TRUE);
 
         if (send_packet(fd, buf, sizeof(buf)) < 0) {
             log_print(log_fd, "Switch HOST to B FAIL\n");

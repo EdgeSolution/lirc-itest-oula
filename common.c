@@ -174,13 +174,13 @@ static int recv_sync_data(int fd, char rcv_char, char snt_char)
  *      Wait the test program on the other side(machine) to be ready.
  *
  * PARAMETERS:
- *      None
+ *      fd - The fd of serail port
  *
  * RETURN:
  *      1 - Ready.
  *      0 - Not Ready(fail).
  ******************************************************************************/
-int wait_other_side_ready(void)
+int wait_other_side_ready(int fd)
 {
     int rc = 0;
     char snt_char, rcv_char;
@@ -195,10 +195,16 @@ int wait_other_side_ready(void)
         rcv_char = DATA_SYNC_A;
     }
 
-    int fd = ser_open(CCM_SERIAL_PORT);
-    if (fd < 0) {
-        printf("Open the serial port of CCM fail!\n");
-        return 0;
+    if (fd < 0 ) {
+        fd = ser_open(CCM_SERIAL_PORT);
+        if (fd < 0) {
+            printf("Open the serial port of CCM fail!\n");
+            return 0;
+        }
+
+        //NOTE: Pull-down RTS before sync, fix HSM test fail on CIM
+        tc_set_rts_casco(fd, FALSE);
+        sleep_ms(100);
     }
 
     while (g_running) {
@@ -222,7 +228,8 @@ int wait_other_side_ready(void)
 
     g_syncing = 0;
 
-    close(fd);
+    //NOTE: RTS will be restored after close, remove the close.
+    //close(fd);
 
     return rc;
 }
@@ -759,5 +766,16 @@ void wait_link_status_all(const uint8_t num)
             if (counter > TIME_OUT)
                 break;
         }
+    }
+}
+
+void tc_set_rts_casco(int fd, char enabled)
+{
+    unsigned char flags = TIOCM_RTS;
+
+    if (enabled == TRUE) {
+        ioctl(fd, TIOCMBIC, &flags);
+    } else {
+        ioctl(fd, TIOCMBIS, &flags);
     }
 }

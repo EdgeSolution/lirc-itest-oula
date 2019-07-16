@@ -113,7 +113,7 @@ typedef struct _test_mod {
 #define WAIT_IN_MS          500
 
 void kill_process(char *name);
-int wait_other_side_ready(void);
+int wait_other_side_ready(int fd);
 int sleep_ms(unsigned int ms);
 int is_exe_exist(char *exe);
 int ser_open(char *dev);
@@ -126,5 +126,6 @@ int socket_init(int *sockfd, char *ipaddr, uint16_t portid);
 int wait_other_side_ready_eth(void);
 void set_if_up_all(void);
 void wait_link_status_all(uint8_t num);
+void tc_set_rts_casco(int fd, char enabled);
 
 #endif /* _COMMON_H_ */

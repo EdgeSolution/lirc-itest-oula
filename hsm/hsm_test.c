@@ -34,7 +34,6 @@ static void wait_for_cpld_stable(int log_fd, int fd);
 static void hsm_test_switch(int fd, int log_fd);
 static void hsm_test_hold(int fd, int log_fd);
 static void *hsm_test(void *args);
-static void tc_set_rts_casco(int fd, char enabled);
 static int tc_get_cts_casco(int fd);
 static void hsm_send(int fd, int log_fd);
 static int hsm_send_switch(int fd);
@@ -351,6 +350,7 @@ static void *hsm_test(void *args)
     if (g_dev_sku == SKU_CIM) {
         hsm_test_cim(fd, log_fd);
     } else {
+        tc_set_rts_casco(fd, TRUE);
         hsm_test_ccm(fd, log_fd);
     }
 
@@ -358,18 +358,6 @@ static void *hsm_test(void *args)
 
     log_print(log_fd, "Test end\n\n");
     pthread_exit(NULL);
-}
-
-
-static void tc_set_rts_casco(int fd, char enabled)
-{
-    unsigned char flags = TIOCM_RTS;
-
-    if (enabled == TRUE) {
-        ioctl(fd, TIOCMBIC, &flags);
-    } else {
-        ioctl(fd, TIOCMBIS, &flags);
-    }
 }
 
 static int tc_get_cts_casco(int fd)
@@ -548,12 +536,11 @@ static void hsm_test_ccm(int fd, int log_fd)
                 test_mod_hsm.pass = 0;
                 break;
             }
-
         } while (tc_get_cts_casco(fd) != 0 && g_running);
     }
 
     if (g_running) {
-        wait_other_side_ready();
+        wait_other_side_ready(fd);
     }
 
     //Starting SIM/MSM test
@@ -563,7 +550,6 @@ static void hsm_test_ccm(int fd, int log_fd)
 
     g_cur_rts = TRUE;
     hsm_test_hold(fd, log_fd);
-
 }
 
 //test routine for CIM
@@ -579,7 +565,6 @@ static void hsm_test_cim(int fd, int log_fd)
 
     do {
         g_cur_cts = tc_get_cts_casco(fd);
-        log_print(log_fd, "CTS: %u\n", g_cur_cts);
 
         //Detect cts change
         if (old_cts != g_cur_cts) {
@@ -588,6 +573,8 @@ static void hsm_test_cim(int fd, int log_fd)
                     (test_counter+1)/2, old_cts, g_cur_cts);
             old_cts = g_cur_cts;
         }
+
+        log_print(log_fd, "CTS: %u\n", g_cur_cts);
 
         //Check CIM HSM status
         if (test_counter/2 > g_hsm_test_loop+1) {
@@ -601,7 +588,7 @@ static void hsm_test_cim(int fd, int log_fd)
     if (test_counter/2 == g_hsm_test_loop+1) {
         test_counter -= 2;
         log_print(log_fd, "Remove noise from test counter, final count %lu\n",
-                test_counter%2);
+                test_counter/2);
     }
 
     //Check CIM HSM status
