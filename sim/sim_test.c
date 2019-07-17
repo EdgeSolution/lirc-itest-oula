@@ -503,12 +503,11 @@ static void *port_recv_event(void *args)
         }
     } /*end while(g_running)*/
 
-    log_print(log_fd, "COM-%d: send: %lu, recv: %lu, error: %lu, timeout: %lu\n",
+    log_print(log_fd, "COM-%d: send: %lu, recv: %lu, error: %lu\n",
             port_id+1,
             _uart_array[port_id].send_count,
             _uart_array[port_id].recv_count,
-            _uart_array[port_id].err_count,
-            _uart_array[port_id].timeout_count);
+            _uart_array[port_id].err_count);
 
     pthread_exit((void *)0);
 }
