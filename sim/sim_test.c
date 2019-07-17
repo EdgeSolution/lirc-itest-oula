@@ -22,7 +22,6 @@
 #include <time.h>
 #include <zlib.h>
 #include <stdint.h>
-#include <malloc.h>
 #include <signal.h>
 #include <pthread.h>
 #include "sim_test.h"
@@ -535,7 +534,7 @@ static void *port_send_event(void *args)
     int n;
     int i;
 
-    struct uart_package * uart_pack;
+    struct uart_package uart_pack = {{0}};
 
     uart_param = (struct uart_attr *)args;
 
@@ -553,21 +552,11 @@ static void *port_send_event(void *args)
 
     _uart_array[port_id].send_count = 0;
 
-    uart_pack = (struct uart_package *)malloc(BUFF_SIZE);
-    if (!uart_pack) {
-        log_print(log_fd, "not enough memory\n");
-        //free(uart_pack);
-        test_mod_sim.pass = 0;
-        pthread_exit((void *)-1);
-    }
-
     while (g_running) {
-        memset(uart_pack, 0, BUFF_SIZE);
-
         _uart_array[port_id].send_count++;
-        creat_uart_pack(uart_pack, _uart_array[port_id].send_count, port_id);
+        creat_uart_pack(&uart_pack, _uart_array[port_id].send_count, port_id);
 
-        n = send_uart_packet(fd, uart_pack, BUFF_SIZE);
+        n = send_uart_packet(fd, &uart_pack, BUFF_SIZE);
         if (n != BUFF_SIZE) {
             log_print(log_fd, "%s send data error\n", port_list[port_id]);
             test_mod_sim.pass = 0;
@@ -578,8 +567,6 @@ static void *port_send_event(void *args)
             }
         }
     }
-
-    free(uart_pack);
 
     /*if g_running == 0, send stop mark to other machine*/
     if(g_running == 0) {
