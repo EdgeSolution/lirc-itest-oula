@@ -402,28 +402,8 @@ static int udp_test_init(uint32_t ethid, uint16_t portid)
         ccm_ip_init(ethid, local_ip);
     }
 
-    /* config local ip for ethernet port */
-    switch (ethid) {
-    case 0:
-        if (set_ipaddr(ETH0, local_ip, NETMASK) == -1) {
-            return -1;
-        }
-        break;
-    case 1:
-        if (set_ipaddr(ETH1, local_ip, NETMASK) == -1) {
-            return -1;
-        }
-        break;
-    case 2:
-        if (set_ipaddr(ETH2, local_ip, NETMASK) == -1) {
-            return -1;
-        }
-        break;
-    case 3:
-        if (set_ipaddr(ETH3, local_ip, NETMASK) == -1) {
-            return -1;
-        }
-        break;
+    if (set_ipaddr(ethid, local_ip, NETMASK) == -1) {
+        return -1;
     }
 
     if (socket_init((int *)&net_sockid[ethid], local_ip, portid) != 0) {
