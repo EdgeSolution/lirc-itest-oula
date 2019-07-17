@@ -38,6 +38,7 @@ typedef struct _ether_port_para {
     uint32_t ethid;
 } __attribute__((packed)) ether_port_para;
 
+/* CCM IP */
 #define IP_UNIT_0_A "192.100.1.2"
 #define IP_UNIT_1_A "192.100.2.2"
 #define IP_UNIT_2_A "192.100.3.2"
@@ -47,6 +48,12 @@ typedef struct _ether_port_para {
 #define IP_UNIT_1_B "192.100.2.3"
 #define IP_UNIT_2_B "192.100.3.3"
 #define IP_UNIT_3_B "192.100.4.3"
+
+/* CIM IP */
+#define CIM_IP_0_A "192.101.1.2"
+#define CIM_IP_1_A "192.101.2.2"
+#define CIM_IP_0_B "192.101.1.3"
+#define CIM_IP_1_B "192.101.2.3"
 
 #define NETMASK "255.255.255.0"
 
@@ -323,42 +330,75 @@ static void ether_port_init(uint32_t ethid, uint16_t portid)
     net_port_para_send[ethid].ip = target_ip[ethid];
 }
 
+void ccm_ip_init(uint32_t ethid, char *ip)
+{
+    if (g_machine == 'A') {
+        switch (ethid) {
+        case 0:
+            strcpy(ip, IP_UNIT_0_A);
+            break;
+        case 1:
+            strcpy(ip, IP_UNIT_1_A);
+            break;
+        case 2:
+            strcpy(ip, IP_UNIT_2_A);
+            break;
+        case 3:
+            strcpy(ip, IP_UNIT_3_A);
+            break;
+        }
+    } else {    /* Machine B */
+        switch (ethid) {
+        case 0:
+            strcpy(ip, IP_UNIT_0_B);
+            break;
+        case 1:
+            strcpy(ip, IP_UNIT_1_B);
+            break;
+        case 2:
+            strcpy(ip, IP_UNIT_2_B);
+            break;
+        case 3:
+            strcpy(ip, IP_UNIT_3_B);
+            break;
+        }
+    }
+}
+
+void cim_ip_init(uint32_t ethid, char *ip)
+{
+    if (g_machine == 'A') {
+        switch (ethid) {
+        case 0:
+            strcpy(ip, CIM_IP_0_A);
+            break;
+        case 1:
+            strcpy(ip, CIM_IP_1_A);
+            break;
+        }
+    } else {    /* Machine B */
+        switch (ethid) {
+        case 0:
+            strcpy(ip, CIM_IP_0_B);
+            break;
+        case 1:
+            strcpy(ip, CIM_IP_1_B);
+            break;
+        }
+    }
+}
+
 static int udp_test_init(uint32_t ethid, uint16_t portid)
 {
     char local_ip[20];
 
     memset(local_ip, 0, 20);
 
-    if (g_machine == 'A') {
-        switch (ethid) {
-        case 0:
-            strcpy(local_ip, IP_UNIT_0_A);
-            break;
-        case 1:
-            strcpy(local_ip, IP_UNIT_1_A);
-            break;
-        case 2:
-            strcpy(local_ip, IP_UNIT_2_A);
-            break;
-        case 3:
-            strcpy(local_ip, IP_UNIT_3_A);
-            break;
-        }
-    } else {    /* Machine B */
-        switch (ethid) {
-        case 0:
-            strcpy(local_ip, IP_UNIT_0_B);
-            break;
-        case 1:
-            strcpy(local_ip, IP_UNIT_1_B);
-            break;
-        case 2:
-            strcpy(local_ip, IP_UNIT_2_B);
-            break;
-        case 3:
-            strcpy(local_ip, IP_UNIT_3_B);
-            break;
-        }
+    //Initial IP address
+    if (g_dev_sku == SKU_CIM) {
+        cim_ip_init(ethid, local_ip);
+    } else {
+        ccm_ip_init(ethid, local_ip);
     }
 
     /* config local ip for ethernet port */
