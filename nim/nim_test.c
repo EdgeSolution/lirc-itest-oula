@@ -39,21 +39,22 @@ typedef struct _ether_port_para {
 } __attribute__((packed)) ether_port_para;
 
 /* CCM IP */
-#define IP_UNIT_0_A "192.100.1.2"
-#define IP_UNIT_1_A "192.100.2.2"
-#define IP_UNIT_2_A "192.100.3.2"
-#define IP_UNIT_3_A "192.100.4.2"
+#define CCM_A_IP0 "192.100.1.2"
+#define CCM_A_IP1 "192.100.2.2"
+#define CCM_A_IP2 "192.100.3.2"
+#define CCM_A_IP3 "192.100.4.2"
 
-#define IP_UNIT_0_B "192.100.1.3"
-#define IP_UNIT_1_B "192.100.2.3"
-#define IP_UNIT_2_B "192.100.3.3"
-#define IP_UNIT_3_B "192.100.4.3"
+#define CCM_B_IP0 "192.100.1.3"
+#define CCM_B_IP1 "192.100.2.3"
+#define CCM_B_IP2 "192.100.3.3"
+#define CCM_B_IP3 "192.100.4.3"
 
 /* CIM IP */
-#define CIM_IP_0_A "192.101.1.2"
-#define CIM_IP_1_A "192.101.2.2"
-#define CIM_IP_0_B "192.101.1.3"
-#define CIM_IP_1_B "192.101.2.3"
+#define CIM_A_IP0 "192.101.1.2"
+#define CIM_A_IP1 "192.101.2.2"
+
+#define CIM_B_IP0 "192.101.1.3"
+#define CIM_B_IP1 "192.101.2.3"
 
 #define NETMASK "255.255.255.0"
 
@@ -287,16 +288,16 @@ static void ether_port_init(uint32_t ethid, uint16_t portid)
     if (g_machine == 'A') {
         switch (ethid) {
         case 0:
-            strcpy(target_ip[0], IP_UNIT_0_B);
+            strcpy(target_ip[0], CCM_B_IP0);
             break;
         case 1:
-            strcpy(target_ip[1], IP_UNIT_1_B);
+            strcpy(target_ip[1], CCM_B_IP1);
             break;
         case 2:
-            strcpy(target_ip[2], IP_UNIT_2_B);
+            strcpy(target_ip[2], CCM_B_IP2);
             break;
         case 3:
-            strcpy(target_ip[3], IP_UNIT_3_B);
+            strcpy(target_ip[3], CCM_B_IP3);
             break;
         default:
             break;
@@ -304,16 +305,16 @@ static void ether_port_init(uint32_t ethid, uint16_t portid)
     } else {    /* Machine B */
         switch (ethid) {
         case 0:
-            strcpy(target_ip[0], IP_UNIT_0_A);
+            strcpy(target_ip[0], CCM_A_IP0);
             break;
         case 1:
-            strcpy(target_ip[1], IP_UNIT_1_A);
+            strcpy(target_ip[1], CCM_A_IP1);
             break;
         case 2:
-            strcpy(target_ip[2], IP_UNIT_2_A);
+            strcpy(target_ip[2], CCM_A_IP2);
             break;
         case 3:
-            strcpy(target_ip[3], IP_UNIT_3_A);
+            strcpy(target_ip[3], CCM_A_IP3);
             break;
         default:
             break;
@@ -335,31 +336,31 @@ void ccm_ip_init(uint32_t ethid, char *ip)
     if (g_machine == 'A') {
         switch (ethid) {
         case 0:
-            strcpy(ip, IP_UNIT_0_A);
+            strcpy(ip, CCM_A_IP0);
             break;
         case 1:
-            strcpy(ip, IP_UNIT_1_A);
+            strcpy(ip, CCM_A_IP1);
             break;
         case 2:
-            strcpy(ip, IP_UNIT_2_A);
+            strcpy(ip, CCM_A_IP2);
             break;
         case 3:
-            strcpy(ip, IP_UNIT_3_A);
+            strcpy(ip, CCM_A_IP3);
             break;
         }
     } else {    /* Machine B */
         switch (ethid) {
         case 0:
-            strcpy(ip, IP_UNIT_0_B);
+            strcpy(ip, CCM_B_IP0);
             break;
         case 1:
-            strcpy(ip, IP_UNIT_1_B);
+            strcpy(ip, CCM_B_IP1);
             break;
         case 2:
-            strcpy(ip, IP_UNIT_2_B);
+            strcpy(ip, CCM_B_IP2);
             break;
         case 3:
-            strcpy(ip, IP_UNIT_3_B);
+            strcpy(ip, CCM_B_IP3);
             break;
         }
     }
@@ -370,19 +371,19 @@ void cim_ip_init(uint32_t ethid, char *ip)
     if (g_machine == 'A') {
         switch (ethid) {
         case 0:
-            strcpy(ip, CIM_IP_0_A);
+            strcpy(ip, CIM_A_IP0);
             break;
         case 1:
-            strcpy(ip, CIM_IP_1_A);
+            strcpy(ip, CIM_A_IP1);
             break;
         }
     } else {    /* Machine B */
         switch (ethid) {
         case 0:
-            strcpy(ip, CIM_IP_0_B);
+            strcpy(ip, CIM_B_IP0);
             break;
         case 1:
-            strcpy(ip, CIM_IP_1_B);
+            strcpy(ip, CIM_B_IP1);
             break;
         }
     }
