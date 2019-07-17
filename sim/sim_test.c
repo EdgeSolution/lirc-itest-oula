@@ -87,15 +87,14 @@ struct uart_attr {
 
 struct uart_count_list {
     uint32_t err_count;//global variable,count packet loss or error
-    uint32_t recv_pack_count;//global variable, count received packet
-    uint32_t send_pack_count;//global variable, count send packet
-    uint32_t target_send_pack_num;//Record target amount of packets sent
+    uint32_t recv_count;//global variable, count received packet
+    uint32_t send_count;//global variable, count send packet
+    uint32_t target_send_num;//Record target amount of packets sent
+    uint32_t lost_count;
     uint32_t timeout_count;
 }__attribute__ ((packed));
 
 static struct uart_count_list _uart_array[16];//init uart_count
-//static float _rate[16];
-static uint32_t _loss_pack_count[16];
 
 static int read_pack_head_1_byte(int fd, uint8_t *buff, int port_id);
 
@@ -321,7 +320,7 @@ static int recv_uart_packet(int fd, uint8_t *buff, int len, int port_id)
     retry_count = 0;
 
     /*if head is not stop_sign then*/
-    _uart_array[port_id].recv_pack_count++;/* Packet Reception count +1*/
+    _uart_array[port_id].recv_count++;/* Packet Reception count +1*/
     bytes += 5;
     len -= 5;
 
@@ -336,7 +335,7 @@ static int recv_uart_packet(int fd, uint8_t *buff, int len, int port_id)
                 if (g_running) {
                     log_print(log_fd, "%s receive %d packet timeout\n",
                             port_list[port_id],
-                            _uart_array[port_id].recv_pack_count);
+                            _uart_array[port_id].recv_count);
                     _uart_array[port_id].timeout_count += 3;
                     test_mod_sim.pass = 0;
                 }
@@ -388,7 +387,7 @@ static int analysis_packet(uint8_t *buff, int port_id)
         if (g_running) {
             /*means received error packet*/
             log_print(log_fd, "%s Received \"%d\"packet error\n",
-                    port_list[port_id], _uart_array[port_id].recv_pack_count);
+                    port_list[port_id], _uart_array[port_id].recv_count);
             write_file(log_fd, "    ");
             /*dump received data*/
             for (i = 0; i < 257; i++) {/*print received pack_head & port_id &pack_data*/
@@ -408,14 +407,15 @@ static int analysis_packet(uint8_t *buff, int port_id)
 
         return -1;
     } else {
-        _uart_array[port_id].target_send_pack_num = recv_packet->pack_num;
-        tmp = _uart_array[port_id].target_send_pack_num - _uart_array[port_id].recv_pack_count;
+        _uart_array[port_id].target_send_num = recv_packet->pack_num;
+        tmp = _uart_array[port_id].target_send_num - _uart_array[port_id].recv_count;
         if (tmp > 0) {
             test_mod_sim.pass = 0;
-            if (tmp != _loss_pack_count[port_id]) {
-                _loss_pack_count[port_id] = tmp;
+            if (tmp != _uart_array[port_id].lost_count) {
+                _uart_array[port_id].lost_count = tmp;
                 log_print(log_fd, "%s lost %d package\n",
-                        port_list[port_id], _loss_pack_count[port_id]);
+                        port_list[port_id],
+                        _uart_array[port_id].lost_count);
             }
         }
     }
@@ -488,16 +488,19 @@ static void *port_recv_event(void *args)
                 log_print(log_fd, "Analyze packet fail\n");
             }
         } else {
-            if (_uart_array[port_id].recv_pack_count % 1000 == 0) {
+            if (_uart_array[port_id].recv_count % 1000 == 0) {
                 log_print(log_fd,"%s received %d packet successfully\n",
                     port_list[port_id],
-                    (uint32_t)_uart_array[port_id].recv_pack_count);
+                    (uint32_t)_uart_array[port_id].recv_count);
             }
         }
     } /*end while(g_running)*/
 
-    log_print(log_fd, "COM-%d summary: error: %lu, timeout: %lu\n",
-            port_id+1, _uart_array[port_id].err_count,
+    log_print(log_fd, "COM-%d: send: %lu, recv: %lu, error: %lu, timeout: %lu\n",
+            port_id+1,
+            _uart_array[port_id].send_count,
+            _uart_array[port_id].recv_count,
+            _uart_array[port_id].err_count,
             _uart_array[port_id].timeout_count);
 
     pthread_exit((void *)0);
@@ -542,7 +545,7 @@ static void *port_send_event(void *args)
 
     sleep(3);/* waiting received thread ready */
 
-    _uart_array[port_id].send_pack_count = 0;
+    _uart_array[port_id].send_count = 0;
 
     uart_pack = (struct uart_package *)malloc(BUFF_SIZE);
     if (!uart_pack) {
@@ -555,17 +558,17 @@ static void *port_send_event(void *args)
     while (g_running) {
         memset(uart_pack, 0, BUFF_SIZE);
 
-        _uart_array[port_id].send_pack_count++;
-        creat_uart_pack(uart_pack, _uart_array[port_id].send_pack_count, port_id);
+        _uart_array[port_id].send_count++;
+        creat_uart_pack(uart_pack, _uart_array[port_id].send_count, port_id);
 
         n = send_uart_packet(fd, uart_pack, BUFF_SIZE);
         if (n != BUFF_SIZE) {
             log_print(log_fd, "%s send data error\n", port_list[port_id]);
             test_mod_sim.pass = 0;
         } else {
-            if (_uart_array[port_id].send_pack_count % 1000 == 0) {
+            if (_uart_array[port_id].send_count % 1000 == 0) {
                 log_print(log_fd,"%s send %d packet ok\n", port_list[port_id],
-                    (uint32_t)_uart_array[port_id].send_pack_count);
+                    (uint32_t)_uart_array[port_id].send_count);
             }
         }
     }
@@ -666,9 +669,6 @@ static void *sim_test(void *args)
 
     /*init global _uart_array*/
     memset(_uart_array, 0, sizeof(struct uart_count_list));
-
-    /*init global _loss_pack_count*/
-    memset(_loss_pack_count, 0, 16 * sizeof(int));
 
     port_num = 8 * g_board_num;
 
@@ -778,13 +778,13 @@ static void sim_print_status(void)
         if (_uart_array[i].timeout_count > 0) {
             printf("%-*s SENT(PKT):%-*u TIMEOUT(%us)\n",
                 COL_FIX_WIDTH, port_list[i],
-                COL_FIX_WIDTH-10, _uart_array[i].send_pack_count,
+                COL_FIX_WIDTH-10, _uart_array[i].send_count,
                 _uart_array[i].timeout_count * 2);
         } else {
             printf("%-*s SENT(PKT):%-*u LOST(PKT):%-*u ERR(PKT):%-*u\n",
                 COL_FIX_WIDTH, port_list[i],
-                COL_FIX_WIDTH-10, _uart_array[i].send_pack_count,
-                COL_FIX_WIDTH-10, _loss_pack_count[i],
+                COL_FIX_WIDTH-10, _uart_array[i].send_count,
+                COL_FIX_WIDTH-10, _uart_array[i].lost_count,
                 COL_FIX_WIDTH-9, _uart_array[i].err_count);
         }
     }
