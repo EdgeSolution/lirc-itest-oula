@@ -39,22 +39,22 @@ typedef struct _ether_port_para {
 } __attribute__((packed)) ether_port_para;
 
 /* CCM IP */
-#define CCM_A_IP0 "192.100.1.2"
-#define CCM_A_IP1 "192.100.2.2"
-#define CCM_A_IP2 "192.100.3.2"
-#define CCM_A_IP3 "192.100.4.2"
+struct ip_addrs {
+    char *ip1;
+    char *ip2;
+};
 
-#define CCM_B_IP0 "192.100.1.3"
-#define CCM_B_IP1 "192.100.2.3"
-#define CCM_B_IP2 "192.100.3.3"
-#define CCM_B_IP3 "192.100.4.3"
+struct ip_addrs ccm_ip_lists[] = {
+    {"192.100.1.2", "192.100.1.3"},
+    {"192.100.2.2", "192.100.2.3"},
+    {"192.100.3.2", "192.100.3.3"},
+    {"192.100.4.2", "192.100.3.3"},
+};
 
-/* CIM IP */
-#define CIM_A_IP0 "192.101.1.2"
-#define CIM_A_IP1 "192.101.2.2"
-
-#define CIM_B_IP0 "192.101.1.3"
-#define CIM_B_IP1 "192.101.2.3"
+struct ip_addrs cim_ip_lists[] = {
+    {"192.101.1.2", "192.101.1.3"},
+    {"192.101.2.2", "192.101.2.3"},
+};
 
 #define NETMASK "255.255.255.0"
 
@@ -285,39 +285,17 @@ static void ether_port_init(uint32_t ethid, uint16_t portid)
 {
     memset(target_ip[ethid], 0, 20);
 
-    if (g_machine == 'A') {
-        switch (ethid) {
-        case 0:
-            strcpy(target_ip[0], CCM_B_IP0);
-            break;
-        case 1:
-            strcpy(target_ip[1], CCM_B_IP1);
-            break;
-        case 2:
-            strcpy(target_ip[2], CCM_B_IP2);
-            break;
-        case 3:
-            strcpy(target_ip[3], CCM_B_IP3);
-            break;
-        default:
-            break;
+    if (g_dev_sku == SKU_CIM) {
+        if (g_machine == 'A') {
+            strcpy(target_ip[ethid], cim_ip_lists[ethid].ip2);
+        } else {    /* Machine B */
+            strcpy(target_ip[ethid], cim_ip_lists[ethid].ip1);
         }
-    } else {    /* Machine B */
-        switch (ethid) {
-        case 0:
-            strcpy(target_ip[0], CCM_A_IP0);
-            break;
-        case 1:
-            strcpy(target_ip[1], CCM_A_IP1);
-            break;
-        case 2:
-            strcpy(target_ip[2], CCM_A_IP2);
-            break;
-        case 3:
-            strcpy(target_ip[3], CCM_A_IP3);
-            break;
-        default:
-            break;
+    } else {
+        if (g_machine == 'A') {
+            strcpy(target_ip[ethid], ccm_ip_lists[ethid].ip2);
+        } else {    /* Machine B */
+            strcpy(target_ip[ethid], ccm_ip_lists[ethid].ip1);
         }
     }
 
@@ -331,64 +309,6 @@ static void ether_port_init(uint32_t ethid, uint16_t portid)
     net_port_para_send[ethid].ip = target_ip[ethid];
 }
 
-void ccm_ip_init(uint32_t ethid, char *ip)
-{
-    if (g_machine == 'A') {
-        switch (ethid) {
-        case 0:
-            strcpy(ip, CCM_A_IP0);
-            break;
-        case 1:
-            strcpy(ip, CCM_A_IP1);
-            break;
-        case 2:
-            strcpy(ip, CCM_A_IP2);
-            break;
-        case 3:
-            strcpy(ip, CCM_A_IP3);
-            break;
-        }
-    } else {    /* Machine B */
-        switch (ethid) {
-        case 0:
-            strcpy(ip, CCM_B_IP0);
-            break;
-        case 1:
-            strcpy(ip, CCM_B_IP1);
-            break;
-        case 2:
-            strcpy(ip, CCM_B_IP2);
-            break;
-        case 3:
-            strcpy(ip, CCM_B_IP3);
-            break;
-        }
-    }
-}
-
-void cim_ip_init(uint32_t ethid, char *ip)
-{
-    if (g_machine == 'A') {
-        switch (ethid) {
-        case 0:
-            strcpy(ip, CIM_A_IP0);
-            break;
-        case 1:
-            strcpy(ip, CIM_A_IP1);
-            break;
-        }
-    } else {    /* Machine B */
-        switch (ethid) {
-        case 0:
-            strcpy(ip, CIM_B_IP0);
-            break;
-        case 1:
-            strcpy(ip, CIM_B_IP1);
-            break;
-        }
-    }
-}
-
 static int udp_test_init(uint32_t ethid, uint16_t portid)
 {
     char local_ip[20];
@@ -397,9 +317,17 @@ static int udp_test_init(uint32_t ethid, uint16_t portid)
 
     //Initial IP address
     if (g_dev_sku == SKU_CIM) {
-        cim_ip_init(ethid, local_ip);
+        if (g_machine == 'A') {
+            strcpy(local_ip, cim_ip_lists[ethid].ip1);
+        } else {
+            strcpy(local_ip, cim_ip_lists[ethid].ip2);
+        }
     } else {
-        ccm_ip_init(ethid, local_ip);
+        if (g_machine == 'A') {
+            strcpy(local_ip, ccm_ip_lists[ethid].ip1);
+        } else {
+            strcpy(local_ip, ccm_ip_lists[ethid].ip2);
+        }
     }
 
     if (set_ipaddr(ethid, local_ip, NETMASK) == -1) {
