@@ -290,7 +290,9 @@ static int recv_uart_packet(int fd, uint8_t *buff, int len, int port_id)
                     port_list[port_id], i, buff[i]);
             if (i == 0) {
                 retry_count++;
-                if (retry_count <= MAX_RETRY_COUNT) {/*if timeout,not read again to avoid data loss*/
+
+                /*if timeout,not read again to avoid data loss*/
+                if (retry_count <= MAX_RETRY_COUNT) {
                     read_pack_head_1_byte(fd, buff, port_id);
                 }
             } else {
@@ -302,6 +304,11 @@ static int recv_uart_packet(int fd, uint8_t *buff, int len, int port_id)
 
         /*timeout*/
         if (retry_count > MAX_RETRY_COUNT) {
+            if (test_mod_sim.pass && _uart_array[port_id].timeout_count != 0) {
+                log_print(log_fd, "COM-%d timeout, please check the port connection\n",
+                        port_id+1);
+            }
+
             if(g_running) {
                 DBG_PRINT("%s check PACKET HEAD timeout when received %d packet\n",
                         port_list[port_id], _uart_array[port_id].recv_pack_count);
