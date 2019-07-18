@@ -60,12 +60,6 @@ struct ip_addrs cim_ip_lists[] = {
 
 #define UDP_PORT  9527
 
-/* Interface name */
-#define ETH0    "eth0"
-#define ETH1    "eth1"
-#define ETH2    "eth2"
-#define ETH3    "eth3"
-
 /* package size */
 #define NET_MAX_NUM 1024
 
