@@ -208,7 +208,7 @@ static void *nim_test(void *args)
     if (test_mod_nim.pass == 0) {
         log_print(log_fd, "Port initial failed, exit\n");
         g_running = 0;
-        return 0;
+        goto exit;
     }
 
     for (i = 0; i < MAX_NIC_COUNT; i++) {
@@ -240,6 +240,8 @@ static void *nim_test(void *args)
     }
 
     log_print(log_fd, "Test end\n\n");
+
+exit:
     pthread_exit(NULL);
 }
 
