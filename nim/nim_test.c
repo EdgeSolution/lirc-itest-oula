@@ -38,28 +38,27 @@ typedef struct _ether_port_para {
     uint32_t ethid;
 } __attribute__((packed)) ether_port_para;
 
-#define IP_UNIT_0_A "192.100.1.2"
-#define IP_UNIT_1_A "192.100.2.2"
-#define IP_UNIT_2_A "192.100.3.2"
-#define IP_UNIT_3_A "192.100.4.2"
+/* CCM IP */
+struct ip_addrs {
+    char *ip1;
+    char *ip2;
+};
 
-#define IP_UNIT_0_B "192.100.1.3"
-#define IP_UNIT_1_B "192.100.2.3"
-#define IP_UNIT_2_B "192.100.3.3"
-#define IP_UNIT_3_B "192.100.4.3"
+struct ip_addrs ccm_ip_lists[] = {
+    {"192.100.1.2", "192.100.1.3"},
+    {"192.100.2.2", "192.100.2.3"},
+    {"192.100.3.2", "192.100.3.3"},
+    {"192.100.4.2", "192.100.3.3"},
+};
+
+struct ip_addrs cim_ip_lists[] = {
+    {"192.101.1.2", "192.101.1.3"},
+    {"192.101.2.2", "192.101.2.3"},
+};
 
 #define NETMASK "255.255.255.0"
 
-#define TESC0_PORT  0x7000
-#define TESC1_PORT  0x8000
-#define TESC2_PORT  0x9000
-#define TESC3_PORT  0xa000
-
-/* Interface name */
-#define ETH0    "eth0"
-#define ETH1    "eth1"
-#define ETH2    "eth2"
-#define ETH3    "eth3"
+#define UDP_PORT  9527
 
 /* package size */
 #define NET_MAX_NUM 1024
@@ -69,7 +68,6 @@ typedef struct _ether_port_para {
 
 /* Global Variables */
 static int net_sockid[MAX_NIC_COUNT];
-static char target_ip[MAX_NIC_COUNT][20];
 
 static uint32_t udp_cnt_send[MAX_NIC_COUNT] = {0};
 static uint32_t udp_cnt_recv[MAX_NIC_COUNT] = {0};
@@ -175,7 +173,6 @@ static void nim_check_pass(void)
 static void *nim_test(void *args)
 {
     int i = 0;
-    int ret[MAX_NIC_COUNT];
     log_fd = test_mod_nim.log_fd;
 
     pthread_t ptid_r[MAX_NIC_COUNT];
@@ -191,53 +188,33 @@ static void *nim_test(void *args)
     memset(tesc_err_no, 0, MAX_NIC_COUNT * sizeof(uint32_t));
     memset(tesc_lost_no, 0, MAX_NIC_COUNT * sizeof(uint32_t));
 
-    memset(ret, -1, sizeof(ret));
-
     /* test init & ethernet port init*/
-    if (g_nim_test_eth[0] == 1) {
-        ret[0] = udp_test_init(0, TESC0_PORT);
-        if (ret[0] == 0) {
-            ether_port_init(0, TESC0_PORT);
+    for (i = 0; i < MAX_NIC_COUNT; i++) {
+        if (g_nim_test_eth[i] == 0) {
+            continue;
+        }
+
+        int ret;
+        ret = udp_test_init(i, UDP_PORT);
+        if (ret == 0) {
+            ether_port_init(i, UDP_PORT);
         } else {
-            log_print(log_fd, "NIC0 init error!\n");
+            log_print(log_fd, "NIC%d init error!\n", i);
             test_mod_nim.pass = 0;
         }
     }
 
-    if (g_nim_test_eth[1] == 1) {
-        ret[1] = udp_test_init(1, TESC1_PORT);
-        if (ret[1] == 0) {
-            ether_port_init(1, TESC1_PORT);
-        } else {
-            log_print(log_fd, "NIC1 init error!\n");
-            test_mod_nim.pass = 0;
-        }
-    }
-
-    if (g_nim_test_eth[2] == 1) {
-        ret[2] = udp_test_init(2, TESC2_PORT);
-        if (ret[2] == 0) {
-            ether_port_init(2, TESC2_PORT);
-        } else {
-            log_print(log_fd, "NIC2 init error!\n");
-            test_mod_nim.pass = 0;
-        }
-    }
-
-    if (g_nim_test_eth[3] == 1) {
-        ret[3] = udp_test_init(3, TESC3_PORT);
-        if (ret[3] == 0) {
-            ether_port_init(3, TESC3_PORT);
-        } else {
-            log_print(log_fd, "NIC3 init error!\n");
-            test_mod_nim.pass = 0;
-        }
+    //NOTE: if port initial fail, exit the test
+    if (test_mod_nim.pass == 0) {
+        log_print(log_fd, "Port initial failed, exit\n");
+        g_running = 0;
+        goto exit;
     }
 
     for (i = 0; i < MAX_NIC_COUNT; i++) {
-        /* Skip ports which not be initialized */
-        if (ret[i] != 0)
+        if (g_nim_test_eth[i] == 0) {
             continue;
+        }
 
         udp_recv_task_id[i] = pthread_create(&ptid_r[i], NULL, (void *)udp_recv_test, &net_port_para_recv[i]);
         if (udp_recv_task_id[i] != 0) {
@@ -254,55 +231,35 @@ static void *nim_test(void *args)
 
     /* Wait all udp send packet thread and all udp receive packet thread to endup */
     for (i = 0; i < MAX_NIC_COUNT; i++) {
-        /* Skip threads about ports which not be initialized */
-        if (ret[i] != 0)
+        if (g_nim_test_eth[i] == 0) {
             continue;
+        }
 
         pthread_join(ptid_r[i], NULL);
         pthread_join(ptid_s[i], NULL);
     }
 
     log_print(log_fd, "Test end\n\n");
+
+exit:
     pthread_exit(NULL);
 }
 
 static void ether_port_init(uint32_t ethid, uint16_t portid)
 {
-    memset(target_ip[ethid], 0, 20);
+    char *target_ip = NULL;
 
-    if (g_machine == 'A') {
-        switch (ethid) {
-        case 0:
-            strcpy(target_ip[0], IP_UNIT_0_B);
-            break;
-        case 1:
-            strcpy(target_ip[1], IP_UNIT_1_B);
-            break;
-        case 2:
-            strcpy(target_ip[2], IP_UNIT_2_B);
-            break;
-        case 3:
-            strcpy(target_ip[3], IP_UNIT_3_B);
-            break;
-        default:
-            break;
+    if (g_dev_sku == SKU_CIM) {
+        if (g_machine == 'A') {
+            target_ip = cim_ip_lists[ethid].ip2;
+        } else {    /* Machine B */
+            target_ip = cim_ip_lists[ethid].ip1;
         }
-    } else {    /* Machine B */
-        switch (ethid) {
-        case 0:
-            strcpy(target_ip[0], IP_UNIT_0_A);
-            break;
-        case 1:
-            strcpy(target_ip[1], IP_UNIT_1_A);
-            break;
-        case 2:
-            strcpy(target_ip[2], IP_UNIT_2_A);
-            break;
-        case 3:
-            strcpy(target_ip[3], IP_UNIT_3_A);
-            break;
-        default:
-            break;
+    } else {
+        if (g_machine == 'A') {
+            target_ip = ccm_ip_lists[ethid].ip2;
+        } else {    /* Machine B */
+            target_ip = ccm_ip_lists[ethid].ip1;
         }
     }
 
@@ -313,69 +270,30 @@ static void ether_port_init(uint32_t ethid, uint16_t portid)
     net_port_para_send[ethid].sockfd = net_sockid[ethid];
     net_port_para_send[ethid].port = portid;
     net_port_para_send[ethid].ethid = ethid;
-    net_port_para_send[ethid].ip = target_ip[ethid];
+    net_port_para_send[ethid].ip = target_ip;
 }
 
 static int udp_test_init(uint32_t ethid, uint16_t portid)
 {
-    char local_ip[20];
+    char *local_ip = NULL;
 
-    memset(local_ip, 0, 20);
-
-    if (g_machine == 'A') {
-        switch (ethid) {
-        case 0:
-            strcpy(local_ip, IP_UNIT_0_A);
-            break;
-        case 1:
-            strcpy(local_ip, IP_UNIT_1_A);
-            break;
-        case 2:
-            strcpy(local_ip, IP_UNIT_2_A);
-            break;
-        case 3:
-            strcpy(local_ip, IP_UNIT_3_A);
-            break;
+    //Initial IP address
+    if (g_dev_sku == SKU_CIM) {
+        if (g_machine == 'A') {
+            local_ip = cim_ip_lists[ethid].ip1;
+        } else {
+            local_ip = cim_ip_lists[ethid].ip2;
         }
-    } else {    /* Machine B */
-        switch (ethid) {
-        case 0:
-            strcpy(local_ip, IP_UNIT_0_B);
-            break;
-        case 1:
-            strcpy(local_ip, IP_UNIT_1_B);
-            break;
-        case 2:
-            strcpy(local_ip, IP_UNIT_2_B);
-            break;
-        case 3:
-            strcpy(local_ip, IP_UNIT_3_B);
-            break;
+    } else {
+        if (g_machine == 'A') {
+            local_ip = ccm_ip_lists[ethid].ip1;
+        } else {
+            local_ip = ccm_ip_lists[ethid].ip2;
         }
     }
 
-    /* config local ip for ethernet port */
-    switch (ethid) {
-    case 0:
-        if (set_ipaddr(ETH0, local_ip, NETMASK) == -1) {
-            return -1;
-        }
-        break;
-    case 1:
-        if (set_ipaddr(ETH1, local_ip, NETMASK) == -1) {
-            return -1;
-        }
-        break;
-    case 2:
-        if (set_ipaddr(ETH2, local_ip, NETMASK) == -1) {
-            return -1;
-        }
-        break;
-    case 3:
-        if (set_ipaddr(ETH3, local_ip, NETMASK) == -1) {
-            return -1;
-        }
-        break;
+    if (set_ipaddr(ethid, local_ip, NETMASK) == -1) {
+        return -1;
     }
 
     if (socket_init((int *)&net_sockid[ethid], local_ip, portid) != 0) {
@@ -394,7 +312,7 @@ static void udp_send_test(ether_port_para *net_port_para)
     int sockfd;
     uint32_t ethid;
     uint16_t portid;
-    char tgt_ip[255];
+    char *tgt_ip = NULL;
 
     int i, j = 0, send_num;
     uint8_t send_buf[NET_MAX_NUM];
@@ -405,7 +323,7 @@ static void udp_send_test(ether_port_para *net_port_para)
     ethid = net_port_para->ethid;
     portid = net_port_para->port;
 
-    strcpy(tgt_ip, net_port_para->ip);
+    tgt_ip = net_port_para->ip;
 
     /* Packaging byte 0 - NET_MAX_NUM - 8 */
     for (i = 0; i < NET_MAX_NUM - 8; i++) {
@@ -429,7 +347,7 @@ static void udp_send_test(ether_port_para *net_port_para)
         send_buf[NET_MAX_NUM - 3] = (uint8_t)(calculated_crc >> 16 & 0xff);
         send_buf[NET_MAX_NUM - 4] = (uint8_t)(calculated_crc >> 24 & 0xff);
 
-        send_num = udp_send(sockfd, (char *)tgt_ip, portid, send_buf, NET_MAX_NUM, ethid);
+        send_num = udp_send(sockfd, tgt_ip, portid, send_buf, NET_MAX_NUM, ethid);
         if (send_num != NET_MAX_NUM) {
             log_print(log_fd, "udp send failed!\n");
         } else {
@@ -452,7 +370,7 @@ static void udp_send_test(ether_port_para *net_port_para)
             send_buf[i] = 0x55;
         }
 
-        send_num = udp_send(sockfd, (char *)tgt_ip, portid, send_buf, NET_MAX_NUM, ethid);
+        send_num = udp_send(sockfd, tgt_ip, portid, send_buf, NET_MAX_NUM, ethid);
         if (send_num != NET_MAX_NUM) {
             log_print(log_fd, "udp send failed!\n");
         }
@@ -525,7 +443,6 @@ static void udp_recv_test(ether_port_para *net_port_para)
                     ethid, udp_cnt_recv[ethid], tesc_lost_no[ethid], tesc_err_no[ethid]);
                 j = 0;
              }
-
         } else if ((recv_num > 0) && (recv_num < NET_MAX_NUM)) {
             log_print(log_fd, "NIC%d: receive packet of %d bytes, lost %d bytes!\n", \
                     ethid, recv_num, NET_MAX_NUM - recv_num);

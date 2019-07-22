@@ -430,13 +430,16 @@ int send_packet(int fd, char *buf, uint8_t len)
     return rc;
 }
 
-int set_ipaddr(char *ifname, char *ipaddr, char *netmask)
+int set_ipaddr(uint32_t ethid, char *ipaddr, char *netmask)
 {
     int sockfd = -1;
     struct ifreq ifr;
     struct sockaddr_in *sin;
+    char ifname[20];
 
-    if ((ifname == NULL) || (ipaddr == NULL)) {
+    snprintf(ifname, sizeof(ifname), "eth%d", ethid);
+
+    if (ipaddr == NULL) {
         DBG_PRINT("illegal do config ip!\n");
 
         return -1;
@@ -589,7 +592,7 @@ int wait_other_side_ready_eth(void)
     char target_ip[IPSTR_LEN];
     char rcv_char;
     char snt_char;
-    char nic[5];
+    char eth_id;
 
     if (g_machine == 'A') {
         sprintf(local_ip, "192.100.1.2");
@@ -605,14 +608,14 @@ int wait_other_side_ready_eth(void)
 
     //Check if nic was enabled in test
     if (g_nim_test_eth[0]) {
-        sprintf(nic, "eth0");
+        eth_id = 0;
     } else if (g_nim_test_eth[1]) {
-        sprintf(nic, "eth1");
+        eth_id = 1;
     } else {
         return TRUE;
     }
 
-    if (0 != set_ipaddr("eth0", local_ip, "255.255.255.0")) {
+    if (0 != set_ipaddr(eth_id, local_ip, "255.255.255.0")) {
         printf("Set IP address fail\n");
         return FALSE;
     }
