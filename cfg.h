@@ -42,5 +42,6 @@ extern enum DEV_SKU g_dev_sku;
 int get_parameter(void);
 int parse_params(int argc, char **argv);
 int get_eth_num(enum DEV_SKU sku);
+void input_y(char *hint);
 
 #endif /* _CFG_H_ */

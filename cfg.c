@@ -954,3 +954,22 @@ int get_eth_num(enum DEV_SKU sku)
             return MAX_NIC_COUNT;
     }
 }
+
+void input_y(char *hint)
+{
+    char buf[MAX_STR_LENGTH];
+
+    do {
+        if (0 != input_str(hint, buf, sizeof(buf))){
+            continue;
+        }
+
+        switch (buf[0]) {
+            case 'y':
+            case 'Y':
+                return;
+            default:
+                break;
+        }
+    } while (g_running);
+}

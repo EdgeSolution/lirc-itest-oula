@@ -108,6 +108,14 @@ int main(int argc, char **argv)
         printf("OK\n");
     }
 
+    //Start CIM HSM first
+    mod_index = 0;
+    if(g_dev_sku == SKU_CIM && g_test_hsm == 1){
+        start_test_module(&test_mod_hsm);
+        pthread_join(test_mod_hsm.pid, NULL);
+
+        printf("\nHSM test done, start other test modules\n\n");
+    }
 
     time_t time_start = time(NULL);
     get_current_time(&tm_start);
@@ -117,9 +125,10 @@ int main(int argc, char **argv)
     report_fd = log_init(report_file, "report", g_report_dir);
 
     /* Start test modules */
-    mod_index = 0;
     start_test_module(&test_mod_led);
-    start_test_module(&test_mod_hsm);
+    if(g_dev_sku != SKU_CIM){
+        start_test_module(&test_mod_hsm);
+    }
     start_test_module(&test_mod_msm);
     start_test_module(&test_mod_nim);
     start_test_module(&test_mod_sim);

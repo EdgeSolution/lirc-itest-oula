@@ -27,6 +27,7 @@
 #include <sys/io.h>
 #include "term.h"
 #include "hsm_test.h"
+#include "cfg.h"
 
 static void hsm_print_status();
 static void hsm_print_result(int fd);
@@ -43,6 +44,8 @@ static void check_cts_a(int log_fd);
 static void check_cts_b(int log_fd);
 static void hsm_test_ccm(int fd, int log_fd);
 static void hsm_test_cim(int fd, int log_fd);
+static int monitor_cts(int fd, int log_fd, int want);
+static int monitor_cts_helper(int fd, int log_fd, char host);
 
 test_mod_t test_mod_hsm = {
     .run = 1,
@@ -82,15 +85,7 @@ static void hsm_print_status()
     printf("%-*s %s\n", COL_FIX_WIDTH, "HSM",
             (test_mod_hsm.pass == 1)?STR_MOD_OK:STR_MOD_ERROR);
 
-    if (g_dev_sku == SKU_CIM) {
-        if (g_machine == 'A') {
-            printf("CTS: %d A is %s, count: %d\n", g_cur_cts,
-                    g_cur_cts?"HOST":"SLAVE", test_counter/2);
-        } else {
-            printf("CTS: %d B is %s, count: %d\n", g_cur_cts,
-                    g_cur_cts?"SLAVE":"HOST", test_counter/2);
-        }
-    } else {
+    if (g_dev_sku != SKU_CIM) {
         if (g_machine == 'A') {
             printf("RTS: %d CTS: %d A is %s\n",
                     g_hsm_switching?(!g_cur_rts):g_cur_rts, g_cur_cts,
@@ -114,11 +109,10 @@ static void hsm_print_result(int fd)
 
     //Print HSM test result
     if (test_mod_hsm.pass) {
-        write_file(fd, "HSM: PASS. test=%lu\n",
-                (g_dev_sku == SKU_CIM)?test_counter/2:test_counter);
+        write_file(fd, "HSM: PASS\n");
     } else {
         if (g_dev_sku == SKU_CIM) {
-            write_file(fd, "HSM: FAIL. test=%lu\n", test_counter/2);
+            write_file(fd, "HSM: FAIL\n");
         } else {
             write_file(fd, "HSM: FAIL. test=%lu, switch fail=%lu, hold fail=%lu%s\n",
                     test_counter, switch_fail_cntr, hold_fail_cntr,
@@ -555,44 +549,60 @@ static void hsm_test_ccm(int fd, int log_fd)
 //test routine for CIM
 static void hsm_test_cim(int fd, int log_fd)
 {
-    uint8_t old_cts;
-    uint64_t test_loop = g_hsm_test_loop * 2;
+    int count = 0;
+    int i = 0;
 
-    log_print(log_fd, "Start HSM switch test: will last %lu loop\n", g_hsm_test_loop);
+    for (i = 0; i < g_hsm_test_loop; ++i) {
+        if (i%2 == 0) {
+            count += monitor_cts_helper(fd, log_fd, 'A');
+        } else {
+            count += monitor_cts_helper(fd, log_fd, 'B');
+        }
+    }
 
-    old_cts = tc_get_cts_casco(fd);
-    log_print(log_fd, "CTS: %u\n", g_cur_cts);
+    if (test_mod_hsm.pass && count == 0) {
+        log_print(log_fd, "PASS\n");
+    } else {
+        log_print(log_fd, "FAIL\n");
+    }
+}
 
-    do {
-        g_cur_cts = tc_get_cts_casco(fd);
+static int monitor_cts(int fd, int log_fd, int want)
+{
+    int i = 0;
+    int cts;
+    int count = 0;
 
-        //Detect cts change
-        if (old_cts != g_cur_cts) {
-            test_counter++;
-            log_print(log_fd, "Switch Counter: %lu, CTS status changed from %d to %d\n",
-                    (test_counter+1)/2, old_cts, g_cur_cts);
-            old_cts = g_cur_cts;
+    for (i=0; i<100; i++) {
+        if (!g_running) {
+            break;
         }
 
-        log_print(log_fd, "CTS: %u\n", g_cur_cts);
-
-        //Check CIM HSM status
-        if (test_counter/2 > g_hsm_test_loop+1) {
+        sleep_ms(50);
+        cts = tc_get_cts_casco(fd);
+        if (cts != want) {
+            printf("%d: CTS not match, want %d, got %d\n",
+                    i+1, want, cts);
+            log_print(log_fd, "CTS not match, want %d, got %d\n",
+                    want, cts);
             test_mod_hsm.pass = 0;
+            count++;
         }
-
-        sleep_ms(WAIT_IN_MS/3);
-    } while (g_running);
-
-    //Remove noise during test in final result
-    if (test_counter/2 == g_hsm_test_loop+1) {
-        test_counter -= 2;
-        log_print(log_fd, "Remove noise from test counter, final count %lu\n",
-                test_counter/2);
     }
 
-    //Check CIM HSM status
-    if (test_counter < test_loop) {
-        test_mod_hsm.pass = 0;
-    }
+    return count;
+}
+
+static int monitor_cts_helper(int fd, int log_fd, char host)
+{
+    char hint[1024];
+
+    snprintf(hint, sizeof(hint),
+            "Please Switch to %c, then input 'Y' to continue", host);
+
+    log_print(log_fd, "User interactive: switch to %c\n", host);
+
+    input_y(hint);
+
+    return monitor_cts(fd, log_fd, (host=='A')?1:0);
 }
