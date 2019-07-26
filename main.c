@@ -90,6 +90,15 @@ int main(int argc, char **argv)
 
     install_sig_handler();
 
+    //Start CIM HSM first
+    mod_index = 0;
+    if(g_dev_sku == SKU_CIM && g_test_hsm == 1){
+        start_test_module(&test_mod_hsm);
+        pthread_join(test_mod_hsm.pid, NULL);
+
+        printf("\nHSM test done, start other test modules\n\n");
+    }
+
     if (g_dev_sku == SKU_CIM) {
         if (g_test_nim) {
             printf("Wait the other side to be ready...\n");
@@ -106,15 +115,6 @@ int main(int argc, char **argv)
             return -1;
         }
         printf("OK\n");
-    }
-
-    //Start CIM HSM first
-    mod_index = 0;
-    if(g_dev_sku == SKU_CIM && g_test_hsm == 1){
-        start_test_module(&test_mod_hsm);
-        pthread_join(test_mod_hsm.pid, NULL);
-
-        printf("\nHSM test done, start other test modules\n\n");
     }
 
     time_t time_start = time(NULL);
