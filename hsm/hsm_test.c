@@ -44,8 +44,8 @@ static void check_cts_a(int log_fd);
 static void check_cts_b(int log_fd);
 static void hsm_test_ccm(int fd, int log_fd);
 static void hsm_test_cim(int fd, int log_fd);
-static int monitor_cts(int fd, int log_fd, int want);
-static int monitor_cts_helper(int fd, int log_fd, char host);
+static int monitor_cts(int fd, int log_fd, char host);
+static int monitor_cts_helper(int fd, int log_fd, char host, int i);
 
 test_mod_t test_mod_hsm = {
     .run = 1,
@@ -554,9 +554,9 @@ static void hsm_test_cim(int fd, int log_fd)
 
     for (i = 0; i < g_hsm_test_loop; ++i) {
         if (i%2 == 0) {
-            count += monitor_cts_helper(fd, log_fd, 'A');
+            count += monitor_cts_helper(fd, log_fd, 'A', i+1);
         } else {
-            count += monitor_cts_helper(fd, log_fd, 'B');
+            count += monitor_cts_helper(fd, log_fd, 'B', i+1);
         }
     }
 
@@ -567,42 +567,72 @@ static void hsm_test_cim(int fd, int log_fd)
     }
 }
 
-static int monitor_cts(int fd, int log_fd, int want)
+#define SAMPLE_COUNT 100
+static int monitor_cts(int fd, int log_fd, char host)
 {
     int i = 0;
     int cts;
-    int count = 0;
+    int count_0 = 0;
+    int count_1 = 0;
+    int fail = 0;
+    int want = (host=='A')?1:0;
 
-    for (i=0; i<100; i++) {
+    printf("%c is master, CTS = %d is ok, sample 100 times at 50ms intervals.\n",
+            host, want);
+
+    for (i=0; i<SAMPLE_COUNT; i++) {
         if (!g_running) {
             break;
         }
 
         sleep_ms(50);
         cts = tc_get_cts_casco(fd);
-        if (cts != want) {
-            printf("%d: CTS not match, want %d, got %d\n",
-                    i+1, want, cts);
-            log_print(log_fd, "CTS not match, want %d, got %d\n",
-                    want, cts);
-            test_mod_hsm.pass = 0;
-            count++;
+
+        switch(cts){
+            case 0:
+                count_0++;
+                break;
+            case 1:
+                count_1++;
+                break;
         }
     }
 
-    return count;
+    if (host == 'A') {
+        if (count_1 != SAMPLE_COUNT && count_0 != 0) {
+            fail = 1;
+            test_mod_hsm.pass = 0;
+        }
+    } else {
+        if (count_1 != 0 && count_0 != SAMPLE_COUNT) {
+            fail = 1;
+            test_mod_hsm.pass = 0;
+        }
+    }
+
+    printf("%s CTS=0 times: %u, CTS=1 times: %u\n",
+            fail?"Error!":"OK!",
+            count_0, count_1);
+
+    log_print(log_fd, "%s CTS=0 times: %u, CTS=1 times: %u\n",
+            fail?"Error!":"OK!",
+            count_0, count_1);
+
+    return fail;
 }
 
-static int monitor_cts_helper(int fd, int log_fd, char host)
+static int monitor_cts_helper(int fd, int log_fd, char host, int i)
 {
     char hint[1024];
 
     snprintf(hint, sizeof(hint),
-            "Please Switch to %c, then input 'Y' to continue", host);
+            "(%d/%llu) Please set the switch to %c, then enter 'y'",
+            i, g_hsm_test_loop,
+            host);
 
     log_print(log_fd, "User interactive: switch to %c\n", host);
 
     input_y(hint);
 
-    return monitor_cts(fd, log_fd, (host=='A')?1:0);
+    return monitor_cts(fd, log_fd, host);
 }
