@@ -96,25 +96,27 @@ int main(int argc, char **argv)
         start_test_module(&test_mod_hsm);
         pthread_join(test_mod_hsm.pid, NULL);
 
-        printf("\nHSM test done, start other test modules\n\n");
+        printf("\nHSM test is done, start other test modules\n\n");
     }
 
-    if (g_dev_sku == SKU_CIM) {
-        if (g_test_nim) {
+    if(g_running){
+        if (g_dev_sku == SKU_CIM) {
+            if (g_test_nim) {
+                printf("Wait the other side to be ready...\n");
+                if (!wait_other_side_ready_eth()) {
+                    printf("The other side is not ready!\n");
+                    return -1;
+                }
+                printf("OK\n");
+            }
+        } else {
             printf("Wait the other side to be ready...\n");
-            if (!wait_other_side_ready_eth()) {
+            if (!wait_other_side_ready(-1)) {
                 printf("The other side is not ready!\n");
                 return -1;
             }
             printf("OK\n");
         }
-    } else {
-        printf("Wait the other side to be ready...\n");
-        if (!wait_other_side_ready(-1)) {
-            printf("The other side is not ready!\n");
-            return -1;
-        }
-        printf("OK\n");
     }
 
     time_t time_start = time(NULL);
