@@ -41,7 +41,7 @@ void kill_process(char *name)
 {
     char kill[260];
 
-    sprintf(kill, "pkill -2 -f %s", name);
+    sprintf(kill, "pkill -f %s >/dev/null 2>&1", name);
     system(kill);
 }
 
