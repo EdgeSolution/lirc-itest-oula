@@ -83,11 +83,6 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    //Wait for link up
-    if (g_test_nim) {
-        wait_link_status_all(get_eth_num(g_dev_sku));
-    }
-
     install_sig_handler();
 
     //Start CIM HSM first
@@ -97,6 +92,11 @@ int main(int argc, char **argv)
         pthread_join(test_mod_hsm.pid, NULL);
 
         printf("\nCTS test is done, start other test modules\n\n");
+    }
+
+    //Wait for link up
+    if (g_test_nim) {
+        wait_link_status_all(get_eth_num(g_dev_sku));
     }
 
     if(g_running){
