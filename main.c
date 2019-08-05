@@ -96,7 +96,7 @@ int main(int argc, char **argv)
         start_test_module(&test_mod_hsm);
         pthread_join(test_mod_hsm.pid, NULL);
 
-        printf("\nHSM test is done, start other test modules\n\n");
+        printf("\nCTS test is done, start other test modules\n\n");
     }
 
     if(g_running){
