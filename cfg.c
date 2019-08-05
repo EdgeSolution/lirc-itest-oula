@@ -677,9 +677,16 @@ static int input_hsm_loop(uint64_t *loop)
     }
 
     do {
-        if (0 != input_num("Please input HSM test loop", &tmp)) {
-            ret = -1;
-            continue;
+        if (g_dev_sku == SKU_CIM) {
+            if (0 != input_num("Please input CTS test loop", &tmp)) {
+                ret = -1;
+                continue;
+            }
+        } else {
+            if (0 != input_num("Please input HSM test loop", &tmp)) {
+                ret = -1;
+                continue;
+            }
         }
 
         //Compare HSM switch time with test duration
@@ -815,10 +822,17 @@ int get_parameter(void)
         }
 
         //HSM
-        g_test_hsm = user_ack("Test HSM?");
+        if (g_dev_sku == SKU_CIM) {
+            g_test_hsm = user_ack("Test CTS?");
+        } else {
+            g_test_hsm = user_ack("Test HSM?");
+        }
+
         if(g_test_hsm == 1) {
-            if (0 != input_board_sn("HSM", g_hsm_sn, sizeof(g_hsm_sn)))
-                return -1;
+            if (g_dev_sku != SKU_CIM) {
+                if (0 != input_board_sn("HSM", g_hsm_sn, sizeof(g_hsm_sn)))
+                    return -1;
+            }
 
             /* Get HSM test loop */
             if (0 != input_hsm_loop(&g_hsm_test_loop))

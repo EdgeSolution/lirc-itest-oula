@@ -491,7 +491,7 @@ void generate_report(int fd, char *report_file, struct tm *tm_start, struct tm *
     } else {
         write_file(fd, "%s SN: %s\n", (g_dev_sku == SKU_CIM)?"CIM":"CCM",  g_ccm_sn);
 
-        if (g_test_hsm) {
+        if (g_test_hsm && g_dev_sku!=SKU_CIM) {
             write_file(fd, "HSM SN: %s\n", g_hsm_sn);
         }
 
