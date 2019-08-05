@@ -575,10 +575,6 @@ static int monitor_cts(int fd, int log_fd, char host)
     int count_0 = 0;
     int count_1 = 0;
     int fail = 0;
-    int want = (host=='A')?1:0;
-
-    printf("%c is master, CTS = %d is ok, sample 100 times at 50ms intervals.\n",
-            host, want);
 
     for (i=0; i<SAMPLE_COUNT; i++) {
         if (!g_running) {
@@ -610,13 +606,11 @@ static int monitor_cts(int fd, int log_fd, char host)
         }
     }
 
-    printf("%s CTS=0 times: %u, CTS=1 times: %u\n",
-            fail?"Error!":"OK!",
-            count_0, count_1);
+    printf("%c is master. CTS=0 times: %u, CTS=1 times: %u. %s\n",
+            host, count_0, count_1, fail?"Error!":"OK!");
 
-    log_print(log_fd, "%s CTS=0 times: %u, CTS=1 times: %u\n",
-            fail?"Error!":"OK!",
-            count_0, count_1);
+    log_print(log_fd, "%c is master. CTS=0 times: %u, CTS=1 times: %u. %s\n",
+            host, count_0, count_1, fail?"Error!":"OK!");
 
     return fail;
 }
@@ -626,7 +620,7 @@ static int monitor_cts_helper(int fd, int log_fd, char host, int i)
     char hint[1024];
 
     snprintf(hint, sizeof(hint),
-            "(%d/%llu) Please set the switch to %c, then enter 'y'",
+            "(%d/%llu) Please set the switch of HSM to %c, then enter 'y'",
             i, g_hsm_test_loop,
             host);
 
