@@ -83,31 +83,41 @@ int main(int argc, char **argv)
         return -1;
     }
 
+    install_sig_handler();
+
+    //Start CIM HSM first
+    mod_index = 0;
+    if(g_dev_sku == SKU_CIM && g_test_hsm == 1){
+        start_test_module(&test_mod_hsm);
+        pthread_join(test_mod_hsm.pid, NULL);
+
+        printf("\nCTS test is done, start other test modules\n\n");
+    }
+
     //Wait for link up
     if (g_test_nim) {
         wait_link_status_all(get_eth_num(g_dev_sku));
     }
 
-    install_sig_handler();
-
-    if (g_dev_sku == SKU_CIM) {
-        if (g_test_nim) {
+    if(g_running){
+        if (g_dev_sku == SKU_CIM) {
+            if (g_test_nim) {
+                printf("Wait the other side to be ready...\n");
+                if (!wait_other_side_ready_eth()) {
+                    printf("The other side is not ready!\n");
+                    return -1;
+                }
+                printf("OK\n");
+            }
+        } else {
             printf("Wait the other side to be ready...\n");
-            if (!wait_other_side_ready_eth()) {
+            if (!wait_other_side_ready(-1)) {
                 printf("The other side is not ready!\n");
                 return -1;
             }
             printf("OK\n");
         }
-    } else {
-        printf("Wait the other side to be ready...\n");
-        if (!wait_other_side_ready(-1)) {
-            printf("The other side is not ready!\n");
-            return -1;
-        }
-        printf("OK\n");
     }
-
 
     time_t time_start = time(NULL);
     get_current_time(&tm_start);
@@ -117,9 +127,10 @@ int main(int argc, char **argv)
     report_fd = log_init(report_file, "report", g_report_dir);
 
     /* Start test modules */
-    mod_index = 0;
     start_test_module(&test_mod_led);
-    start_test_module(&test_mod_hsm);
+    if(g_dev_sku != SKU_CIM){
+        start_test_module(&test_mod_hsm);
+    }
     start_test_module(&test_mod_msm);
     start_test_module(&test_mod_nim);
     start_test_module(&test_mod_sim);
@@ -480,7 +491,7 @@ void generate_report(int fd, char *report_file, struct tm *tm_start, struct tm *
     } else {
         write_file(fd, "%s SN: %s\n", (g_dev_sku == SKU_CIM)?"CIM":"CCM",  g_ccm_sn);
 
-        if (g_test_hsm) {
+        if (g_test_hsm && g_dev_sku!=SKU_CIM) {
             write_file(fd, "HSM SN: %s\n", g_hsm_sn);
         }
 
