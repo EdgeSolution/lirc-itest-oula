@@ -100,6 +100,14 @@ static void hsm_print_status()
 
 static void hsm_print_result(int fd)
 {
+    char *name = NULL;
+
+    if (g_dev_sku == SKU_CIM) {
+        name = "CTS";
+    } else {
+        name = "HSM";
+    }
+
     //Fix unexpect fail counter increase when break test
     if (switch_fail_cntr == 1)
         switch_fail_cntr--;
@@ -109,13 +117,13 @@ static void hsm_print_result(int fd)
 
     //Print HSM test result
     if (test_mod_hsm.pass) {
-        write_file(fd, "HSM: PASS\n");
+        write_file(fd, "%s: PASS\n", name);
     } else {
         if (g_dev_sku == SKU_CIM) {
-            write_file(fd, "HSM: FAIL\n");
+            write_file(fd, "%s: FAIL\n", name);
         } else {
-            write_file(fd, "HSM: FAIL. test=%lu, switch fail=%lu, hold fail=%lu%s\n",
-                    test_counter, switch_fail_cntr, hold_fail_cntr,
+            write_file(fd, "%s: FAIL. test=%lu, switch fail=%lu, hold fail=%lu%s\n",
+                    name, test_counter, switch_fail_cntr, hold_fail_cntr,
                     timeout_cntr?" Timeout":"");
         }
     }
