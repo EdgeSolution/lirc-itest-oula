@@ -92,6 +92,12 @@ int main(int argc, char **argv)
         pthread_join(test_mod_hsm.pid, NULL);
 
         printf("\nCTS test is done, start other test modules\n\n");
+
+        //If only HSM was tested, stop the testing
+        if (g_test_cpu == 0 && g_test_nim == 0
+                && g_test_led == 0 && g_test_mem == 0) {
+            g_running = 0;
+        }
     }
 
     //Wait for link up
