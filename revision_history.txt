@@ -6,6 +6,20 @@ LAST UPDATE 2019-05-20
 Versions in brackets () are not official releases, but testing versions.
 
 VERSION  DATE        CHANGES / DESCRIPTION
+0.22     2019-08-12  - [common] fix kill proces fail issue
+                     - [hsm] use new test method for CIM
+                     - [hsm] use same API with casco for set RTS
+                     - [main] pull-down RTS before hsm switch test
+                     - [nim] exit nim test on port initial fail
+                     - [nim] refactor set ip address
+                     - [nim] remove unused macro
+                     - [nim] use different IP for CCM and CIM
+                     - [sim] add port checking to avoid mismatch connection
+                     - [sim] add timeout log message for result
+                     - [sim] refactor data structure
+                     - [sim] refactor struct uart_count_list
+                     - [sim] remove meanless malloc/free
+
 0.20     2019-05-20  - [main] Fix parameter '-nim' support
                      - [main] Remove sleep in main loop
                      - [nim] Update hsm test for CIM
