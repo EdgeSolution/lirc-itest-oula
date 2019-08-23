@@ -62,6 +62,9 @@ static void *cpu_test(void *args)
     char prog_path[1024];
     char cmd[1024];
 
+    //KIll other process of stresscpu2
+    kill_process(prog);
+
     print_version(log_fd, "CPU");
 
     snprintf(prog_path, sizeof(prog_path), "%s/%s", g_progam_path, prog);

@@ -63,6 +63,9 @@ static void *mem_test(void *args)
     char prog_path[1024];
     char cmd[1024];
 
+    //kill other process of memtester
+    kill_process(prog);
+
     print_version(log_fd, "MEM");
 
     snprintf(prog_path, sizeof(prog_path), "%s/%s", g_progam_path, prog);
