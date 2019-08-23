@@ -561,6 +561,10 @@ static void hsm_test_cim(int fd, int log_fd)
     int i = 0;
 
     for (i = 0; i < g_hsm_test_loop; ++i) {
+        if(!g_running) {
+            break;
+        }
+
         if (i%2 == 0) {
             count += monitor_cts_helper(fd, log_fd, 'A', i+1);
         } else {
@@ -635,6 +639,9 @@ static int monitor_cts_helper(int fd, int log_fd, char host, int i)
     log_print(log_fd, "User interactive: switch to %c\n", host);
 
     input_y(hint);
+    if (!g_running) {
+        return 0;
+    }
 
     return monitor_cts(fd, log_fd, host);
 }

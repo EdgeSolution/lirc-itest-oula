@@ -971,10 +971,12 @@ int get_eth_num(enum DEV_SKU sku)
 
 void input_y(char *hint)
 {
+    int ret = 0;
     char buf[MAX_STR_LENGTH];
 
     do {
         if (0 != input_str(hint, buf, sizeof(buf))){
+            ret = -1;
             continue;
         }
 
@@ -983,7 +985,7 @@ void input_y(char *hint)
             case 'Y':
                 return;
             default:
-                break;
+                continue;
         }
-    } while (g_running);
+    } while (ret == -1);
 }
