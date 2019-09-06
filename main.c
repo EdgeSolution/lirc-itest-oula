@@ -83,8 +83,6 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    install_sig_handler();
-
     //Start CIM HSM first
     mod_index = 0;
     if(g_dev_sku == SKU_CIM && g_test_hsm == 1){
@@ -99,6 +97,8 @@ int main(int argc, char **argv)
             g_running = 0;
         }
     }
+
+    install_sig_handler();
 
     //Wait for link up
     if (g_test_nim) {
