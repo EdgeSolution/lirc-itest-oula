@@ -1,11 +1,16 @@
 LIRC-ITEST REVISION HISTORY
 
-LAST UPDATE 2019-05-20
+LAST UPDATE 2019-09-18
 
 
 Versions in brackets () are not official releases, but testing versions.
 
 VERSION  DATE        CHANGES / DESCRIPTION
+0.24     2019-09-18  - [cpu] kill exists process of stresscpu2 before test
+                     - [mem] kill exists process of memtester before test
+                     - [nim] fix wrong target ip of eth3
+                     - [hsm] cancel cts test via ctrl-c
+
 0.22     2019-08-12  - [common] fix kill proces fail issue
                      - [hsm] use new test method for CIM
                      - [hsm] use same API with casco for set RTS
