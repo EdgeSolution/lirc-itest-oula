@@ -44,6 +44,7 @@ extern char g_progam_path[];
 
 extern uint64_t g_hsm_test_loop;
 extern uint8_t g_hsm_switching;
+extern uint64_t g_hsm_interval_in_ms;
 
 uint8_t g_nim_test_eth[MAX_NIC_COUNT];
 

@@ -66,8 +66,6 @@ test_mod_t test_mod_hsm = {
 #define HOLD_INTERVAL       60
 #define WAIT_TIMEOUT        3
 
-#define SENDING_COUNT       2
-
 /* The packet to send */
 static char g_packet[PACKET_SIZE];
 
@@ -131,11 +129,9 @@ static void hsm_print_result(int fd)
 
 static void wait_for_cpld_stable(int log_fd, int fd)
 {
-    int i;
-    for (i = 0; i < SENDING_COUNT; i++) {
-        hsm_send(fd, log_fd);
-        sleep_ms(WAIT_IN_MS);
-    }
+
+    hsm_send(fd, log_fd);
+    sleep_ms(g_hsm_interval_in_ms);
 }
 
 /*
@@ -180,7 +176,7 @@ static void hsm_test_switch(int fd, int log_fd)
 
             if (g_cur_rts) {
                 hsm_send(fd, log_fd);
-                sleep_ms(WAIT_IN_MS);
+                sleep_ms(g_hsm_interval_in_ms);
             }
 
             if (!g_running) {
@@ -224,7 +220,7 @@ static void hsm_test_switch(int fd, int log_fd)
 
             if (g_cur_rts) {
                 hsm_send(fd, log_fd);
-                sleep_ms(WAIT_IN_MS);
+                sleep_ms(g_hsm_interval_in_ms);
             }
 
             if (!g_running) {
@@ -267,7 +263,7 @@ static void hsm_test_hold(int fd, int log_fd)
     if (g_machine == 'A') {
         while (g_running) {
             hsm_send(fd, log_fd);
-            sleep_ms(WAIT_IN_MS);
+            sleep_ms(g_hsm_interval_in_ms);
 
             cur_time = time(NULL);
             if (cur_time > (old_time + HOLD_INTERVAL)) {
@@ -295,7 +291,7 @@ static void hsm_test_hold(int fd, int log_fd)
     } else {
         while (g_running) {
             hsm_send(fd, log_fd);
-            sleep_ms(WAIT_IN_MS);
+            sleep_ms(g_hsm_interval_in_ms);
 
             cur_time = time(NULL);
             if (cur_time > (old_time + HOLD_INTERVAL)) {
@@ -455,7 +451,7 @@ static void wait_for_cts_change(int fd)
 
     do {
         hsm_send_switch(fd);
-        sleep_ms(WAIT_IN_MS);
+        sleep_ms(g_hsm_interval_in_ms);
         cts = tc_get_cts_casco(fd);
 
         cnt++;

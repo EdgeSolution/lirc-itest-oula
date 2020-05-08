@@ -71,6 +71,7 @@ int g_baudrate = 115200;
 /* HSM: test loop */
 uint64_t g_hsm_test_loop = 100;
 uint8_t g_hsm_switching = 0;
+uint64_t g_hsm_interval_in_ms = WAIT_IN_MS;
 
 /* NIM: port test flag, set by user input */
 uint8_t g_nim_test_eth[MAX_NIC_COUNT] = {0};
@@ -690,10 +691,10 @@ static int input_hsm_loop(uint64_t *loop)
         }
 
         //Compare HSM switch time with test duration
-        if (tmp*(WAIT_IN_MS*2/1000) >= g_duration*60) {
+        if (tmp*(g_hsm_interval_in_ms/1000) >= g_duration*60) {
             printf("Invalid HSM test loop, HSM switch duration (%llus)"
                     " must smaller than total test duration (%llus)\n",
-                    tmp*(WAIT_IN_MS*2/1000), g_duration*60);
+                    tmp*(g_hsm_interval_in_ms/1000), g_duration*60);
             ret = -1;
             continue;
         }
@@ -890,6 +891,41 @@ int get_parameter(void)
     return 0;
 }
 
+static int parse_params_sku(int argc, char **argv)
+{
+    if (strcmp("-msm", argv[1]) == 0) {
+        g_dev_sku = SKU_CCM_MSM;
+    } else if (strcmp("-cim", argv[1]) == 0) {
+        g_dev_sku = SKU_CIM;
+    } else if (strcmp("-nim", argv[1]) == 0) {
+        g_dev_sku = SKU_CCM_LEGACY;
+    } else {
+        return -EINVAL;
+    }
+
+    return 0;
+}
+
+static int parse_params_hsm(int argc, char **argv)
+{
+    if (strcmp("-sec", argv[1]) != 0) {
+        return -EINVAL;
+    }
+
+    switch (argv[2][0]) {
+        case '1':
+            g_hsm_interval_in_ms = WAIT_IN_MS;
+            break;
+        case '2':
+            g_hsm_interval_in_ms = WAIT_IN_MS*2;
+            break;
+        default:
+            return -EINVAL;
+    }
+
+    return 0;
+}
+
 /******************************************************************************
  * NAME:
  *      get_parameter
@@ -908,40 +944,21 @@ int get_parameter(void)
 int parse_params(int argc, char **argv)
 {
     //Check parameter
-    if (argc == 1) {
-        g_dev_sku = SKU_CCM;
-    } else if (argc == 2){
-        if (strcmp("-msm", argv[1]) == 0) {
-            g_dev_sku = SKU_CCM_MSM;
-        } else if (strcmp("-cim", argv[1]) == 0) {
-            g_dev_sku = SKU_CIM;
-        } else if (strcmp("-nim", argv[1]) == 0) {
-            g_dev_sku = SKU_CCM_LEGACY;
-        } else {
-            return -EINVAL;
-        }
-    } else {
-        return -EINVAL;
-    }
 
-    switch (g_dev_sku) {
-        case SKU_CCM: //without MSM, NIM, single SIM
-        case SKU_CCM_LEGACY: //without MSM
-            g_test_msm = 0;
+    switch (argc) {
+        case 1:
+            g_dev_sku = SKU_CCM;
             break;
-        case SKU_CIM: //without SIM, NIM, MSM
-            g_test_sim = 0;
-            g_test_msm = 0;
-            break;
-        case SKU_CCM_MSM:
-            break;
+        case 2:
+            return parse_params_sku(argc, argv);
+        case 3:
+            return parse_params_hsm(argc, argv);
         default:
             return -EINVAL;
     }
 
     return 0;
 }
-
 
 /******************************************************************************
  * NAME:

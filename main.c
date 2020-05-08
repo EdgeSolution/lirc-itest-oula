@@ -70,9 +70,6 @@ int main(int argc, char **argv)
 
     if (!adv_hwb()) { exit(0); }
 
-    //Bring up all NICs
-    set_if_up_all();
-
     if (0 != parse_params(argc, argv)) {
         print_usage(argv[0]);
         return -1;
@@ -82,6 +79,9 @@ int main(int argc, char **argv)
     if (get_parameter() < 0) {
         return -1;
     }
+
+    //Bring up all NICs
+    set_if_up_all();
 
     //Start CIM HSM first
     mod_index = 0;
