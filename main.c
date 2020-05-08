@@ -56,6 +56,8 @@ static void print_usage(char *name)
             "    Run test on CIM\n"
             "  -nim\n"
             "    Run with legacy SKU of CCM with NIM support\n"
+            "  -sec <1|2>\n"
+            "    Set HSM switching time as 1 second or 2 seconds\n"
             );
 }
 
