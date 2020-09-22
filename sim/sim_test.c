@@ -312,7 +312,7 @@ static int recv_uart_packet(int fd, uint8_t *buff, int len, int port_id)
 
             if(g_running) {
                 DBG_PRINT("%s check PACKET HEAD timeout when received %d packet\n",
-                        port_list[port_id], _uart_array[port_id].recv_pack_count);
+                        port_list[port_id], _uart_array[port_id].recv_count);
 
                 test_mod_sim.pass = 0;
             }
