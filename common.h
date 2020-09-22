@@ -38,7 +38,7 @@ extern char g_machine;
 
 extern uint64_t g_duration;
 extern int g_running;
-extern uint8_t g_board_num;
+extern uint8_t g_port_num;
 extern int g_baudrate;
 extern char g_progam_path[];
 

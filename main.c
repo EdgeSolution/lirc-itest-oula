@@ -23,6 +23,7 @@
 #include <libgen.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include "cfg.h"
 #include "main.h"
 #include "version.h"
 #include "adv_hwb/adv_hwb.h"
@@ -513,7 +514,7 @@ void generate_report(int fd, char *report_file, struct tm *tm_start, struct tm *
 
         if (g_test_sim) {
             write_file(fd, "SIM1 SN: %s\n", g_sim_sn[0]);
-            if (g_board_num == 2) {
+            if (get_sim_board_num() == MAX_SIM_COUNT) {
                 write_file(fd, "SIM2 SN: %s\n", g_sim_sn[1]);
             }
         }

@@ -25,6 +25,7 @@
 
 /* Max counter of sim modules */
 #define MAX_SIM_COUNT       2
+#define MAX_SIM_PORT_COUNT  16
 
 #define MAX_NIC_COUNT 4
 
@@ -43,5 +44,6 @@ int get_parameter(void);
 int parse_params(int argc, char **argv);
 int get_eth_num(enum DEV_SKU sku);
 void input_y(char *hint);
+int get_sim_board_num(void);
 
 #endif /* _CFG_H_ */

@@ -24,6 +24,8 @@
 #include <stdint.h>
 #include <signal.h>
 #include <pthread.h>
+#include "cfg.h"
+#include "common.h"
 #include "sim_test.h"
 #include "term.h"
 
@@ -50,7 +52,7 @@ static const uint8_t stop_sign[5] = {
     0xff
 };
 
-static char *port_list[16] = {
+static char *port_list[MAX_SIM_PORT_COUNT] = {
     "/dev/ttyS2",
     "/dev/ttyS3",
     "/dev/ttyS4",
@@ -663,7 +665,7 @@ static void *sim_test(void *args)
     /*init global _uart_array*/
     memset(_uart_array, 0, sizeof(struct uart_count_list));
 
-    port_num = 8 * g_board_num;
+    port_num = g_port_num;
 
     /*init uart_param*/
     for (i=0; i<port_num; i++) {
@@ -757,7 +759,7 @@ static void sim_print_result(int fd)
 static void sim_print_status(void)
 {
     int i;
-    int port_num = 8 * g_board_num;
+    int port_num = g_port_num;
 
     if (g_hsm_switching) {
         printf("%-*s %s\n",
