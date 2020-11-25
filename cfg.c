@@ -63,7 +63,7 @@ char g_machine = 'A';
 int g_running = 1;
 
 /* Board number (SIM) */
-uint8_t g_board_num = 2;
+uint8_t g_port_num = MAX_SIM_PORT_COUNT;
 
 /* Baudrate of serial port (SIM) */
 int g_baudrate = 115200;
@@ -85,7 +85,7 @@ static int decode_time(unsigned char *value, int vlen);
 static int input_str(const char *hint, char *str, uint8_t len);
 static int input_num(const char *hint, uint64_t *num);
 static int input_machine(char *machine);
-static int input_sim_board_num(uint8_t *num);
+static int input_sim_port_num(uint8_t *num);
 static int input_product_sn(char *sn, uint8_t len);
 static int input_board_sn(const char *board, char *sn, uint8_t len);
 static int input_baudrate(int *baud);
@@ -93,6 +93,7 @@ static int user_ack(char *hint);
 static int input_tester(char *tester, uint8_t len);
 static int input_test_duration(uint64_t *duration);
 static int input_hsm_loop(uint64_t *loop);
+int get_sim_port_num(int index);
 
 /*
  * Trim whitespace chars from the end of string.
@@ -155,7 +156,9 @@ static int is_board_num_valid(int board_num)
     int i;
     int valid = 0;
 
-    for (i = 2; i <= (8 * board_num + 1); i++) {
+    int port_number = get_sim_port_num(board_num);
+
+    for (i = 2; i <= (port_number + 1); i++) {
         snprintf(ser_dev, sizeof(ser_dev), "%s%d", ser_prefix, i);
 
         if(access(ser_dev, F_OK) == 0) {
@@ -163,7 +166,7 @@ static int is_board_num_valid(int board_num)
         }
     }
 
-    if (valid >= (8 * board_num))
+    if (valid >= port_number)
         return 1;
 
     return 0;
@@ -432,7 +435,7 @@ static int input_machine(char *machine)
     return 0;
 }
 
-static int input_sim_board_num(uint8_t *num)
+static int input_sim_port_num(uint8_t *num)
 {
     uint64_t tmp;
     int ret = 0;
@@ -443,14 +446,18 @@ static int input_sim_board_num(uint8_t *num)
 
     do {
         /* Get the number of SIM board && check it */
-        if (0 != input_num("Please input SIM Board Number(1/2)", &tmp)) {
+        if (0 != input_num("Please input SIM Port Number(1/2/3):\n"
+                    "1: 8 ports\n"
+                    "2: 16 ports\n"
+                    "3: 4 ports\n",
+                    &tmp)) {
             ret = -1;
             continue;
         }
 
-        if (tmp != 1 && tmp != 2) {
+        if (tmp < 0 || tmp > 3) {
             ret = -1;
-            printf("Invalid Board Number\n");
+            printf("Invalid Board Index\n");
             continue;
         }
 
@@ -461,9 +468,9 @@ static int input_sim_board_num(uint8_t *num)
         }
 
         break;
-    } while(ret == -1);
+    } while (ret == -1);
 
-    *num = (uint8_t)tmp&0xff;
+    *num = get_sim_port_num(tmp);
 
     return 0;
 }
@@ -756,8 +763,8 @@ int get_parameter(void)
         if (g_dev_sku != SKU_CIM) {
             //SIM
             /* Get the number of SIM board && check it */
-            if (0 != input_sim_board_num(&g_board_num))
-                return -1;
+            if (0 != input_sim_port_num(&g_port_num))
+              return -1;
 
             //Baudrate
             if (0 != input_baudrate(&g_baudrate))
@@ -785,10 +792,10 @@ int get_parameter(void)
             /* Get the SIM board number and the baudrate of serial */
             if (g_test_sim == 1) {
                 /* Get the number of SIM board && check it */
-                if (0 != input_sim_board_num(&g_board_num))
-                    return -1;
+                if (0 != input_sim_port_num(&g_port_num))
+                  return -1;
 
-                for (i = 0; i < g_board_num; i++) {
+                for (i = 0; i < get_sim_board_num(); i++) {
                     if (0 != input_board_sn("SIM", g_sim_sn[i], sizeof(g_sim_sn[i])))
                         return -1;
                 }
@@ -851,7 +858,7 @@ int get_parameter(void)
 
     if (g_dev_sku != SKU_CIM) {
         //If use two SIM board, disable CPU/memory test
-        if (g_test_sim && g_board_num == 2) {
+        if (g_test_sim && g_port_num == MAX_SIM_PORT_COUNT) {
             g_test_cpu = 0;
             g_test_mem = 0;
         }
@@ -878,7 +885,7 @@ int get_parameter(void)
     DBG_PRINT("msm sn: %s\n", g_msm_sn);
     DBG_PRINT("hsm sn: %s\n", g_hsm_sn);
 
-    DBG_PRINT("sim board num: %d, baudrate: %d\n", g_board_num, g_baudrate);
+    DBG_PRINT("sim port num: %d, baudrate: %d\n", g_port_num, g_baudrate);
     DBG_PRINT("hsm test loop: %llu\n", g_hsm_test_loop);
 
     DBG_PRINT("nim test port: ");
@@ -988,4 +995,30 @@ void input_y(char *hint)
                 continue;
         }
     } while (ret == -1);
+}
+
+int get_sim_board_num(void)
+{
+    switch (g_port_num) {
+        case 4:
+        case 8:
+            return 1;
+        case MAX_SIM_PORT_COUNT:
+            return 2;
+        default:
+            return 0;
+    }
+}
+
+int get_sim_port_num(int index)
+{
+    switch (index) {
+        case 1:
+        case 2:
+            return 8 * index;
+        case 3:
+            return 4;
+        default:
+            return 0;
+    }
 }

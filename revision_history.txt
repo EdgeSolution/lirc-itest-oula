@@ -1,11 +1,13 @@
 LIRC-ITEST REVISION HISTORY
 
-LAST UPDATE 2019-09-18
+LAST UPDATE 2020-09-27
 
 
 Versions in brackets () are not official releases, but testing versions.
 
 VERSION  DATE        CHANGES / DESCRIPTION
+(0.25)   2020-09-27  - [sim] add support for 4 port cable
+
 0.24     2019-09-18  - [cpu] kill exists process of stresscpu2 before test
                      - [mem] kill exists process of memtester before test
                      - [nim] fix wrong target ip of eth3
